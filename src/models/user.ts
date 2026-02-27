@@ -1,25 +1,28 @@
-export interface IUser {
+/**
+ * User model - Represents a TripTally user account
+ */
+export interface User {
+  id: string;          // UUID primary key
+  name: string;        // User's full name
+  email: string;       // User's email (unique)
+  profile_image: string | null;  // Profile image URL from Cloudinary
+  created_at: string;  // ISO timestamp
+}
+
+/**
+ * User create/update input
+ */
+export interface CreateUserInput {
   id: string;
   name: string;
   email: string;
-  password: string;
-  profile_pic?: string;
-  token?: string;
-  trips?: string[];
-  created_at: string;
-  updated_at: string;
+  profile_image?: string;
 }
 
-export const userTableName = "users";
+export interface UpdateUserInput {
+  name?: string;
+  profile_image?: string;
+}
 
-// Supabase table structure:
-// - id: UUID (primary key)
-// - name: text (not null)
-// - email: text (not null, unique)
-// - password: text (not null)
-// - profile_pic: text (nullable)
-// - token: text (nullable)
-// - trips: uuid[] (array of trip IDs, nullable)
-// - created_at: timestamp (auto)
-// - updated_at: timestamp (auto)
+export const USER_TABLE = 'users';
 
