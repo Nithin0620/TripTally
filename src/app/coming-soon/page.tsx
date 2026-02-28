@@ -1,20 +1,9 @@
-import type { Metadata } from 'next';
+'use client';
+
 import { motion } from 'framer-motion';
 import CountdownTimer from '@/components/CountdownTimer';
 import VisitorCounter from '@/components/VisitorCounter';
 import WaitlistSection from '@/components/WaitlistSection';
-
-export const metadata: Metadata = {
-  title: 'TripTally - Coming Soon',
-  description:
-    'TripTally is launching soon. Join our waitlist to be the first to experience smarter travel planning and expense management.',
-  openGraph: {
-    title: 'TripTally - Coming Soon',
-    description:
-      'TripTally is launching soon. Join our waitlist to be the first.',
-    type: 'website',
-  },
-};
 
 export default function ComingSoonPage() {
   return (

@@ -21,11 +21,11 @@ export default function WaitlistSection() {
 
     if (result.success) {
       setMessageType('success');
-      setMessage(result.message);
+      setMessage((result as any).message || 'Successfully joined the waitlist!');
       setEmail('');
     } else {
       setMessageType('error');
-      setMessage(result.error);
+      setMessage((result as any).error || 'An error occurred');
     }
 
     setLoading(false);
@@ -138,6 +138,33 @@ export default function WaitlistSection() {
         >
           ✓ No spam, unsubscribe anytime
         </motion.p>
+
+        {/* Development Notice & CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+          className="mt-12 text-center"
+        >
+          <p className="text-[#FFFFFF]/70 mb-6 text-base md:text-lg">
+            🚀 Currently in development. Stay tuned for the launch!
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              disabled
+              className="px-8 py-4 bg-[#17394B]/60 text-[#FFFFFF]/40 border border-[#EFEC07]/20 rounded-full font-semibold text-base cursor-not-allowed transition-all duration-300"
+            >
+              Sign Up (Coming Soon)
+            </button>
+            <button
+              disabled
+              className="px-8 py-4 bg-[#17394B]/60 text-[#FFFFFF]/40 border border-[#EFEC07]/20 rounded-full font-semibold text-base cursor-not-allowed transition-all duration-300"
+            >
+              Learn More (Coming Soon)
+            </button>
+          </div>
+        </motion.div>
       </div>
     </motion.section>
   );

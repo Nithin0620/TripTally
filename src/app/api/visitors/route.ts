@@ -59,10 +59,9 @@ export async function POST(request: NextRequest) {
       .from('visitors')
       .select('id')
       .eq('visitor_uuid', visitor_uuid)
-      .single()
       .maybeSingle();
 
-    if (selectError && selectError.code !== 'PGRST116') {
+    if (selectError) {
       console.error('Supabase select error:', selectError);
       return NextResponse.json(
         { error: 'Failed to check visitor' },

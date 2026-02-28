@@ -122,9 +122,9 @@ export default function Home() {
         </div>
 
         {/* Waitlist CTA Section */}
-        <div className="max-w-3xl mx-auto py-12 text-center mb-12">
+        <div className="max-w-3xl mx-auto py-12 text-center ">
           <h2 className="text-3xl md:text-4xl font-bold text-[#EFEC07] mb-6">Be Part of the Journey</h2>
-          <p className="text-[#FFFFFF]/70 text-base md:text-lg mb-8">
+          <p className="text-[#FFFFFF]/70 text-base md:text-lg">
             Join thousands of travelers preparing for smarter group trips
           </p>
           <WaitlistSection />
@@ -132,7 +132,7 @@ export default function Home() {
       </div>
 
         {/* Footer */}
-        <footer className="bg-[#02131B]/80 border-t border-[#EFEC07]/10 text-[#FFFFFF]/60 py-8 mt-12">
+        <footer className="bg-[#02131B]/80 border-t border-[#EFEC07]/10 text-[#FFFFFF]/60 py-8">
           <div className="container mx-auto px-6 text-center">
             <p>
               © {new Date().getFullYear()} TripTally. All rights reserved.

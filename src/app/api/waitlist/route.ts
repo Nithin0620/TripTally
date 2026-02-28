@@ -41,10 +41,9 @@ export async function POST(request: NextRequest) {
       .from('waitlist')
       .select('id')
       .eq('email', normalizedEmail)
-      .single()
       .maybeSingle();
 
-    if (selectError && selectError.code !== 'PGRST116') {
+    if (selectError) {
       console.error('Supabase select error:', selectError);
       return NextResponse.json(
         { error: 'Failed to check email' },
