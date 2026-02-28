@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const activityData: CreateActivityRequest = {
@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const updateData = {
@@ -166,7 +166,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { error } = await deleteActivity(id);

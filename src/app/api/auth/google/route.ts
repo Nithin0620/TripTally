@@ -4,7 +4,6 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { oauth2client } from 'google-auth-library';
 import { supabase } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
 import { badRequestResponse, serverErrorResponse, unauthorizedResponse } from '@/middleware/auth';
@@ -70,6 +69,11 @@ export async function POST(request: NextRequest) {
       return serverErrorResponse('Failed to fetch user');
     }
 
+    // Ensure user exists
+    if (!user) {
+      return serverErrorResponse('User not found');
+    }
+
     // Update profile image if provided
     if (picture && (!user.profile_image || user.profile_image !== picture)) {
       await supabase
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT
+
     const token = await signToken({
       userId: user.id,
       email: user.email,

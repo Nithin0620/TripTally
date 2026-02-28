@@ -31,7 +31,7 @@ export async function GET(
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { settlements, error, balances } = await calculateTripSettlements(tripId);

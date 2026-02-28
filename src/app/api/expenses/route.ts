@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const expenseData: CreateExpenseRequest = {
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { expenses, error } = await getTripExpenses(tripId);
@@ -138,7 +138,7 @@ export async function PUT(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const updateData = {
@@ -190,7 +190,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { error } = await deleteExpense(id);

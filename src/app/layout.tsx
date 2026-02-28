@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Navbar from "@/components/Navbar";
+import FooterSection from "@/components/FooterSection";
 
 export const metadata: Metadata = {
   title: "TripTally",
@@ -13,7 +16,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          <Navbar />
+          <main>{children}</main>
+          <FooterSection />
+        </AuthProvider>
+      </body>
     </html>
   );
 }

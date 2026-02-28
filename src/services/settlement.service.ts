@@ -27,8 +27,9 @@ export async function calculateTripSettlements(tripId: string) {
 
     // Build user map
     for (const member of members) {
-      if (member.users) {
-        userMap[member.users.id] = member.users as User;
+      const userData = member.users;
+      if (userData && !Array.isArray(userData)) {
+        userMap[(userData as any).id] = userData as User;
       }
     }
 

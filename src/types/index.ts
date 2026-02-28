@@ -87,15 +87,15 @@ export interface Settlement {
   from_user_id: string;
   to_user_id: string;
   amount: number;
-  from_user?: User;
-  to_user?: User;
+  from_user?: Omit<User, 'created_at'>;
+  to_user?: Omit<User, 'created_at'>;
 }
 
 // ============================================
 // JWT Payload
 // ============================================
 
-export interface JWTPayload {
+export interface AppJWTPayload {
   userId: string;
   email: string;
   iat?: number;

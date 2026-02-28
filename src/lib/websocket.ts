@@ -2,7 +2,7 @@
 // WebSocket Server Setup
 // ============================================
 
-import { WebSocket, Server as WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { WebSocketMessage } from '@/types';
 import * as http from 'http';
 

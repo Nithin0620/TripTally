@@ -3,7 +3,7 @@
 // ============================================
 
 import { SignJWT, jwtVerify } from 'jose';
-import { JWTPayload } from '@/types';
+import { AppJWTPayload } from '@/types';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
@@ -14,7 +14,7 @@ const JWT_EXPIRY = '7d';
 /**
  * Sign a JWT token with user data
  */
-export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promise<string> {
+export async function signToken(payload: Omit<AppJWTPayload, 'iat' | 'exp'>): Promise<string> {
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(JWT_EXPIRY)
@@ -26,10 +26,10 @@ export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promi
 /**
  * Verify and decode a JWT token
  */
-export async function verifyToken(token: string): Promise<JWTPayload | null> {
+export async function verifyToken(token: string): Promise<AppJWTPayload | null> {
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
-    return verified.payload as JWTPayload;
+    return verified.payload as unknown as AppJWTPayload;
   } catch (error) {
     console.error('Token verification failed:', error);
     return null;
