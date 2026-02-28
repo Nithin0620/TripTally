@@ -1,0 +1,177 @@
+// ============================================
+// Core Data Types
+// ============================================
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  profile_image?: string;
+  created_at: string;
+}
+
+export interface Trip {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  cover_image?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface TripMember {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: 'owner' | 'editor' | 'viewer';
+  joined_at: string;
+  user?: User; // Joined user details
+}
+
+export interface Activity {
+  id: string;
+  trip_id: string;
+  title: string;
+  activity_date: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+  order_index?: number;
+  created_at: string;
+}
+
+export interface Expense {
+  id: string;
+  trip_id: string;
+  title: string;
+  amount: number;
+  paid_by: string;
+  split_type: 'equal' | 'percentage' | 'custom';
+  category?: string;
+  created_at: string;
+  paidByUser?: User;
+  shares?: ExpenseShare[];
+}
+
+export interface ExpenseShare {
+  id: string;
+  expense_id: string;
+  user_id: string;
+  share_amount: number;
+  user?: User;
+}
+
+export interface Receipt {
+  id: string;
+  expense_id: string;
+  image_url: string;
+  extracted_text?: string;
+  created_at: string;
+}
+
+export interface Template {
+  id: string;
+  title: string;
+  location?: string;
+  days?: number;
+  budget_range?: string;
+  is_public: boolean;
+  created_by?: string;
+  created_at: string;
+}
+
+export interface Settlement {
+  from_user_id: string;
+  to_user_id: string;
+  amount: number;
+  from_user?: User;
+  to_user?: User;
+}
+
+// ============================================
+// JWT Payload
+// ============================================
+
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
+// ============================================
+// API Request/Response Types
+// ============================================
+
+export interface AuthRequest {
+  email: string;
+  password?: string;
+  name?: string;
+  googleToken?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+export interface CreateTripRequest {
+  title: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  cover_image?: string;
+}
+
+export interface CreateActivityRequest {
+  trip_id: string;
+  title: string;
+  activity_date: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+  order_index?: number;
+}
+
+export interface CreateExpenseRequest {
+  trip_id: string;
+  title: string;
+  amount: number;
+  paid_by: string;
+  split_type: 'equal' | 'percentage' | 'custom';
+  category?: string;
+  shares: {
+    user_id: string;
+    amount: number;
+  }[];
+}
+
+export interface TripInviteRequest {
+  trip_id: string;
+  email: string;
+  role: 'editor' | 'viewer';
+}
+
+// ============================================
+// WebSocket Event Types
+// ============================================
+
+export interface WebSocketMessage {
+  type: 'expense_added' | 'activity_updated' | 'settlement_updated' | 'user_joined';
+  trip_id: string;
+  data: any;
+  timestamp: number;
+}
+
+// ============================================
+// Context Types
+// ============================================
+
+export interface UserContext {
+  userId: string;
+  email: string;
+}
