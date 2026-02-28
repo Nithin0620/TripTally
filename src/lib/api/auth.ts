@@ -39,8 +39,8 @@ export const authApi = {
   /**
    * Google OAuth login
    */
-  async googleLogin(token: string): Promise<ApiResponse<AuthResponse>> {
-    return apiClient.post<AuthResponse>('/api/auth/google', { token });
+  async googleLogin(googleToken: string): Promise<ApiResponse<AuthResponse>> {
+    return apiClient.post<AuthResponse>('/api/auth/google', { googleToken });
   },
 
   /**

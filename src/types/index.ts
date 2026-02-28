@@ -175,3 +175,54 @@ export interface UserContext {
   userId: string;
   email: string;
 }
+
+// ============================================
+// EXPLORE SYSTEM TYPES
+// ============================================
+
+export interface Hotel {
+  name: string;
+  image: string;
+  description: string;
+  price_range: string;
+}
+
+export interface Restaurant {
+  name: string;
+  image: string;
+  description: string;
+  cuisine: string;
+}
+
+export interface Place {
+  id: string;
+  name: string;
+  category: 'Beaches' | 'Mountains' | 'Cities' | 'Spiritual' | 'Luxury';
+  state: string;
+  description: string;
+  best_time_to_visit: string;
+  avg_budget: string;
+  travel_duration: string;
+  hero_image: string;
+  gallery_images: string[];
+  hotels: Hotel[];
+  restaurants: Restaurant[];
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GeneratePlacesRequest {
+  category: 'Beaches' | 'Mountains' | 'Cities' | 'Spiritual' | 'Luxury';
+  limit?: number;
+}
+
+export interface GeneratePlacesResponse {
+  places: Place[];
+  success: boolean;
+  error?: string;
+}
+
+export interface ExploreCategory {
+  category: 'Beaches' | 'Mountains' | 'Cities' | 'Spiritual' | 'Luxury';
+  places: Place[];
+}

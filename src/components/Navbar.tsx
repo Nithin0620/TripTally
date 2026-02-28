@@ -4,77 +4,164 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import Button from "./ui/Button";
+import { usePathname, useRouter } from "next/navigation";
+import MobileMenu from "@/components/MobileMenu";
+
+const navItems = [
+  { label: "Home", href: "/" },
+  { label: "Explore", href: "/explore" },
+  { label: "Templates", href: "/templates" },
+  { label: "Maps", href: "/map" },
+  { label: "AI Planner", href: "/ai-planner" },
+];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 20);
     };
+
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
     await logout();
-    router.push('/');
+    router.push("/");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
   };
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-brand-bg/95 backdrop-blur-lg shadow-lg" : "bg-transparent"
-      }`}
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-white">
-            <span className="text-brand-accent">Trip</span>Tally
+    <nav className="sticky top-0 z-50 transition-all ease-in-out w-full">
+      <motion.div
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        className="mx-auto mt-4 max-w-7xl px-6"
+      >
+        <div
+          className={`flex h-[64px] items-center justify-between rounded-full border border-white/10 px-6 backdrop-blur-lg transition-[background-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            scrolled
+              ? "bg-[#17394B]/70 shadow-[0_10px_28px_rgba(0,0,0,0.35)]"
+              : "bg-white/5 shadow-lg"
+          }`}
+        >
+          <Link href="/" className="text-xl font-bold text-white sm:text-2xl">
+            TripTally
           </Link>
 
-          <div className="hidden items-center gap-8 md:flex">
-            <Link href="/" className="text-sm font-medium text-white/80 transition hover:text-white">
-              Home
-            </Link>
-            <Link href="/pricing" className="text-sm font-medium text-white/80 transition hover:text-white">
-              Pricing
-            </Link>
-            {user && (
-              <Link href="/dashboard" className="text-sm font-medium text-white/80 transition hover:text-white">
-                Dashboard
-              </Link>
-            )}
+          <div className="hidden items-center gap-7 md:flex">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group relative text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive ? "text-white" : "text-white/80 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                  <span
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-[#EFEC07] transition-all duration-300 ${
+                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="hidden text-sm text-white/60 sm:inline">
-                  {user.name}
-                </span>
-                <Button onClick={handleLogout} variant="secondary">
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button href="/login" variant="secondary" className="hidden sm:inline-flex">
-                  Login
-                </Button>
-                <Button href="/register">Get Started</Button>
-              </>
+          <div className="hidden items-center gap-3 md:flex">
+            {!user && (
+              <Link
+                href="/login"
+                className="rounded-full px-3 py-2 text-sm font-medium text-white/85 transition-all duration-300 hover:scale-105 hover:text-white"
+              >
+                Login
+              </Link>
             )}
+
+            {user && (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/10 text-xs font-semibold text-white">
+                {getInitials(user.name || user.email)}
+              </div>
+            )}
+
+            {user && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-full px-3 py-2 text-sm font-medium text-white/85 transition-all duration-300 hover:scale-105 hover:text-white"
+              >
+                Logout
+              </button>
+            )}
+
+            <Link
+              href={user ? "/dashboard" : "/register"}
+              className="rounded-full bg-[#EFEC07] px-6 py-2.5 text-sm font-semibold text-[#02131B] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_25px_rgba(250,204,21,0.4)]"
+            >
+              Get Started
+            </Link>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:bg-white/10 md:hidden"
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            <div className="relative h-4 w-5">
+              <span
+                className={`absolute left-0 top-0 h-0.5 w-5 bg-white transition-all duration-300 ${
+                  mobileOpen ? "translate-y-[7px] rotate-45" : ""
+                }`}
+              />
+              <span
+                className={`absolute left-0 top-[7px] h-0.5 w-5 bg-white transition-all duration-300 ${
+                  mobileOpen ? "opacity-0" : "opacity-100"
+                }`}
+              />
+              <span
+                className={`absolute left-0 top-[14px] h-0.5 w-5 bg-white transition-all duration-300 ${
+                  mobileOpen ? "-translate-y-[7px] -rotate-45" : ""
+                }`}
+              />
+            </div>
+          </button>
         </div>
-      </div>
-    </motion.nav>
+
+        <MobileMenu
+          isOpen={mobileOpen}
+          navItems={navItems}
+          pathname={pathname}
+          user={user}
+          onLogout={handleLogout}
+          onClose={() => setMobileOpen(false)}
+        />
+      </motion.div>
+    </nav>
   );
 }

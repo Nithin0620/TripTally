@@ -4,12 +4,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
 import { badRequestResponse, serverErrorResponse } from '@/middleware/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const dbClient = supabaseAdmin ?? supabase;
+    const isUpstreamSslFailure = (message?: string) => {
+      if (!message) return false;
+      const normalized = message.toLowerCase();
+      return normalized.includes('ssl handshake failed') || normalized.includes('error code 525');
+    };
+
     const body = await request.json();
     const { email, password, name } = body;
 
@@ -23,11 +30,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: existingUserError } = await dbClient
       .from('users')
       .select('id')
       .eq('email', email)
       .single();
+
+    if (existingUserError && existingUserError.code !== 'PGRST116') {
+      console.error('Register existing user lookup error:', existingUserError);
+      if (isUpstreamSslFailure(existingUserError.message)) {
+        return NextResponse.json(
+          { error: 'Auth service is temporarily unavailable (upstream SSL issue). Please retry in a few minutes.' },
+          { status: 503 }
+        );
+      }
+      return serverErrorResponse(existingUserError.message || 'Failed to check existing user');
+    }
 
     if (existingUser) {
       return badRequestResponse('Email already registered');
@@ -38,7 +56,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user
-    const { data: user, error: createError } = await supabase
+    const { data: user, error: createError } = await dbClient
       .from('users')
       .insert({
         email,
@@ -50,12 +68,19 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (createError || !user) {
-      return serverErrorResponse('Failed to create user');
+      console.error('Register create user error:', createError);
+      if (isUpstreamSslFailure(createError?.message)) {
+        return NextResponse.json(
+          { error: 'Auth service is temporarily unavailable (upstream SSL issue). Please retry in a few minutes.' },
+          { status: 503 }
+        );
+      }
+      return serverErrorResponse(createError?.message || 'Failed to create user');
     }
 
     // Store password hash (in production, use Supabase Auth)
     // For this demo, we'd need an auth_passwords table
-    const { error: authError } = await supabase
+    const { error: authError } = await dbClient
       .from('auth_passwords')
       .insert({
         user_id: user.id,
@@ -63,9 +88,22 @@ export async function POST(request: NextRequest) {
       });
 
     if (authError) {
+      console.error('Register set password error:', authError);
+      if (authError.code === 'PGRST205') {
+        await dbClient.from('users').delete().eq('id', user.id);
+        return serverErrorResponse(
+          "Database is missing 'auth_passwords' table. Run supabase_complete_schema.sql in Supabase SQL editor and retry."
+        );
+      }
+      if (isUpstreamSslFailure(authError.message)) {
+        return NextResponse.json(
+          { error: 'Auth service is temporarily unavailable (upstream SSL issue). Please retry in a few minutes.' },
+          { status: 503 }
+        );
+      }
       // Clean up user
-      await supabase.from('users').delete().eq('id', user.id);
-      return serverErrorResponse('Failed to set password');
+      await dbClient.from('users').delete().eq('id', user.id);
+      return serverErrorResponse(authError.message || 'Failed to set password');
     }
 
     // Generate JWT

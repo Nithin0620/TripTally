@@ -19,9 +19,6 @@ export default function FooterSection() {
           <div>
             <h4 className="mb-4 font-semibold text-white">Product</h4>
             <div className="space-y-2">
-              <Link href="/pricing" className="block text-sm text-white/60 transition hover:text-white">
-                Pricing
-              </Link>
               <Link href="/dashboard" className="block text-sm text-white/60 transition hover:text-white">
                 Dashboard
               </Link>

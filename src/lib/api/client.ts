@@ -15,12 +15,30 @@ class ApiClient {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
+  private buildUrl(endpoint: string): string {
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+    if (!this.baseUrl) {
+      return normalizedEndpoint;
+    }
+
+    const normalizedBase = this.baseUrl.endsWith('/')
+      ? this.baseUrl.slice(0, -1)
+      : this.baseUrl;
+
+    if (normalizedBase.endsWith('/api') && normalizedEndpoint.startsWith('/api/')) {
+      return `${normalizedBase}${normalizedEndpoint.slice(4)}`;
+    }
+
+    return `${normalizedBase}${normalizedEndpoint}`;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(this.buildUrl(endpoint), {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -29,15 +47,21 @@ class ApiClient {
         credentials: 'include', // Include cookies for JWT auth
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson ? await response.json() : null;
+      const fallbackText = isJson ? '' : await response.text();
 
       if (!response.ok) {
         return {
-          error: data.error || `Request failed with status ${response.status}`,
+          error:
+            (data && typeof data === 'object' && 'error' in data ? String((data as { error?: string }).error) : '') ||
+            fallbackText ||
+            `Request failed with status ${response.status}`,
         };
       }
 
-      return { data };
+      return { data: data as T };
     } catch (error) {
       console.error('API request error:', error);
       return {

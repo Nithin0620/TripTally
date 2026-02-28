@@ -3,7 +3,6 @@ import FeatureSection from "@/components/FeatureSection";
 import PackageGeneratorSection from "@/components/PackageGeneratorSection";
 import DiscoverSection from "@/components/DiscoverSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import PricingSection from "@/components/PricingSection";
 
 export default function Home() {
   return (
@@ -13,7 +12,6 @@ export default function Home() {
       <PackageGeneratorSection />
       <DiscoverSection />
       <TestimonialsSection />
-      <PricingSection />
     </main>
   );
 }

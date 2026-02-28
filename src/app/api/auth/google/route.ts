@@ -4,14 +4,13 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
 import { badRequestResponse, serverErrorResponse, unauthorizedResponse } from '@/middleware/auth';
 
-const google = require('google-auth-library');
-
 export async function POST(request: NextRequest) {
   try {
+    const dbClient = supabaseAdmin ?? supabase;
     const body = await request.json();
     const { googleToken } = body;
 
@@ -19,30 +18,39 @@ export async function POST(request: NextRequest) {
       return badRequestResponse('Missing googleToken');
     }
 
-    // Verify Google token
-    const client = new google.OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
-    let ticket;
-
+    // Verify token with Google
+    let payload;
     try {
-      ticket = await client.verifyIdToken({
-        idToken: googleToken,
-        audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-      });
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=' + googleToken);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google tokeninfo error:', errorText);
+        return unauthorizedResponse('Invalid Google token');
+      }
+      
+      payload = await response.json();
     } catch (error) {
       console.error('Google token verification failed:', error);
       return unauthorizedResponse('Invalid Google token');
     }
 
-    const payload = ticket.getPayload();
-    
     if (!payload || !payload.email) {
       return unauthorizedResponse('Invalid Google token payload');
     }
 
-    const { email, name, picture } = payload;
+    const email = payload.email;
+    const name = payload.name || email.split('@')[0];
+    const picture = payload.picture;
+
+    const isUpstreamSslFailure = (message?: string) => {
+      if (!message) return false;
+      const normalized = message.toLowerCase();
+      return normalized.includes('ssl handshake failed') || normalized.includes('error code 525');
+    };
 
     // Check if user exists
-    let { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await dbClient
       .from('users')
       .select('id, name, email, profile_image')
       .eq('email', email)
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // If user doesn't exist, create them
     if (userError && userError.code === 'PGRST116') {
-      const { data: newUser, error: createError } = await supabase
+      const { data: newUser, error: createError } = await dbClient
         .from('users')
         .insert({
           email,
@@ -61,12 +69,30 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (createError || !newUser) {
-        return serverErrorResponse('Failed to create user');
+        console.error('Google user create error:', createError);
+        if (isUpstreamSslFailure(createError?.message)) {
+          return NextResponse.json(
+            {
+              error: 'Auth service is temporarily unavailable (upstream SSL issue). Please retry in a few minutes.',
+            },
+            { status: 503 }
+          );
+        }
+        return serverErrorResponse(createError?.message || 'Failed to create user');
       }
 
       user = newUser;
     } else if (userError) {
-      return serverErrorResponse('Failed to fetch user');
+      console.error('Google user fetch error:', userError);
+      if (isUpstreamSslFailure(userError.message)) {
+        return NextResponse.json(
+          {
+            error: 'Auth service is temporarily unavailable (upstream SSL issue). Please retry in a few minutes.',
+          },
+          { status: 503 }
+        );
+      }
+      return serverErrorResponse(userError.message || 'Failed to fetch user');
     }
 
     // Ensure user exists
@@ -76,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Update profile image if provided
     if (picture && (!user.profile_image || user.profile_image !== picture)) {
-      await supabase
+      await dbClient
         .from('users')
         .update({ profile_image: picture })
         .eq('id', user.id);
