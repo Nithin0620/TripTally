@@ -12,11 +12,45 @@
 
 html {
   font-family: 'Inter', sans-serif;
+  background-color: #02131B;
+  color: #FFFFFF;
 }
 
 body {
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: #02131B;
+  color: #FFFFFF;
+  overflow-x: hidden;
+}
+
+/* Accent color utilities */
+@layer components {
+  .accent-text {
+    @apply text-[#EFEC07];
+  }
+
+  .accent-border {
+    @apply border-[#EFEC07];
+  }
+
+  .accent-bg {
+    @apply bg-[#EFEC07];
+  }
+
+  .accent-hover {
+    @apply hover:text-[#EFEC07] transition-colors duration-300;
+  }
+
+  .dark-bg-primary {
+    @apply bg-[#02131B];
+  }
+
+  .dark-bg-secondary {
+    @apply bg-[#17394B];
+  }
+
+  .light-text {
+    @apply text-[#FFFFFF];
+  }
 }
 
 /* Custom animations */
@@ -31,6 +65,34 @@ body {
   }
 }
 
+@keyframes accentGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 236, 7, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(239, 236, 7, 0.6);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 1s ease-out;
+}
+
+.animate-accent-glow {
+  animation: accentGlow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
 }
