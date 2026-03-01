@@ -101,7 +101,7 @@ export default function CategorySection({
         viewport={{ once: true }}
         className="mb-12"
       >
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-3 flex items-center gap-3">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3 flex items-center gap-3">
           <span className="text-3xl">{getCategoryEmoji(category)}</span>
           {category}
         </h2>
@@ -142,14 +142,14 @@ export default function CategorySection({
 
       {/* Debug info - shows count */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 text-center mb-4">
+        <div className="text-xs text-[#7a9186] text-center mb-4">
           Showing {displayedPlaces.length} places ({places.length} from DB)
         </div>
       )}
 
       {/* Auto-loading indicator */}
       {isLoading && !initialLoadDone && (
-        <div className="flex justify-center items-center gap-3 py-8 text-gray-400">
+        <div className="flex justify-center items-center gap-3 py-8 text-[#5f7a6c]">
           <Loader2 size={20} className="animate-spin" />
           <p>Loading more {category.toLowerCase()}...</p>
         </div>
@@ -167,7 +167,7 @@ export default function CategorySection({
           <button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="relative group px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#EFEC07]/30 rounded-full text-white font-semibold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative group px-8 py-3 bg-white hover:bg-[#f5fbf7] border border-[#cfe0d7] hover:border-[#EFEC07]/30 rounded-full text-[#163427] font-semibold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

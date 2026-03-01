@@ -20,16 +20,16 @@ export default function PackageGeneratorSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={scaleIn}
         >
-          <h2 className="mb-6 text-center text-4xl font-black text-white md:text-5xl">
+          <h2 className="mb-6 text-center text-4xl font-black text-[#163427] md:text-5xl">
             Dream Trip Builder
           </h2>
-          <p className="mb-8 text-center text-xl text-white/70">
+          <p className="mb-8 text-center text-xl text-[#5f7a6c]">
             Tell us your vision, and our AI will craft the perfect itinerary.
           </p>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                 Destination
               </label>
               <input
@@ -37,18 +37,18 @@ export default function PackageGeneratorSection() {
                 placeholder="Where do you want to go?"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                 Travel Vibe
               </label>
               <select
                 value={vibe}
                 onChange={(e) => setVibe(e.target.value)}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               >
                 <option value="" className="bg-brand-surface">
                   Choose your style
@@ -72,7 +72,7 @@ export default function PackageGeneratorSection() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                 Budget (USD)
               </label>
               <input
@@ -80,7 +80,7 @@ export default function PackageGeneratorSection() {
                 placeholder="e.g., $3000 or $1000-$2000"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               />
             </div>
 

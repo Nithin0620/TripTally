@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import CategorySection from '@/components/explore/CategorySection';
 import { ExploreCategory } from '@/types';
 import { useEffect, useState } from 'react';
@@ -11,7 +12,7 @@ function ExploreHero() {
   return (
     <section className="relative py-20 md:py-32 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#17394B]/30 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#E7F3EC]/70 to-transparent pointer-events-none" />
 
       <div
         className="relative z-10 max-w-5xl mx-auto text-center px-4 md:px-8 animate-fadeInUp"
@@ -25,7 +26,7 @@ function ExploreHero() {
         </div>
 
         <h1
-          className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fadeInUp"
+          className="text-5xl md:text-7xl font-bold text-[#163427] mb-6 leading-tight animate-fadeInUp"
           style={{ animationDelay: '0.1s' }}
         >
           Explore India's
@@ -36,7 +37,7 @@ function ExploreHero() {
         </h1>
 
         <p
-          className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
+          className="text-lg md:text-xl text-[#4f6f5e] max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
           style={{ animationDelay: '0.2s' }}
         >
           From serene beaches to majestic mountains, spiritual retreats to luxurious escapes—
@@ -57,9 +58,9 @@ function ExploreHero() {
           ].map((pill, idx) => (
             <div
               key={idx}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
+              className="px-4 py-2 bg-white/80 border border-[#d8e7df] rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
             >
-              <span className="text-sm text-gray-300">{pill}</span>
+              <span className="text-sm text-[#4f6f5e]">{pill}</span>
             </div>
           ))}
         </div>
@@ -127,12 +128,12 @@ function ExploreCTA() {
       `}</style>
 
       <h2
-        className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fadeInUp"
+        className="text-4xl md:text-5xl font-bold text-[#163427] mb-6 animate-fadeInUp"
       >
         Ready to Plan Your Next Adventure?
       </h2>
 
-      <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
+      <p className="text-[#4f6f5e] text-lg mb-8 max-w-2xl mx-auto">
         Use our AI-powered planner to create personalized itineraries, manage
         budgets, and split expenses with your travel companions.
       </p>
@@ -140,10 +141,10 @@ function ExploreCTA() {
       <div
         className="flex flex-col sm:flex-row gap-4 justify-center"
       >
-        <button className="px-8 py-4 bg-[#EFEC07] text-[#02131B] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+        <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
           Start Planning
         </button>
-        <button className="px-8 py-4 bg-white/10 border border-white/30 text-white rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white/20">
+        <button className="px-8 py-4 bg-white/85 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
           Get Inspiration
         </button>
       </div>
@@ -176,7 +177,7 @@ export default function ExplorePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#02131B] text-white">
+    <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Hero */}
         <ExploreHero />
@@ -186,18 +187,23 @@ export default function ExplorePage() {
           <div className="py-20 text-center">
             <div className="inline-block">
               <div className="w-12 h-12 border-2 border-[#EFEC07] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-400">Loading amazing destinations...</p>
+              <p className="text-[#5f7a6c]">Loading amazing destinations...</p>
             </div>
           </div>
         ) : categories.length === 0 ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#163427] mb-3">
                 No Places Found
               </h2>
-              <p className="text-gray-400">
+              <p className="text-[#5f7a6c] mb-6">
                 We're working on loading amazing destinations for you.
               </p>
+              <Link href="/map">
+                <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+                  View on Map
+                </button>
+              </Link>
             </div>
           </div>
         ) : (

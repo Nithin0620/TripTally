@@ -66,10 +66,10 @@ export default function DiscoverSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-white md:text-5xl">
+          <h2 className="mb-4 text-4xl font-black text-[#163427] md:text-5xl">
             Discover Popular Destinations
           </h2>
-          <p className="text-xl text-white/70">
+          <p className="text-xl text-[#5f7a6c]">
             Handpicked packages curated by our AI travel experts.
           </p>
         </motion.div>
@@ -88,8 +88,8 @@ export default function DiscoverSection() {
               onClick={() => setActiveFilter(filter)}
               className={`rounded-full px-6 py-2 font-medium transition ${
                 activeFilter === filter
-                  ? "bg-brand-accent text-brand-bg"
-                  : "bg-brand-surface text-white backdrop-blur-md hover:border-brand-accent hover:shadow-[0_0_16px_rgba(239,236,7,0.2)]"
+                    ? "bg-brand-accent text-brand-text"
+                    : "bg-brand-surface text-brand-text backdrop-blur-md hover:border-brand-accent hover:shadow-[0_0_16px_rgba(239,236,7,0.2)]"
               }`}
             >
               {filter}
@@ -125,7 +125,7 @@ export default function DiscoverSection() {
                     {destination.name}
                   </h3>
                 </div>
-                <div className="absolute right-4 top-4 rounded-full bg-brand-accent px-4 py-2 text-sm font-bold text-brand-bg">
+                <div className="absolute right-4 top-4 rounded-full bg-brand-accent px-4 py-2 text-sm font-bold text-brand-text">
                   {destination.price}
                 </div>
               </div>

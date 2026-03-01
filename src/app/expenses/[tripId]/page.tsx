@@ -70,19 +70,19 @@ export default function ExpensesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#02131B] to-[#102a3a] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#F6FBF8] to-[#E7F3EC] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin">
             <div className="h-12 w-12 border-4 border-[#EFEC07] border-t-transparent rounded-full" />
           </div>
-          <p className="text-white mt-4">Loading expenses...</p>
+          <p className="text-[#163427] mt-4">Loading expenses...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#02131B] to-[#102a3a]">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6FBF8] to-[#E7F3EC]">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
@@ -91,8 +91,8 @@ export default function ExpensesPage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">Trip Expenses</h1>
-          <p className="text-gray-400">Manage costs and calculate settlements</p>
+          <h1 className="text-4xl font-bold text-[#163427] mb-2">Trip Expenses</h1>
+          <p className="text-[#5f7a6c]">Manage costs and calculate settlements</p>
         </motion.div>
 
         {/* Action Buttons */}
@@ -104,7 +104,7 @@ export default function ExpensesPage() {
         >
           <button
             onClick={() => setShowAddExpense(true)}
-            className="px-6 py-3 bg-[#EFEC07] text-[#02131B] font-semibold rounded-3xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all duration-300"
+            className="px-6 py-3 bg-[#EFEC07] text-[#163427] font-semibold rounded-3xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all duration-300"
           >
             + Add Expense
           </button>
@@ -121,8 +121,8 @@ export default function ExpensesPage() {
           >
             <div className="space-y-4">
               {expenses.length === 0 ? (
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 text-center">
-                  <p className="text-gray-400">No expenses yet. Add one to get started!</p>
+                <div className="bg-white/80 backdrop-blur-md border border-[#cfe0d7] rounded-3xl p-8 text-center">
+                  <p className="text-[#5f7a6c]">No expenses yet. Add one to get started!</p>
                 </div>
               ) : (
                 expenses.map((expense, index) => (
@@ -162,22 +162,22 @@ export default function ExpensesPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-8"
           >
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-              <h2 className="text-2xl font-bold text-white mb-6">Settlement Plan</h2>
-              <p className="text-gray-400 mb-6">
+            <div className="bg-white/80 backdrop-blur-md border border-[#cfe0d7] rounded-3xl p-6">
+              <h2 className="text-2xl font-bold text-[#163427] mb-6">Settlement Plan</h2>
+              <p className="text-[#5f7a6c] mb-6">
                 Optimized payment plan to settle all debts with minimum transactions:
               </p>
               <div className="space-y-3">
                 {settlement.settlements.map((settlement: any, index: number) => (
                   <div
                     key={index}
-                    className="bg-white/5 border border-white/10 rounded-xl p-4 flex justify-between items-center"
+                    className="bg-white border border-[#d8e7df] rounded-xl p-4 flex justify-between items-center"
                   >
                     <div>
-                      <p className="text-white font-semibold">
+                      <p className="text-[#163427] font-semibold">
                         {settlement.from_user?.name || settlement.from}
                       </p>
-                      <p className="text-gray-400 text-sm">pays</p>
+                      <p className="text-[#5f7a6c] text-sm">pays</p>
                     </div>
                     <div className="text-center">
                       <p className="text-[#EFEC07] font-bold text-lg">
@@ -185,7 +185,7 @@ export default function ExpensesPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-white font-semibold">
+                      <p className="text-[#163427] font-semibold">
                         {settlement.to_user?.name || settlement.to}
                       </p>
                     </div>

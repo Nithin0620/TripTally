@@ -27,14 +27,14 @@ export default function Toast({ toasts, onRemove }: ToastProps) {
                 ? 'bg-green-500/90 text-white'
                 : toast.type === 'error'
                 ? 'bg-red-500/90 text-white'
-                : 'bg-brand-surface/90 text-white'
+                : 'bg-brand-surface/95 text-brand-text'
             }`}
           >
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">{toast.message}</span>
               <button
                 onClick={() => onRemove(toast.id)}
-                className="text-white/80 hover:text-white"
+                className="text-current/80 hover:text-current"
               >
                 ✕
               </button>

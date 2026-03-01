@@ -23,7 +23,7 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-24"
     >
       <motion.div
         style={{ opacity }}
@@ -33,20 +33,20 @@ export default function HeroSection() {
         transition={{ duration: 1.5, ease: "easeOut" }}
       >
         <div
-          className="h-full w-full bg-cover bg-center"
+          className="h-full z-50 w-full bg-cover bg-center"
           style={{
             backgroundImage:
               "url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80)",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg/90 via-brand-bg/70 to-brand-surface/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg/30 via-brand-bg/20 to-brand-surface/30" />
       </motion.div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* Hero Text */}
           <motion.h1
-            className="mb-6 text-5xl font-black text-white md:text-7xl"
+            className="mb-6 text-5xl font-black text-[#163427] md:text-7xl"
             variants={fadeIn}
             initial="hidden"
             animate="visible"
@@ -57,7 +57,7 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="mb-8 text-xl text-white/80 md:text-2xl"
+            className="mb-8 text-xl text-[#101642] md:text-2xl"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -86,13 +86,13 @@ export default function HeroSection() {
             initial="hidden"
             animate="visible"
           >
-            <h3 className="mb-6 text-2xl font-bold text-white">
+            <h3 className="mb-6 text-2xl font-bold text-[#163427]">
               Generate Your Dream Trip
             </h3>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Where To?
                 </label>
                 <input
@@ -100,18 +100,18 @@ export default function HeroSection() {
                   placeholder="e.g., Tokyo, Paris"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Travel Style
                 </label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 >
                   <option value="" className="bg-brand-surface">
                     Select style
@@ -132,7 +132,7 @@ export default function HeroSection() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Budget Range
                 </label>
                 <input
@@ -140,7 +140,7 @@ export default function HeroSection() {
                   placeholder="e.g., $2000-$5000"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 />
               </div>
             </div>

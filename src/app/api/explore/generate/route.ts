@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OpenAI } from 'openai';
 import { Place } from '@/types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 interface GenerateRequestBody {
   category: string;
@@ -54,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create prompt for OpenAI
+    // Create prompt for Groq
     const prompt = `Generate 5 unique travel destinations in India under the "${category}" category. For each destination, provide the following information in valid JSON format:
 
 {
@@ -78,28 +73,47 @@ Requirements:
 - Make descriptions engaging and inspiring
 - Category: ${category}`;
 
-    // Call OpenAI API
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4-turbo',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a travel expert generating destination recommendations for India. Always respond with valid JSON only, no additional text.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
+    // Call Groq API
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY not configured');
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a travel expert generating destination recommendations for India. Always respond with valid JSON only, no additional text.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Groq API error: ${errorText}`);
+    }
+
+    const data = await response.json();
+
     // Extract JSON from response
-    const content = response.choices[0]?.message?.content;
+    const content = data.choices[0]?.message?.content;
     if (!content) {
-      throw new Error('No response from OpenAI');
+      throw new Error('No response from Groq');
     }
 
     let parsedResponse: { places: GeneratedPlace[] };
@@ -117,7 +131,7 @@ Requirements:
         if (objectMatch) {
           parsedResponse = JSON.parse(objectMatch[0]);
         } else {
-          throw new Error('Could not extract JSON from OpenAI response');
+          throw new Error('Could not extract JSON from Groq response');
         }
       }
     }

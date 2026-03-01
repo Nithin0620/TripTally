@@ -49,7 +49,7 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden hover:border-[#EFEC07]/30 transition-all"
+      className="bg-white/85 backdrop-blur-md border border-[#cfe0d7] rounded-3xl overflow-hidden hover:border-[#EFEC07]/30 transition-all"
     >
       {/* Main Content */}
       <div
@@ -58,8 +58,8 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
       >
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-white mb-1">{expense.title}</h3>
-            <p className="text-gray-400 text-sm flex items-center gap-2">
+            <h3 className="text-xl font-bold text-[#163427] mb-1">{expense.title}</h3>
+            <p className="text-[#5f7a6c] text-sm flex items-center gap-2">
               <span>Paid by {expense.users?.name || 'Unknown'}</span>
               <span>•</span>
               <span>{formatDate(expense.created_at)}</span>
@@ -67,19 +67,19 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
           </div>
           <div className="text-right">
             <p className="text-3xl font-bold text-[#EFEC07]">{formatCurrency(expense.amount)}</p>
-            <p className="text-gray-400 text-xs mt-1 capitalize">{expense.split_type} split</p>
+            <p className="text-[#5f7a6c] text-xs mt-1 capitalize">{expense.split_type} split</p>
           </div>
         </div>
 
         {/* Quick Summary */}
-        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-4">
+        <div className="mt-4 pt-4 border-t border-[#d8e7df] grid grid-cols-2 gap-4">
           <div>
-            <p className="text-gray-400 text-xs mb-1">Amount Paid</p>
-            <p className="text-white font-semibold">{formatCurrency(expense.amount)}</p>
+            <p className="text-[#5f7a6c] text-xs mb-1">Amount Paid</p>
+            <p className="text-[#163427] font-semibold">{formatCurrency(expense.amount)}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-xs mb-1">Split Among</p>
-            <p className="text-white font-semibold">{expense.expense_shares?.length || 0} people</p>
+            <p className="text-[#5f7a6c] text-xs mb-1">Split Among</p>
+            <p className="text-[#163427] font-semibold">{expense.expense_shares?.length || 0} people</p>
           </div>
         </div>
 
@@ -102,20 +102,20 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="border-t border-white/10 bg-black/20"
+            className="border-t border-[#d8e7df] bg-[#f5fbf7]"
           >
             <div className="p-6 space-y-4">
               {/* Notes */}
               {expense.notes && (
                 <div>
-                  <p className="text-gray-400 text-sm mb-2">Notes</p>
-                  <p className="text-white bg-white/5 p-3 rounded-xl">{expense.notes}</p>
+                  <p className="text-[#5f7a6c] text-sm mb-2">Notes</p>
+                  <p className="text-[#163427] bg-white p-3 rounded-xl border border-[#d8e7df]">{expense.notes}</p>
                 </div>
               )}
 
               {/* Share Breakdown */}
               <div>
-                <p className="text-gray-400 text-sm mb-3 font-semibold">Share Breakdown</p>
+                <p className="text-[#5f7a6c] text-sm mb-3 font-semibold">Share Breakdown</p>
                 <div className="space-y-2">
                   {expense.expense_shares?.map((share: any, idx: number) => (
                     <motion.div
@@ -123,19 +123,19 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="bg-white/5 border border-white/10 rounded-xl p-3 flex justify-between items-center"
+                      className="bg-white border border-[#d8e7df] rounded-xl p-3 flex justify-between items-center"
                     >
                       <div className="flex-1">
-                        <p className="text-white font-medium">
+                        <p className="text-[#163427] font-medium">
                           {share.users?.name || 'Unknown User'}
                         </p>
-                        <p className="text-gray-400 text-xs">{share.users?.email || 'N/A'}</p>
+                        <p className="text-[#5f7a6c] text-xs">{share.users?.email || 'N/A'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[#EFEC07] font-bold">
                           {formatCurrency(share.share_amount)}
                         </p>
-                        <p className="text-gray-400 text-xs">
+                        <p className="text-[#5f7a6c] text-xs">
                           {((share.share_amount / expense.amount) * 100).toFixed(0)}%
                         </p>
                       </div>
@@ -145,7 +145,7 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t border-white/10">
+              <div className="flex gap-2 pt-4 border-t border-[#d8e7df]">
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
@@ -155,7 +155,7 @@ export default function ExpenseCard({ expense, index, onUpdate }: ExpenseCardPro
                 </button>
                 <button
                   onClick={() => setIsExpanded(false)}
-                  className="flex-1 px-4 py-2 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-colors font-semibold text-sm"
+                  className="flex-1 px-4 py-2 bg-white text-[#163427] border border-[#cfe0d7] rounded-xl hover:bg-[#f5fbf7] transition-colors font-semibold text-sm"
                 >
                   Close
                 </button>

@@ -192,7 +192,7 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="text-white">Loading...</div>
+        <div className="text-[#163427]">Loading...</div>
       </div>
     );
   }
@@ -211,14 +211,14 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="bg-gradient-to-br from-[#17394B] to-[#02131B] border border-white/10 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-gradient-to-br from-white to-[#eef7f1] border border-[#cfe0d7] rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-b from-[#17394B] to-transparent p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">Add New Expense</h2>
+        <div className="sticky top-0 bg-gradient-to-b from-[#e7f3ec] to-transparent p-6 border-b border-[#d8e7df]">
+          <h2 className="text-2xl font-bold text-[#163427]">Add New Expense</h2>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            className="absolute top-4 right-4 text-[#5f7a6c] hover:text-[#163427] transition-colors"
           >
             ✕
           </button>
@@ -227,40 +227,40 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Expense Details</h3>
+            <h3 className="text-lg font-semibold text-[#163427]">Expense Details</h3>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Title *</label>
+              <label className="block text-sm text-[#5f7a6c] mb-2">Title *</label>
               <input
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="e.g., Dinner, Hotel, Transport"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-[#EFEC07] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[#cfe0d7] rounded-xl px-4 py-3 text-[#163427] placeholder-[#7a9186] focus:border-[#EFEC07] focus:outline-none transition-colors"
               />
               {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Amount (₹) *</label>
+                <label className="block text-sm text-[#5f7a6c] mb-2">Amount (₹) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-[#EFEC07] focus:outline-none transition-colors"
+                  className="w-full bg-white border border-[#cfe0d7] rounded-xl px-4 py-3 text-[#163427] placeholder-[#7a9186] focus:border-[#EFEC07] focus:outline-none transition-colors"
                 />
                 {errors.amount && <p className="text-red-400 text-xs mt-1">{errors.amount}</p>}
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Category</label>
+                <label className="block text-sm text-[#5f7a6c] mb-2">Category</label>
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#EFEC07] focus:outline-none transition-colors"
+                  className="w-full bg-white border border-[#cfe0d7] rounded-xl px-4 py-3 text-[#163427] focus:border-[#EFEC07] focus:outline-none transition-colors"
                 >
                   <option value="general">General</option>
                   <option value="food">Food</option>
@@ -273,24 +273,24 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Notes</label>
+              <label className="block text-sm text-[#5f7a6c] mb-2">Notes</label>
               <textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Add any notes about this expense..."
                 rows={2}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-[#EFEC07] focus:outline-none transition-colors resize-none"
+                className="w-full bg-white border border-[#cfe0d7] rounded-xl px-4 py-3 text-[#163427] placeholder-[#7a9186] focus:border-[#EFEC07] focus:outline-none transition-colors resize-none"
               />
             </div>
           </div>
 
           {/* Who Paid */}
           <div>
-            <label className="block text-sm text-gray-400 mb-2 font-semibold">Who Paid? *</label>
+            <label className="block text-sm text-[#5f7a6c] mb-2 font-semibold">Who Paid? *</label>
             <select
               value={paidById}
               onChange={e => setPaidById(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#EFEC07] focus:outline-none transition-colors"
+              className="w-full bg-white border border-[#cfe0d7] rounded-xl px-4 py-3 text-[#163427] focus:border-[#EFEC07] focus:outline-none transition-colors"
             >
               <option value="">Select person</option>
               {tripMembers.map(member => (
@@ -304,7 +304,7 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
 
           {/* Split Type */}
           <div>
-            <label className="block text-sm text-gray-400 mb-3 font-semibold">Split Type</label>
+            <label className="block text-sm text-[#5f7a6c] mb-3 font-semibold">Split Type</label>
             <div className="grid grid-cols-3 gap-3">
               {(['equal', 'percentage', 'custom'] as const).map(type => (
                 <button
@@ -313,8 +313,8 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                   onClick={() => setSplitType(type)}
                   className={`px-4 py-3 rounded-xl font-semibold transition-all ${
                     splitType === type
-                      ? 'bg-[#EFEC07] text-[#02131B]'
-                      : 'bg-white/5 text-white border border-white/10 hover:border-white/20'
+                        ? 'bg-[#EFEC07] text-[#163427]'
+                        : 'bg-white text-[#163427] border border-[#cfe0d7] hover:border-[#9fc1ae]'
                   }`}
                 >
                   {type === 'equal' && '= Equal'}
@@ -327,12 +327,12 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
 
           {/* Members Selection */}
           <div>
-            <label className="block text-sm text-gray-400 mb-3 font-semibold">Split Among *</label>
+            <label className="block text-sm text-[#5f7a6c] mb-3 font-semibold">Split Among *</label>
             <div className="space-y-2">
               {tripMembers.map(member => (
                 <motion.label
                   key={member.id}
-                  className="flex items-center p-3 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-colors"
+                  className="flex items-center p-3 bg-white border border-[#cfe0d7] rounded-xl cursor-pointer hover:border-[#9fc1ae] transition-colors"
                 >
                   <input
                     type="checkbox"
@@ -340,7 +340,7 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                     onChange={() => toggleMember(member.id)}
                     className="w-5 h-5 rounded accent-[#EFEC07] cursor-pointer"
                   />
-                  <span className="ml-3 text-white">{member.name}</span>
+                  <span className="ml-3 text-[#163427]">{member.name}</span>
                 </motion.label>
               ))}
             </div>
@@ -358,10 +358,10 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-3"
               >
-                <p className="text-sm text-gray-400 font-semibold">Enter percentage for each member:</p>
+                <p className="text-sm text-[#5f7a6c] font-semibold">Enter percentage for each member:</p>
                 {selectedMembers.map(memberId => (
                   <div key={memberId} className="flex items-center gap-3">
-                    <span className="text-white flex-1">{getMemberName(memberId)}</span>
+                    <span className="text-[#163427] flex-1">{getMemberName(memberId)}</span>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -371,9 +371,9 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                         value={percentages[memberId]}
                         onChange={e => setPercentages({ ...percentages, [memberId]: e.target.value })}
                         placeholder="0"
-                        className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-white text-right focus:border-[#EFEC07] focus:outline-none transition-colors"
+                        className="w-20 bg-white border border-[#cfe0d7] rounded-lg px-2 py-2 text-[#163427] text-right focus:border-[#EFEC07] focus:outline-none transition-colors"
                       />
-                      <span className="text-gray-400">%</span>
+                      <span className="text-[#5f7a6c]">%</span>
                     </div>
                   </div>
                 ))}
@@ -390,12 +390,12 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-3"
               >
-                <p className="text-sm text-gray-400 font-semibold">Enter amount for each member:</p>
+                <p className="text-sm text-[#5f7a6c] font-semibold">Enter amount for each member:</p>
                 {selectedMembers.map(memberId => (
                   <div key={memberId} className="flex items-center gap-3">
-                    <span className="text-white flex-1">{getMemberName(memberId)}</span>
+                    <span className="text-[#163427] flex-1">{getMemberName(memberId)}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-400">₹</span>
+                      <span className="text-[#5f7a6c]">₹</span>
                       <input
                         type="number"
                         step="0.01"
@@ -403,7 +403,7 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
                         value={customShares[memberId]}
                         onChange={e => setCustomShares({ ...customShares, [memberId]: e.target.value })}
                         placeholder="0.00"
-                        className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-white text-right focus:border-[#EFEC07] focus:outline-none transition-colors"
+                        className="w-24 bg-white border border-[#cfe0d7] rounded-lg px-2 py-2 text-[#163427] text-right focus:border-[#EFEC07] focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -416,18 +416,18 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
           </AnimatePresence>
 
           {/* Buttons */}
-          <div className="flex gap-4 pt-6 border-t border-white/10">
+          <div className="flex gap-4 pt-6 border-t border-[#d8e7df]">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-colors font-semibold"
+              className="flex-1 px-6 py-3 bg-white text-[#163427] border border-[#cfe0d7] rounded-xl hover:bg-[#f5fbf7] transition-colors font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-6 py-3 bg-[#EFEC07] text-[#02131B] rounded-xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-[#EFEC07] text-[#163427] rounded-xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Creating...' : 'Create Expense'}
             </button>

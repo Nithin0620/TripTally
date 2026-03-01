@@ -39,10 +39,10 @@ export default function TestimonialsSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-white md:text-5xl">
+          <h2 className="mb-4 text-4xl font-black text-[#163427] md:text-5xl">
             Loved by Travelers Worldwide
           </h2>
-          <p className="text-xl text-white/70">
+          <p className="text-xl text-[#5f7a6c]">
             Join thousands of happy adventurers using TripTally.
           </p>
         </motion.div>
@@ -67,7 +67,7 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* Testimonial Text */}
-                <p className="mb-6 text-white/80">{testimonial.text}</p>
+                <p className="mb-6 text-[#4f6f5e]">{testimonial.text}</p>
 
                 {/* Author */}
                 <div className="flex items-center gap-4">
@@ -77,8 +77,8 @@ export default function TestimonialsSection() {
                     className="h-12 w-12 rounded-full"
                   />
                   <div>
-                    <h4 className="font-bold text-white">{testimonial.name}</h4>
-                    <p className="text-sm text-white/60">{testimonial.role}</p>
+                    <h4 className="font-bold text-[#163427]">{testimonial.name}</h4>
+                    <p className="text-sm text-[#5f7a6c]">{testimonial.role}</p>
                   </div>
                 </div>
               </GlassCard>

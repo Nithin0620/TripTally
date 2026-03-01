@@ -90,7 +90,7 @@ export default function TripDetailsPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-2xl font-bold text-white">Loading trip...</div>
+        <div className="text-2xl font-bold text-[#163427]">Loading trip...</div>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function TripDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Link href="/dashboard" className="mb-4 inline-flex items-center text-sm text-white/70 hover:text-white">
+            <Link href="/dashboard" className="mb-4 inline-flex items-center text-sm text-[#5f7a6c] hover:text-[#163427]">
               ← Back to Dashboard
             </Link>
             
@@ -122,28 +122,28 @@ export default function TripDetailsPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/50 to-transparent" />
               <div className="absolute bottom-6 left-6">
                 <h1 className="text-5xl font-black text-white">{trip.title}</h1>
-                <p className="mt-2 text-lg text-white/80">
+                <p className="mt-2 text-lg text-white/90">
                   {new Date(trip.start_date).toLocaleDateString()} → {new Date(trip.end_date).toLocaleDateString()}
                 </p>
               </div>
             </div>
 
-            <p className="mt-6 text-lg text-white/70">{trip.description || 'No description'}</p>
+            <p className="mt-6 text-lg text-[#4f6f5e]">{trip.description || 'No description'}</p>
           </motion.div>
 
           {/* Stats */}
           <div className="mb-8 grid gap-6 md:grid-cols-3">
             <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-white/60">Activities</p>
-              <p className="text-3xl font-bold text-white">{activities.length}</p>
+              <p className="mb-2 text-sm text-[#5f7a6c]">Activities</p>
+              <p className="text-3xl font-bold text-[#163427]">{activities.length}</p>
             </GlassCard>
             <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-white/60">Total Expenses</p>
-              <p className="text-3xl font-bold text-white">${totalExpenses.toFixed(2)}</p>
+              <p className="mb-2 text-sm text-[#5f7a6c]">Total Expenses</p>
+              <p className="text-3xl font-bold text-[#163427]">${totalExpenses.toFixed(2)}</p>
             </GlassCard>
             <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-white/60">Settlements</p>
-              <p className="text-3xl font-bold text-white">{settlements.length}</p>
+              <p className="mb-2 text-sm text-[#5f7a6c]">Settlements</p>
+              <p className="text-3xl font-bold text-[#163427]">{settlements.length}</p>
             </GlassCard>
           </div>
 
@@ -153,8 +153,8 @@ export default function TripDetailsPage() {
               onClick={() => setActiveTab('activities')}
               className={`rounded-xl px-6 py-3 font-semibold transition ${
                 activeTab === 'activities'
-                  ? 'bg-brand-accent text-brand-bg'
-                  : 'bg-brand-surface text-white hover:bg-brand-surface/80'
+                    ? 'bg-brand-accent text-brand-text'
+                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
               }`}
             >
               Activities
@@ -163,8 +163,8 @@ export default function TripDetailsPage() {
               onClick={() => setActiveTab('expenses')}
               className={`rounded-xl px-6 py-3 font-semibold transition ${
                 activeTab === 'expenses'
-                  ? 'bg-brand-accent text-brand-bg'
-                  : 'bg-brand-surface text-white hover:bg-brand-surface/80'
+                    ? 'bg-brand-accent text-brand-text'
+                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
               }`}
             >
               Expenses
@@ -176,8 +176,8 @@ export default function TripDetailsPage() {
               }}
               className={`rounded-xl px-6 py-3 font-semibold transition ${
                 activeTab === 'settlement'
-                  ? 'bg-brand-accent text-brand-bg'
-                  : 'bg-brand-surface text-white hover:bg-brand-surface/80'
+                    ? 'bg-brand-accent text-brand-text'
+                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
               }`}
             >
               Settlement
@@ -194,13 +194,13 @@ export default function TripDetailsPage() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-white">Activities</h2>
+                  <h2 className="text-2xl font-bold text-[#163427]">Activities</h2>
                   <Button onClick={() => setShowAddActivity(true)}>+ Add Activity</Button>
                 </div>
 
                 {activities.length === 0 ? (
                   <GlassCard className="p-12 text-center">
-                    <p className="text-white/70">No activities yet. Add your first activity!</p>
+                    <p className="text-[#5f7a6c]">No activities yet. Add your first activity!</p>
                   </GlassCard>
                 ) : (
                   <div className="space-y-4">
@@ -208,15 +208,15 @@ export default function TripDetailsPage() {
                       <GlassCard key={activity.id} className="p-6">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="text-xl font-bold text-white">{activity.title}</h3>
-                            <p className="mt-1 text-sm text-white/70">
+                            <h3 className="text-xl font-bold text-[#163427]">{activity.title}</h3>
+                            <p className="mt-1 text-sm text-[#5f7a6c]">
                               📅 {new Date(activity.activity_date).toLocaleDateString()}
                             </p>
                             {activity.location && (
-                              <p className="mt-1 text-sm text-white/70">📍 {activity.location}</p>
+                              <p className="mt-1 text-sm text-[#5f7a6c]">📍 {activity.location}</p>
                             )}
                             {activity.notes && (
-                              <p className="mt-2 text-white/80">{activity.notes}</p>
+                              <p className="mt-2 text-[#345847]">{activity.notes}</p>
                             )}
                           </div>
                           <Button
@@ -242,13 +242,13 @@ export default function TripDetailsPage() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-white">Expenses</h2>
+                  <h2 className="text-2xl font-bold text-[#163427]">Expenses</h2>
                   <Button onClick={() => setShowAddExpense(true)}>+ Add Expense</Button>
                 </div>
 
                 {expenses.length === 0 ? (
                   <GlassCard className="p-12 text-center">
-                    <p className="text-white/70">No expenses yet. Add your first expense!</p>
+                    <p className="text-[#5f7a6c]">No expenses yet. Add your first expense!</p>
                   </GlassCard>
                 ) : (
                   <div className="space-y-4">
@@ -256,8 +256,8 @@ export default function TripDetailsPage() {
                       <GlassCard key={expense.id} className="p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="text-xl font-bold text-white">{expense.title}</h3>
-                            <div className="mt-2 flex gap-4 text-sm text-white/70">
+                            <h3 className="text-xl font-bold text-[#163427]">{expense.title}</h3>
+                            <div className="mt-2 flex gap-4 text-sm text-[#5f7a6c]">
                               <span>💵 ${expense.amount.toFixed(2)}</span>
                               <span>👤 Paid by {expense.paidByUser?.name || 'Unknown'}</span>
                               <span>📊 {expense.split_type}</span>
@@ -286,11 +286,11 @@ export default function TripDetailsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <h2 className="mb-6 text-2xl font-bold text-white">Settlement</h2>
+                <h2 className="mb-6 text-2xl font-bold text-[#163427]">Settlement</h2>
                 
                 {settlements.length === 0 ? (
                   <GlassCard className="p-12 text-center">
-                    <p className="text-white/70">All settled up! 🎉</p>
+                    <p className="text-[#5f7a6c]">All settled up! 🎉</p>
                   </GlassCard>
                 ) : (
                   <div className="space-y-4">
@@ -298,7 +298,7 @@ export default function TripDetailsPage() {
                       <GlassCard key={idx} className="p-6">
                         <div className="flex items-center gap-4">
                           <div className="flex-1">
-                            <p className="text-lg text-white">
+                            <p className="text-lg text-[#163427]">
                               <span className="font-bold">{settlement.from_user?.name || 'User'}</span>
                               {' owes '}
                               <span className="font-bold">{settlement.to_user?.name || 'User'}</span>
@@ -407,50 +407,50 @@ function AddActivityModal({
         className="w-full max-w-md"
       >
         <GlassCard className="p-8">
-          <h2 className="mb-6 text-2xl font-bold text-white">Add Activity</h2>
+          <h2 className="mb-6 text-2xl font-bold text-[#163427]">Add Activity</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Title</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="e.g., Visit Eiffel Tower"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Date</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Date</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Location</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Location</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="Optional"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Notes</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Notes</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={loading}
                 rows={3}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="Optional notes"
               />
             </div>
@@ -525,22 +525,22 @@ function AddExpenseModal({
         className="w-full max-w-md"
       >
         <GlassCard className="p-8">
-          <h2 className="mb-6 text-2xl font-bold text-white">Add Expense</h2>
+          <h2 className="mb-6 text-2xl font-bold text-[#163427]">Add Expense</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Title</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="e.g., Hotel Booking"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Amount</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Amount</label>
               <input
                 type="number"
                 step="0.01"
@@ -548,18 +548,18 @@ function AddExpenseModal({
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="0.00"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">Category</label>
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Category</label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="e.g., Accommodation, Food, Transport"
               />
             </div>

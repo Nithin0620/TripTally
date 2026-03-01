@@ -33,20 +33,20 @@ export default function BalanceSummary({ settlement }: BalanceSummaryProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6"
+      className="bg-white/85 backdrop-blur-md border border-[#cfe0d7] rounded-3xl p-6"
     >
-      <h3 className="text-xl font-bold text-white mb-6">Balance Summary</h3>
+      <h3 className="text-xl font-bold text-[#163427] mb-6">Balance Summary</h3>
 
       {/* Summary Stats */}
-      <div className="mb-6 p-4 bg-black/30 rounded-xl border border-white/10">
+      <div className="mb-6 p-4 bg-white rounded-xl border border-[#d8e7df]">
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-gray-400 text-sm">Total Expenses</p>
+            <p className="text-[#5f7a6c] text-sm">Total Expenses</p>
             <p className="text-2xl font-bold text-[#EFEC07]">₹{totalExpensed.toFixed(2)}</p>
           </div>
           <div className="text-right">
-            <p className="text-gray-400 text-sm">Settlements Needed</p>
-            <p className="text-2xl font-bold text-white">{settlement.settlements?.length || 0}</p>
+            <p className="text-[#5f7a6c] text-sm">Settlements Needed</p>
+            <p className="text-2xl font-bold text-[#163427]">{settlement.settlements?.length || 0}</p>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function BalanceSummary({ settlement }: BalanceSummaryProps) {
           >
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-white font-medium text-sm">You {entry.isCreditor ? 'owe' : 'get'}</p>
+                <p className="text-[#163427] font-medium text-sm">You {entry.isCreditor ? 'owe' : 'get'}</p>
               </div>
               <div className={`font-bold ${entry.isCreditor ? 'text-red-400' : 'text-green-400'}`}>
                 ₹{Math.abs(entry.balance).toFixed(2)}
@@ -78,7 +78,7 @@ export default function BalanceSummary({ settlement }: BalanceSummaryProps) {
       </div>
 
       {/* Info Message */}
-      <p className="text-xs text-gray-500 mt-6 text-center">
+      <p className="text-xs text-[#7a9186] mt-6 text-center">
         Balances are calculated from all expenses in this trip
       </p>
     </motion.div>

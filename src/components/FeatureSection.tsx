@@ -39,10 +39,10 @@ export default function FeatureSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-white md:text-5xl">
+          <h2 className="mb-4 text-4xl font-black text-[#163427] md:text-5xl">
             Our AI Simplifies Every Step
           </h2>
-          <p className="text-xl text-white/70">
+          <p className="text-xl text-[#5f7a6c]">
             From planning to payment, we've got you covered.
           </p>
         </motion.div>
@@ -63,10 +63,10 @@ export default function FeatureSection() {
                 />
                 <div className="p-6">
                   <div className="mb-3 text-4xl">{feature.icon}</div>
-                  <h3 className="mb-3 text-2xl font-bold text-white">
+                  <h3 className="mb-3 text-2xl font-bold text-[#163427]">
                     {feature.title}
                   </h3>
-                  <p className="text-white/70">{feature.description}</p>
+                  <p className="text-[#5f7a6c]">{feature.description}</p>
                 </div>
               </GlassCard>
             </motion.div>

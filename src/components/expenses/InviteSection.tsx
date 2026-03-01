@@ -80,13 +80,13 @@ export default function InviteSection({ tripId, onInviteSent }: InviteSectionPro
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6"
+      className="bg-white/85 backdrop-blur-md border border-[#cfe0d7] rounded-3xl p-6"
     >
-      <h3 className="text-xl font-bold text-white mb-4">Invite Members</h3>
+      <h3 className="text-xl font-bold text-[#163427] mb-4">Invite Members</h3>
 
       <form onSubmit={handleInvite} className="space-y-4">
         <div>
-          <label className="block text-sm text-gray-400 mb-2">Invite by Email</label>
+          <label className="block text-sm text-[#5f7a6c] mb-2">Invite by Email</label>
           <div className="flex gap-2">
             <input
               type="email"
@@ -94,12 +94,12 @@ export default function InviteSection({ tripId, onInviteSent }: InviteSectionPro
               onChange={e => setEmail(e.target.value)}
               placeholder="friend@example.com"
               disabled={loading}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:border-[#EFEC07] focus:outline-none transition-colors disabled:opacity-50"
+              className="flex-1 bg-white border border-[#cfe0d7] rounded-xl px-4 py-2 text-[#163427] placeholder-[#7a9186] focus:border-[#EFEC07] focus:outline-none transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={loading || !email.trim()}
-              className="px-4 py-2 bg-[#EFEC07] text-[#02131B] rounded-xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-4 py-2 bg-[#EFEC07] text-[#163427] rounded-xl hover:shadow-lg hover:shadow-[#EFEC07]/50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {loading ? 'Sending...' : 'Invite'}
             </button>
@@ -109,8 +109,8 @@ export default function InviteSection({ tripId, onInviteSent }: InviteSectionPro
 
       {/* Recently Invited */}
       {sentEmails.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-white/10">
-          <p className="text-sm text-gray-400 mb-3">Recently invited:</p>
+        <div className="mt-6 pt-6 border-t border-[#d8e7df]">
+          <p className="text-sm text-[#5f7a6c] mb-3">Recently invited:</p>
           <div className="space-y-2">
             {sentEmails.map((sentEmail, index) => (
               <motion.div
@@ -118,7 +118,7 @@ export default function InviteSection({ tripId, onInviteSent }: InviteSectionPro
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-2 text-sm text-gray-400"
+                className="flex items-center gap-2 text-sm text-[#5f7a6c]"
               >
                 <span className="w-2 h-2 bg-green-400 rounded-full" />
                 {sentEmail}
@@ -128,7 +128,7 @@ export default function InviteSection({ tripId, onInviteSent }: InviteSectionPro
         </div>
       )}
 
-      <p className="text-xs text-gray-500 mt-4 text-center">
+      <p className="text-xs text-[#7a9186] mt-4 text-center">
         Invitations expire in 7 days
       </p>
     </motion.div>
