@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import 'mapbox-gl/dist/mapbox-gl.css';
 
 @tailwind base;
 @tailwind components;
@@ -11,10 +12,107 @@
 }
 
 html {
-  font-family: 'Inter', sans-serif;
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: #f5f5f5;
-  color: #333;
+  font-family: 'Inter', sans-serif;
+  background: #02131B;
+  color: #ffffff;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+
+.glass-card {
+  background: rgba(23, 57, 75, 0.88);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.triptally-map-marker {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background: radial-gradient(circle at 35% 35%, #fff899 0%, #efec07 55%, #d1b800 100%);
+  box-shadow: 0 0 0 5px rgba(239, 236, 7, 0.2), 0 8px 22px rgba(23, 57, 75, 0.3);
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.triptally-map-marker:hover {
+  transform: scale(1.16);
+  box-shadow: 0 0 0 6px rgba(239, 236, 7, 0.28), 0 12px 28px rgba(23, 57, 75, 0.35);
+}
+
+.triptally-map-popup {
+  min-width: 220px;
+  border-radius: 16px;
+  border: 1px solid rgba(23, 57, 75, 0.14);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+}
+
+.triptally-map-popup-title {
+  margin-bottom: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17394b;
+}
+
+.triptally-map-popup-description {
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(23, 57, 75, 0.82);
+}
+
+.triptally-map-popup-button {
+  border-radius: 9999px;
+  border: 0;
+  background: #efec07;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #02131b;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.triptally-map-popup-button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 8px 18px rgba(239, 236, 7, 0.34);
+}
+
+.mapboxgl-popup-content {
+  border-radius: 16px;
+  border: 1px solid rgba(23, 57, 75, 0.14);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 36px rgba(23, 57, 75, 0.2);
+  padding: 0;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.96);
+}
+
+.mapboxgl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid rgba(23, 57, 75, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(23, 57, 75, 0.18);
+}
+
+.mapboxgl-ctrl button {
+  background-color: transparent;
+}
+
+.mapboxgl-ctrl-icon {
+  filter: none;
 }

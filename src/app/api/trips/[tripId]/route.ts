@@ -40,7 +40,7 @@ export async function GET(
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { trip, members, error } = await getTrip(tripId);
@@ -79,7 +79,7 @@ export async function PUT(
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const body = await request.json();
@@ -129,7 +129,7 @@ export async function DELETE(
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { error } = await deleteTrip(tripId);

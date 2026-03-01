@@ -11,7 +11,7 @@ import { UserContext } from '@/types';
  */
 export async function authenticateUser(request: NextRequest) {
   const cookie = request.headers.get('cookie');
-  const token = extractTokenFromCookie(cookie);
+  const token = extractTokenFromCookie(cookie ?? undefined);
 
   if (!token) {
     return {

@@ -1,24 +1,16 @@
-// ============================================
-// POST /api/expenses - Create expense
-// GET /api/expenses - List trip expenses
-// PUT /api/expenses - Update expense
-// DELETE /api/expenses - Delete expense
-// ============================================
-
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, badRequestResponse, serverErrorResponse } from '@/middleware/auth';
 import { checkTripEditAccess, checkTripViewAccess } from '@/middleware/role';
 import { forbiddenResponse } from '@/middleware/auth';
 import {
-  createExpense,
+  createExpenseWithSplit,
   getTripExpenses,
   updateExpense,
   deleteExpense,
 } from '@/services/expense.service';
-import { CreateExpenseRequest } from '@/types';
 
 /**
- * POST /api/expenses - Create expense
+ * POST /api/expenses - Create expense with validated split calculation
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,13 +21,38 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { trip_id, title, amount, paid_by, split_type, category, shares } = body;
+    const {
+      trip_id,
+      title,
+      amount,
+      paid_by,
+      split_type,
+      involved_members,
+      percentages,
+      custom_shares,
+      notes,
+      category,
+    } = body;
 
     // Validation
-    if (!trip_id || !title || !amount || !paid_by || !split_type || !shares) {
+    if (
+      !trip_id ||
+      !title ||
+      !amount ||
+      !paid_by ||
+      !split_type ||
+      !involved_members ||
+      !Array.isArray(involved_members) ||
+      involved_members.length === 0
+    ) {
       return badRequestResponse(
-        'Missing required fields: trip_id, title, amount, paid_by, split_type, shares'
+        'Missing required fields: trip_id, title, amount, paid_by, split_type, involved_members (array)'
       );
+    }
+
+    // Validate split_type
+    if (!['equal', 'percentage', 'custom'].includes(split_type)) {
+      return badRequestResponse('split_type must be "equal", "percentage", or "custom"');
     }
 
     // Check edit access
@@ -45,26 +62,28 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
-    const expenseData: CreateExpenseRequest = {
+    // Use new split calculator with validation
+    const { data, error } = await createExpenseWithSplit(
       trip_id,
       title,
-      amount: parseFloat(amount),
+      parseFloat(amount),
       paid_by,
-      split_type,
-      category,
-      shares,
-    };
-
-    const { expense, error } = await createExpense(expenseData);
+      split_type as 'equal' | 'percentage' | 'custom',
+      involved_members,
+      percentages || undefined,
+      custom_shares || undefined,
+      notes || undefined,
+      category || 'general'
+    );
 
     if (error) {
-      return serverErrorResponse(error);
+      return NextResponse.json({ error }, { status: 400 });
     }
 
-    return NextResponse.json({ expense }, { status: 201 });
+    return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error('Error creating expense:', error);
     return serverErrorResponse('Failed to create expense');
@@ -96,7 +115,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { expenses, error } = await getTripExpenses(tripId);
@@ -138,7 +157,7 @@ export async function PUT(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const updateData = {
@@ -190,7 +209,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     const { error } = await deleteExpense(id);

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     // Upload to Cloudinary
@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     if (!hasAccess) {
-      return forbiddenResponse(roleError);
+      return forbiddenResponse(roleError ?? undefined);
     }
 
     // Get receipt
