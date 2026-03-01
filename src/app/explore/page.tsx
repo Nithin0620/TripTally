@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import CategorySection from '@/components/explore/CategorySection';
-import { ExploreCategory } from '@/types';
+import PlaceCard from '@/components/explore/PlaceCard';
+import { ExploreCategory, Place, PlacesApiResponse, SearchApiResponse } from '@/types';
 import { useEffect, useState } from 'react';
+import { Search, Loader2 } from 'lucide-react';
 
 /**
  * Hero Section Component
@@ -46,7 +48,7 @@ function ExploreHero() {
 
         {/* Feature Pills */}
         <div
-          className="flex flex-wrap justify-center gap-4 mb-12 animate-fadeInUp"
+          className="flex flex-wrap justify-center gap-4 animate-fadeInUp"
           style={{ animationDelay: '0.3s' }}
         >
           {[
@@ -158,6 +160,11 @@ function ExploreCTA() {
 export default function ExplorePage() {
   const [categories, setCategories] = useState<ExploreCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<Place[]>([]);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [searchSource, setSearchSource] = useState<'database' | 'ai' | null>(null);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -176,11 +183,87 @@ export default function ExplorePage() {
     loadCategories();
   }, []);
 
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setSearchResults([]);
+      setSearchMessage('Please enter at least 2 characters.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchMessage('');
+
+    try {
+      const response = await fetch(`/api/explore/search?q=${encodeURIComponent(trimmedQuery)}`);
+      const data = (await response.json()) as SearchApiResponse;
+
+      if (!response.ok || !data.success) {
+        setSearchResults([]);
+        setSearchSource(null);
+        setSearchMessage(data.error || 'Search failed. Please try again.');
+        return;
+      }
+
+      setSearchResults(data.data || []);
+      setSearchSource(data.source || null);
+      setSearchMessage(data.message || (data.data?.length ? 'Search complete.' : 'No places found.'));
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+      setSearchSource(null);
+      setSearchMessage('Search failed. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8">
         {/* Hero */}
-        <ExploreHero />
+        <div className="py-8">
+          <ExploreHero />
+        </div>
+
+        {/* Sticky Search Section */}
+        <section className="sticky top-0 z-50 mb-10 -mx-4 md:-mx-6 lg:-mx-8 bg-[#F6FBF8] px-4 md:px-6 lg:px-8 py-6 shadow-md">
+          <div className="rounded-2xl border border-[#d8e7df] bg-white p-4 md:p-6">
+            <form onSubmit={handleSearch} className="flex flex-col gap-3 md:flex-row">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search places by name or description"
+                className="w-full rounded-full border border-[#cfe0d7] px-4 py-3 text-[#163427] placeholder-[#8ca196] focus:border-[#EFEC07] focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={searchLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#163427] px-5 py-3 font-semibold text-white disabled:opacity-60 whitespace-nowrap"
+              >
+                {searchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                {searchLoading ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+
+            {searchMessage && (
+              <p className="mt-3 text-sm text-[#4f6f5e]">
+                {searchSource === 'ai' ? '🤖 ' : ''}
+                {searchMessage}
+              </p>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {searchResults.map((place) => (
+                  <PlaceCard key={place.id} place={place} isAI={searchSource === 'ai'} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Categories */}
         {loading ? (
@@ -213,15 +296,25 @@ export default function ExplorePage() {
                 key={categoryData.category}
                 category={categoryData.category}
                 places={categoryData.places}
+                hasMore={categoryData.hasMore}
                 onLoadMore={async (category, offset) => {
                   const response = await fetch(
                     `/api/explore/places?category=${encodeURIComponent(category)}&offset=${offset}`
                   );
                   if (!response.ok) {
                     console.error('API returned error:', response.status);
-                    return [];
+                    return { places: [], hasMore: false };
                   }
-                  return await response.json();
+
+                  const payload = (await response.json()) as PlacesApiResponse;
+                  if (!payload.success) {
+                    return { places: [], hasMore: false };
+                  }
+
+                  return {
+                    places: payload.data || [],
+                    hasMore: payload.pagination?.hasMore ?? false,
+                  };
                 }}
               />
             ))}

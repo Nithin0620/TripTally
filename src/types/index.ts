@@ -10,6 +10,27 @@ export interface User {
   created_at: string;
 }
 
+export interface PaginationInfo {
+  limit: number;
+  offset: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface PlacesApiResponse {
+  success: boolean;
+  data: Place[];
+  pagination?: PaginationInfo;
+  error?: string;
+}
+
+export interface SearchApiResponse {
+  success: boolean;
+  data: Place[];
+  source?: 'database' | 'ai';
+  message?: string;
+  error?: string;
+}
 export interface Trip {
   id: string;
   title: string;
@@ -223,6 +244,7 @@ export interface GeneratePlacesResponse {
 }
 
 export interface ExploreCategory {
-  category: 'Beaches' | 'Mountains' | 'Cities' | 'Spiritual' | 'Luxury';
+  category: string; // Dynamically fetched from database, not hardcoded
   places: Place[];
+  hasMore?: boolean;
 }

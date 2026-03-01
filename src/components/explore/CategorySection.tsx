@@ -9,71 +9,45 @@ import { Loader2 } from 'lucide-react';
 interface CategorySectionProps {
   category: string;
   places: Place[];
-  onLoadMore?: (category: string, offset: number) => Promise<Place[]>;
+  hasMore?: boolean; // Initial hasMore from API
+  onLoadMore?: (
+    category: string,
+    offset: number
+  ) => Promise<{ places: Place[]; hasMore: boolean }>;
 }
 
 export default function CategorySection({
   category,
   places,
+  hasMore: initialHasMore = false,
   onLoadMore,
 }: CategorySectionProps) {
   const [displayedPlaces, setDisplayedPlaces] = useState(places);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore);
 
   // Sync displayedPlaces with places prop when it changes
   useEffect(() => {
     setDisplayedPlaces(places);
-  }, [places]);
-
-  // Auto-load more places on initial mount
-  useEffect(() => {
-    const autoLoadMore = async () => {
-      if (initialLoadDone || !onLoadMore) {
-        return;
-      }
-
-      console.log(`[${category}] Auto-loading more places. Current count: ${places.length}`);
-      setIsLoading(true);
-      try {
-        const newPlaces = await onLoadMore(category, places.length);
-        console.log(`[${category}] Fetched ${newPlaces?.length || 0} new places`);
-        
-        if (!newPlaces || newPlaces.length === 0) {
-          console.log(`[${category}] No new places returned, but keeping hasMore=true for manual load`);
-          // Don't set hasMore to false here - let user manually try to load more
-        } else {
-          setDisplayedPlaces((prev) => [...prev, ...newPlaces]);
-        }
-      } catch (error) {
-        console.error(`[${category}] Failed to auto-load more places:`, error);
-      } finally {
-        setIsLoading(false);
-        setInitialLoadDone(true);
-      }
-    };
-
-    autoLoadMore();
-  }, [category, onLoadMore, initialLoadDone, places.length]);
+    setHasMore(initialHasMore);
+  }, [places, initialHasMore]);
 
   const handleLoadMore = async () => {
     if (!onLoadMore) return;
 
     setIsLoading(true);
     try {
-      // Pass the current displayed places length as the offset
-      const newPlaces = await onLoadMore(category, displayedPlaces.length);
-      
-      // If no new places returned, hide the button
-      if (!newPlaces || newPlaces.length === 0) {
-        setHasMore(false);
-      } else {
+      const result = await onLoadMore(category, displayedPlaces.length);
+      const newPlaces = result?.places || [];
+
+      if (newPlaces.length > 0) {
         setDisplayedPlaces((prev) => [...prev, ...newPlaces]);
       }
+
+      setHasMore(result?.hasMore ?? false);
     } catch (error) {
       console.error('Failed to load more places:', error);
-      setHasMore(false); // Hide button on error too
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +66,7 @@ export default function CategorySection({
   };
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-1 md:py-2">
       {/* Category Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -110,7 +84,7 @@ export default function CategorySection({
 
       {/* Places Grid */}
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -147,16 +121,8 @@ export default function CategorySection({
         </div>
       )}
 
-      {/* Auto-loading indicator */}
-      {isLoading && !initialLoadDone && (
-        <div className="flex justify-center items-center gap-3 py-8 text-[#5f7a6c]">
-          <Loader2 size={20} className="animate-spin" />
-          <p>Loading more {category.toLowerCase()}...</p>
-        </div>
-      )}
-
-      {/* See More Button - Always show after initial load completes */}
-      {onLoadMore && hasMore && (
+      {/* See More Button */}
+      {onLoadMore && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

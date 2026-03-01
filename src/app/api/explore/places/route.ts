@@ -1,152 +1,106 @@
-import { createClient } from '@supabase/supabase-js';
-import { Place } from '@/types';
-import { NextResponse, NextRequest } from 'next/server';
-import { getOpenAIJson } from '@/lib/openai';
+/**
+ * GET /api/explore/places
+ *
+ * Fetch places by category with pagination
+ * Database-only - NO AI CALLS
+ *
+ * Query Parameters:
+ * - category: string (required) - Any category that exists in the database
+ * - offset: number (optional, default: 0) - Number of places to skip
+ * - limit: number (optional, default: 4) - Number of places per page
+ *
+ * Response:
+ * {
+ *   success: boolean,
+ *   data: Place[],
+ *   pagination: {
+ *     limit: number,
+ *     offset: number,
+ *     total: number,
+ *     hasMore: boolean
+ *   }
+ * }
+ */
 
-interface AIGeneratedPlace {
-  name: string;
-  category: string;
-  state: string;
-  description: string;
-  best_time_to_visit: string;
-  avg_budget: string;
-  travel_duration: string;
-  hotels: Array<{
-    name: string;
-    description: string;
-    price_range: string;
-  }>;
-  restaurants: Array<{
-    name: string;
-    description: string;
-    cuisine: string;
-  }>;
-}
+import { NextResponse, NextRequest } from 'next/server';
+import { Place } from '@/types';
+import { getPlacesByCategory, getPlacesCategoryCount } from '@/lib/places-db';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
-    const offset = parseInt(searchParams.get('offset') || '4', 10);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const limitParam = searchParams.get('limit');
 
+    // Validate category
     if (!category) {
       return NextResponse.json(
-        { error: 'Category parameter is required' },
+        {
+          success: false,
+          error: 'Category parameter is required',
+          data: [],
+        },
         { status: 400 }
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
+    // Validate offset and limit
+    if (offset < 0) {
       return NextResponse.json(
-        { error: 'Missing Supabase configuration' },
-        { status: 500 }
+        {
+          success: false,
+          error: 'Offset must be non-negative',
+          data: [],
+        },
+        { status: 400 }
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Try fetching from database first
-    const { data, error } = await supabase
-      .from('places')
-      .select('*')
-      .eq('category', category)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + 4);
-
-    if (error) {
-      console.error(`Error fetching places for ${category}:`, error);
+    if (limitParam && (Number.isNaN(parseInt(limitParam, 10)) || parseInt(limitParam, 10) < 1)) {
       return NextResponse.json(
-        { error: `Failed to fetch places for ${category}` },
-        { status: 500 }
+        {
+          success: false,
+          error: 'Limit must be a positive number',
+          data: [],
+        },
+        { status: 400 }
       );
     }
 
-    console.log(`[API] Fetched ${data?.length || 0} places from DB for ${category} at offset ${offset}`);
+    const totalCount = await getPlacesCategoryCount(category);
+    const computedLimit = limitParam
+      ? Math.min(parseInt(limitParam, 10), 100)
+      : offset > 0
+        ? Math.max(0, totalCount - offset)
+        : 4;
 
-    // If we have data, return it
-    if (data && data.length > 0) {
-      return NextResponse.json((data as Place[]) || []);
-    }
+    // Fetch places from database only
+    const places = await getPlacesByCategory(category, computedLimit, offset);
 
-    // If no data from database, generate using OpenAI
-    console.log(`[API] No more places in database for ${category}, generating with OpenAI...`);
-    
-    // Check if OpenAI is configured
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn('[API] OPENAI_API_KEY is not configured. Returning empty array.');
-      return NextResponse.json([]);
-    }
-    
-    console.log(`[API] Using OpenAI model: ${process.env.OPENAI_MODEL || 'gpt-4o-mini'}`);
-    
-    const systemPrompt = `You are a travel expert. Generate realistic and detailed information about travel destinations in India. 
-    Return ONLY valid JSON with no additional text or markdown formatting.`;
-    
-    const userPrompt = `Generate 5 unique and diverse travel destinations in India for the "${category}" category.
-    
-    For each place, provide:
-    - name: The actual name of the destination
-    - category: Must be exactly "${category}"
-    - state: The Indian state where it's located
-    - description: A compelling 2-3 sentence description highlighting what makes it special
-    - best_time_to_visit: The ideal months or season to visit
-    - avg_budget: Realistic budget range per person for 3-4 days (e.g., "₹15,000 - ₹25,000")
-    - travel_duration: Recommended duration to explore (e.g., "3-4 days")
-    - hotels: Array of 3 real or realistic hotels with name, description (1 sentence), and price_range (e.g., "₹3,000 - ₹5,000/night")
-    - restaurants: Array of 3 restaurants with name, description (1 sentence), and cuisine type
-    
-    Return as JSON array: { "places": [...] }`;
+    console.log(
+      `[API] Fetched ${places.length} places for ${category} at offset ${offset} (total: ${totalCount})`
+    );
 
-    try {
-      console.log(`[API] Calling OpenAI to generate ${category} places...`);
-      const aiResponse = await getOpenAIJson<{ places: AIGeneratedPlace[] }>(
-        systemPrompt,
-        userPrompt,
-        2500
-      );
-
-      if (!aiResponse || !aiResponse.places) {
-        console.error('[API] Failed to generate places with OpenAI - Invalid response:', aiResponse);
-        return NextResponse.json([]);
-      }
-
-      console.log(`[API] OpenAI generated ${aiResponse.places.length} places for ${category}`);
-
-      // Transform AI response to Place format with placeholder images
-      const generatedPlaces: Place[] = aiResponse.places.map((place, index) => ({
-        id: `ai-${category}-${Date.now()}-${index}`,
-        name: place.name,
-        category: category as any,
-        state: place.state,
-        description: place.description,
-        best_time_to_visit: place.best_time_to_visit,
-        avg_budget: place.avg_budget,
-        travel_duration: place.travel_duration,
-        hero_image: '',  // Will be fetched from Unsplash on frontend
-        gallery_images: [],
-        hotels: place.hotels.map(h => ({
-          ...h,
-          image: ''  // Will be fetched from Unsplash on frontend
-        })),
-        restaurants: place.restaurants.map(r => ({
-          ...r,
-          image: ''  // Will be fetched from Unsplash on frontend
-        })),
-        created_at: new Date().toISOString(),
-      }));
-
-      console.log(`Generated ${generatedPlaces.length} places with OpenAI for ${category}`);
-      return NextResponse.json(generatedPlaces);
-    } catch (aiError) {
-      console.error('Error generating places with OpenAI:', aiError);
-      return NextResponse.json([]);
-    }
+    return NextResponse.json({
+      success: true,
+      data: places || [],
+      pagination: {
+        limit: computedLimit,
+        offset,
+        total: totalCount,
+        hasMore: offset + computedLimit < totalCount,
+      },
+    });
   } catch (error) {
-    console.error('Error in /api/explore/places:', error);
-    // Return empty array instead of error to prevent breaking the UI
-    return NextResponse.json([]);
+    console.error('[API] Error in /api/explore/places:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        data: [],
+      },
+      { status: 500 }
+    );
   }
 }
