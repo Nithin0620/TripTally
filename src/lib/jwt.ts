@@ -66,3 +66,52 @@ export function setAuthCookie(token: string): string {
 export function clearAuthCookie(): string {
   return `auth_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
 }
+
+/**
+ * Get auth token from localStorage (client-side)
+ * Falls back to auth context if available
+ */
+export async function getAuthToken(): Promise<string | null> {
+  // Try localStorage first
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const token = window.localStorage.getItem('auth_token');
+    if (token) return token;
+  }
+
+  // Try to get from auth context via a fetch to get session
+  try {
+    const response = await fetch('/api/auth/session', { method: 'GET' });
+    if (response.ok) {
+      const data = await response.json();
+      return data.token || null;
+    }
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+  }
+
+  return null;
+}
+
+/**
+ * Store auth token in localStorage (client-side)
+ */
+export function storeAuthToken(token: string): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem('auth_token', token);
+  }
+}
+
+/**
+ * Remove auth token from localStorage (client-side)
+ */
+export function removeAuthToken(): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem('auth_token');
+  }
+}
+
+/**
+ * Alias for verifyToken for backward compatibility
+ */
+export const verifyJWT = verifyToken;
+

@@ -16,21 +16,10 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -51,19 +40,19 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 transition-all ease-in-out w-full">
+    <nav className="sticky top-3 z-50 w-full transition-transform duration-500 ease-in-out hover:-translate-y-1">
       <motion.div
         initial={{ opacity: 0, y: -14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeInOut" }}
+        animate={{ opacity: 1, y: [0, 0, 0] }}
+        // whileHover={{ y: -8 }}
+        transition={{
+          opacity: { duration: 0.00, ease: "easeInOut" },
+          y: { duration: 2.5, ease: "easeInOut", repeat: Infinity },
+        }}
         className="mx-auto mt-4 max-w-7xl px-6"
       >
         <div
-          className={`flex h-[64px] items-center justify-between rounded-full border border-white/10 px-6 backdrop-blur-lg transition-[background-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            scrolled
-              ? "bg-[#17394B]/70 shadow-[0_10px_28px_rgba(0,0,0,0.35)]"
-              : "bg-white/5 shadow-lg"
-          }`}
+          className="flex h-[64px] items-center justify-between rounded-full border border-white/10 px-6 bg-white/5 shadow-lg transition-all ease-in-out duration-500"
         >
           <Link href="/" className="text-xl font-bold text-white sm:text-2xl">
             TripTally

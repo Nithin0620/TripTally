@@ -1,19 +1,32 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Button from "./ui/Button";
 import { fadeIn, fadeInUp, slideUp } from "@/lib/animations";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function HeroSection() {
   const [destination, setDestination] = useState("");
   const [style, setStyle] = useState("");
   const [budget, setBudget] = useState("");
 
+  const sectionRef = useRef(null);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Fade out from full opacity to invisible
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
-      {/* Background Image with Parallax */}
+    <section
+      ref={sectionRef}
+      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20"
+    >
       <motion.div
+        style={{ opacity }}
         className="absolute inset-0 z-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}

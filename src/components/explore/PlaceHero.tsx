@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useUnsplashImage } from '@/hooks/useUnsplashImage';
 
 interface PlaceHeroProps {
   name: string;
@@ -17,6 +18,8 @@ export default function PlaceHero({
   heroImage,
   description,
 }: PlaceHeroProps) {
+  const { image, loading } = useUnsplashImage(name, heroImage);
+
   return (
     <div className="relative w-full h-screen min-h-[500px] overflow-hidden">
       {/* Hero Image with Parallax */}
@@ -27,11 +30,15 @@ export default function PlaceHero({
         transition={{ duration: 1, ease: 'easeOut' }}
         viewport={{ once: true }}
       >
-        <img
-          src={heroImage}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
+        {loading ? (
+          <div className="w-full h-full bg-gray-800 animate-pulse" />
+        ) : (
+          <img
+            src={image?.url || heroImage}
+            alt={image?.alt || name}
+            className="w-full h-full object-cover"
+          />
+        )}
       </motion.div>
 
       {/* Gradient Overlay - Enhanced for readability */}
@@ -90,6 +97,20 @@ export default function PlaceHero({
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Photographer Credit */}
+      {image && image.photographer !== 'Unknown' && (
+        <div className="absolute bottom-4 right-4 z-10">
+          <a
+            href={image.photographerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-white/60 hover:text-white/90 transition-colors backdrop-blur-sm bg-black/20 px-3 py-1.5 rounded-full"
+          >
+            📷 {image.photographer}
+          </a>
+        </div>
+      )}
 
       {/* Scroll Indicator */}
       <motion.div

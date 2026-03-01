@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Hotel } from '@/types';
 import { MapPin, DollarSign } from 'lucide-react';
+import { useUnsplashImage } from '@/hooks/useUnsplashImage';
 
 interface HotelCardProps {
   hotel: Hotel;
@@ -11,6 +12,7 @@ interface HotelCardProps {
 
 export default function HotelCard({ hotel, index = 0 }: HotelCardProps) {
   const isEven = index % 2 === 0;
+  const { image, loading } = useUnsplashImage(`${hotel.name} hotel`, hotel.image);
 
   return (
     <motion.div
@@ -31,12 +33,16 @@ export default function HotelCard({ hotel, index = 0 }: HotelCardProps) {
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.3 }}
         >
-          <img
-            src={hotel.image}
-            alt={hotel.name}
-            className="w-full h-80 object-cover rounded-3xl shadow-2xl"
-            loading="lazy"
-          />
+          {loading ? (
+            <div className="w-full h-80 bg-gray-800 animate-pulse rounded-3xl" />
+          ) : (
+            <img
+              src={image?.url || hotel.image}
+              alt={image?.alt || hotel.name}
+              className="w-full h-80 object-cover rounded-3xl shadow-2xl"
+              loading="lazy"
+            />
+          )}
         </motion.div>
 
         {/* Content */}
@@ -83,10 +89,15 @@ export default function HotelCard({ hotel, index = 0 }: HotelCardProps) {
             </ul>
 
             {/* CTA */}
-            <button className="group px-8 py-3 bg-[#EFEC07] text-[#02131B] rounded-full font-bold transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/30 hover:scale-105 flex items-center gap-2">
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(hotel.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group px-8 py-3 bg-[#EFEC07] text-[#02131B] rounded-full font-bold transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/30 hover:scale-105 flex items-center gap-2 inline-flex"
+            >
               Learn More
               <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
+            </a>
           </motion.div>
         </div>
       </div>

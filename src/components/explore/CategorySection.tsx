@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Place } from '@/types';
 import PlaceCard from './PlaceCard';
@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 interface CategorySectionProps {
   category: string;
   places: Place[];
-  onLoadMore?: (category: string) => Promise<Place[]>;
+  onLoadMore?: (category: string, offset: number) => Promise<Place[]>;
 }
 
 export default function CategorySection({
@@ -19,16 +19,61 @@ export default function CategorySection({
 }: CategorySectionProps) {
   const [displayedPlaces, setDisplayedPlaces] = useState(places);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Sync displayedPlaces with places prop when it changes
+  useEffect(() => {
+    setDisplayedPlaces(places);
+  }, [places]);
+
+  // Auto-load more places on initial mount
+  useEffect(() => {
+    const autoLoadMore = async () => {
+      if (initialLoadDone || !onLoadMore) {
+        return;
+      }
+
+      console.log(`[${category}] Auto-loading more places. Current count: ${places.length}`);
+      setIsLoading(true);
+      try {
+        const newPlaces = await onLoadMore(category, places.length);
+        console.log(`[${category}] Fetched ${newPlaces?.length || 0} new places`);
+        
+        if (!newPlaces || newPlaces.length === 0) {
+          console.log(`[${category}] No new places returned, but keeping hasMore=true for manual load`);
+          // Don't set hasMore to false here - let user manually try to load more
+        } else {
+          setDisplayedPlaces((prev) => [...prev, ...newPlaces]);
+        }
+      } catch (error) {
+        console.error(`[${category}] Failed to auto-load more places:`, error);
+      } finally {
+        setIsLoading(false);
+        setInitialLoadDone(true);
+      }
+    };
+
+    autoLoadMore();
+  }, [category, onLoadMore, initialLoadDone, places.length]);
 
   const handleLoadMore = async () => {
     if (!onLoadMore) return;
 
     setIsLoading(true);
     try {
-      const newPlaces = await onLoadMore(category);
-      setDisplayedPlaces((prev) => [...prev, ...newPlaces]);
+      // Pass the current displayed places length as the offset
+      const newPlaces = await onLoadMore(category, displayedPlaces.length);
+      
+      // If no new places returned, hide the button
+      if (!newPlaces || newPlaces.length === 0) {
+        setHasMore(false);
+      } else {
+        setDisplayedPlaces((prev) => [...prev, ...newPlaces]);
+      }
     } catch (error) {
       console.error('Failed to load more places:', error);
+      setHasMore(false); // Hide button on error too
     } finally {
       setIsLoading(false);
     }
@@ -89,14 +134,29 @@ export default function CategorySection({
               transition={{ duration: 0.5, ease: 'easeOut' }}
               layout
             >
-              <PlaceCard place={place} isAI={idx >= places.length} />
+              <PlaceCard place={place} isAI={place.id.startsWith('ai-')} />
             </motion.div>
           ))}
         </AnimatePresence>
       </motion.div>
 
-      {/* See More Button */}
-      {onLoadMore && displayedPlaces.length <= places.length + 1 && (
+      {/* Debug info - shows count */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 text-center mb-4">
+          Showing {displayedPlaces.length} places ({places.length} from DB)
+        </div>
+      )}
+
+      {/* Auto-loading indicator */}
+      {isLoading && !initialLoadDone && (
+        <div className="flex justify-center items-center gap-3 py-8 text-gray-400">
+          <Loader2 size={20} className="animate-spin" />
+          <p>Loading more {category.toLowerCase()}...</p>
+        </div>
+      )}
+
+      {/* See More Button - Always show after initial load completes */}
+      {onLoadMore && hasMore && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

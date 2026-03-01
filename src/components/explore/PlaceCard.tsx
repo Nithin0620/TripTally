@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Place } from '@/types';
 import { ArrowRight } from 'lucide-react';
+import { useUnsplashImage } from '@/hooks/useUnsplashImage';
 
 interface PlaceCardProps {
   place: Place;
@@ -12,6 +13,7 @@ interface PlaceCardProps {
 
 export default function PlaceCard({ place, isAI = false }: PlaceCardProps) {
   const slug = place.name.toLowerCase().replace(/\s+/g, '-');
+  const { image, loading } = useUnsplashImage(place.name, place.hero_image);
 
   return (
     <motion.div
@@ -22,12 +24,16 @@ export default function PlaceCard({ place, isAI = false }: PlaceCardProps) {
       <Link href={`/explore/${slug}`}>
         <div className="relative rounded-3xl overflow-hidden bg-gray-900 cursor-pointer h-96">
           {/* Image with ratio maintenance */}
-          <img
-            src={place.hero_image}
-            alt={place.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
+          {loading ? (
+            <div className="w-full h-full bg-gray-800 animate-pulse" />
+          ) : (
+            <img
+              src={image?.url || place.hero_image}
+              alt={image?.alt || place.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+          )}
 
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-300" />
