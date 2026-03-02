@@ -31,7 +31,9 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "skipDefaultLibCheck": true,
+    "types": ["node"]
   },
   "include": [
     "src",

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/jwt';
+import { verifyToken, extractTokenFromCookie } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from Authorization header
+    // Get token from cookie (preferred) or Authorization header (backward compatibility)
+    const cookieHeader = request.headers.get('cookie');
     const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    
+    let token = extractTokenFromCookie(cookieHeader || '');
+    
+    // Fallback to Authorization header if no cookie
+    if (!token && authHeader) {
+      token = authHeader.replace('Bearer ', '');
+    }
 
     if (!token) {
       return NextResponse.json(
@@ -33,7 +40,7 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
-    return NextResponse.json({ user, token });
+    return NextResponse.json({ user });
   } catch (error) {
     console.error('Token verification error:', error);
     return NextResponse.json(
