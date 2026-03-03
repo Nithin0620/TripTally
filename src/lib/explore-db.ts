@@ -16,7 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  */
 export async function getPlacesByCategory(category: string): Promise<Place[]> {
   const { data, error } = await safeSupabaseQuery<Place[]>(
-    () => supabase
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('category', category)
@@ -68,7 +68,7 @@ export async function getPlaceByName(name: string): Promise<Place | null> {
     .join(' ');
 
   const { data, error } = await safeSupabaseQuery<Place>(
-    () => supabase
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('name', placeName)
@@ -84,13 +84,13 @@ export async function getPlaceByName(name: string): Promise<Place | null> {
   return (data as Place) || null;
 }
 
-/**
- * Fetch multiple places by category (for "See More" functionality)
- */
+
 export async function getMorePlacesByCategory(
   category: string,
+  offset: number = 0
+) {
   const { data, error } = await safeSupabaseQuery<Place[]>(
-    () => supabase
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('category', category)
@@ -112,7 +112,7 @@ export async function getMorePlacesByCategory(
  */
 export async function searchPlaces(query: string): Promise<Place[]> {
   const { data, error } = await safeSupabaseQuery<Place[]>(
-    () => supabase
+    async () => await supabase
       .from('places')
       .select('*')
       .or(
@@ -126,7 +126,5 @@ export async function searchPlaces(query: string): Promise<Place[]> {
     return [];
   }
 
-  return (data as Place[]) || []; console.error(`Error searching places with query "${query}":`, error);
-    return [];
-  }
+  return (data as Place[]) || [];
 }
