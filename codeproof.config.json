@@ -1,0 +1,29 @@
+{
+  "projectId": "c0a01bc3-84f9-4b53-b970-eda3f06b6c46",
+  "projectType": "Node",
+  "scanMode": "staged",
+  "enforcement": "disabled",
+  "aiPromptScanner": {
+    "enabled": true,
+    "useGemini": true
+  },
+  "dependencyScanner": {
+    "enabled": true,
+    "includeDevDependencies": true
+  },
+  "features": {
+    "reporting": true,
+    "integration": false,
+    "aiEscalation": false,
+    "secretRemediation": false
+  },
+  "integration": {
+    "enabled": false,
+    "endpointUrl": "https://code-proof.onrender.com/api/reports"
+  },
+  "severityRules": {
+    "block": [],
+    "warn": [],
+    "allow": []
+  }
+}
