@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import { INDIA_CENTER, MAPBOX_STYLE } from "@/lib/mapbox";
-import { placeNameToSlug } from "@/lib/explore";
 
 type FamousPlace = {
   name: string;
@@ -15,6 +15,7 @@ export default function MapBoxMap() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [mapError, setMapError] = useState<string>("");
+  const router = useRouter();
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -55,6 +56,7 @@ export default function MapBoxMap() {
     map.addControl(new mapboxgl.FullscreenControl(), "top-right");
 
     let markers: mapboxgl.Marker[] = [];
+    let activePopup: mapboxgl.Popup | null = null;
 
     const addMarkers = async () => {
       const response = await fetch("/api/explore/famous-places", { cache: "no-store" });
@@ -63,12 +65,15 @@ export default function MapBoxMap() {
       }
 
       const data = (await response.json()) as { places?: FamousPlace[] };
-      const places = data.places || [];
+      const places = (data.places || []).filter((place) => 
+        place && place.name && place.description && place.coordinates && place.coordinates.length === 2
+      );
 
       markers = places.map((place) => {
         const markerElement = document.createElement("div");
-        markerElement.className = "triptally-map-marker";
+        markerElement.className = "triptally-map-marker cursor-pointer";
 
+        // Create popup content
         const popupContent = document.createElement("div");
         popupContent.className = "triptally-map-popup";
 
@@ -85,23 +90,85 @@ export default function MapBoxMap() {
         button.className = "triptally-map-popup-button";
         button.textContent = "Explore";
         button.addEventListener("click", () => {
-          window.location.href = `/explore/${placeNameToSlug(place.name)}`;
+          const slug = place.name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-");
+          router.push(`/explore/${slug}`);
         });
 
+        const closeButton = document.createElement("button");
+        closeButton.type = "button";
+        closeButton.className = "triptally-map-popup-close";
+        closeButton.textContent = "✕";
+        closeButton.addEventListener("click", (e) => {
+          e.stopPropagation();
+          popup.remove();
+          isPinned = false;
+        });
+
+        popupContent.appendChild(closeButton);
         popupContent.appendChild(title);
         popupContent.appendChild(description);
         popupContent.appendChild(button);
 
-        const popup = new mapboxgl.Popup({ closeButton: false, offset: 14 }).setDOMContent(popupContent);
+        const popup = new mapboxgl.Popup({ 
+          closeButton: false, 
+          closeOnClick: false,
+          offset: 30,
+          anchor: 'top'
+        }).setDOMContent(popupContent);
 
-        return new mapboxgl.Marker({ element: markerElement, anchor: "center" })
+        const marker = new mapboxgl.Marker({ element: markerElement, anchor: "center" })
           .setLngLat(place.coordinates)
-          .setPopup(popup)
           .addTo(map);
+
+        let hoverTimeout: NodeJS.Timeout | null = null;
+        let isPinned = false;
+
+        // Show popup on hover
+        markerElement.addEventListener("mouseenter", () => {
+          if (hoverTimeout) clearTimeout(hoverTimeout);
+          popup.setLngLat(place.coordinates).addTo(map);
+        });
+
+        // Hide popup when leaving marker (only if not pinned)
+        markerElement.addEventListener("mouseleave", () => {
+          hoverTimeout = setTimeout(() => {
+            if (!isPinned) {
+              popup.remove();
+            }
+          }, 100);
+        });
+
+        // Pin popup on marker click
+        markerElement.addEventListener("click", () => {
+          if (hoverTimeout) clearTimeout(hoverTimeout);
+          isPinned = true;
+          popup.setLngLat(place.coordinates).addTo(map);
+        });
+
+        // Keep popup visible when hovering over it
+        popup.getElement()?.addEventListener("mouseenter", () => {
+          if (hoverTimeout) clearTimeout(hoverTimeout);
+        });
+
+        popup.getElement()?.addEventListener("mouseleave", () => {
+          hoverTimeout = setTimeout(() => {
+            if (!isPinned) {
+              popup.remove();
+            }
+          }, 100);
+        });
+
+        return marker;
       });
     };
 
-    void addMarkers();
+    // Wait for map to load before adding markers
+    map.on('load', () => {
+      void addMarkers();
+    });
 
     return () => {
       markers.forEach((marker) => marker.remove());
@@ -112,11 +179,11 @@ export default function MapBoxMap() {
 
   if (mapError) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-3xl border border-white/10 bg-[#17394B]/40 p-6 text-center text-sm text-white/80">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl border border-[#cfe0d7] bg-white p-6 text-center text-sm text-[#4f6f5e]">
         {mapError}
       </div>
     );
   }
 
-  return <div ref={mapContainerRef} className="h-full w-full rounded-3xl border border-white/10" />;
+  return <div ref={mapContainerRef} className="h-full w-full rounded-3xl border border-[#cfe0d7]" />;
 }

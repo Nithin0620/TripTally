@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Place, ExploreCategory } from '@/types';
+import { safeSupabaseQuery, isHTMLError } from './supabase-health';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,19 +15,21 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  * Fetch all places by category from Supabase
  */
 export async function getPlacesByCategory(category: string): Promise<Place[]> {
-  try {
-    const { data, error } = await supabase
+  const { data, error } = await safeSupabaseQuery<Place[]>(
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('category', category)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }),
+    `getPlacesByCategory(${category})`
+  );
 
-    if (error) throw error;
-    return (data as Place[]) || [];
-  } catch (error) {
+  if (error) {
     console.error(`Error fetching places for category ${category}:`, error);
     return [];
   }
+
+  return (data as Place[]) || [];
 }
 
 /**
@@ -58,66 +61,70 @@ export async function getExploreCategories(): Promise<ExploreCategory[]> {
  * Fetch a single place by name (slug)
  */
 export async function getPlaceByName(name: string): Promise<Place | null> {
-  try {
-    // Convert slug back to place name (e.g., "goa" -> "Goa")
-    const placeName = name
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  // Convert slug back to place name (e.g., "goa" -> "Goa")
+  const placeName = name
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
-    const { data, error } = await supabase
+  const { data, error } = await safeSupabaseQuery<Place>(
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('name', placeName)
-      .single();
+      .single(),
+    `getPlaceByName(${name})`
+  );
 
-    if (error) throw error;
-    return (data as Place) || null;
-  } catch (error) {
+  if (error) {
     console.error(`Error fetching place ${name}:`, error);
     return null;
   }
+
+  return (data as Place) || null;
 }
 
-/**
- * Fetch multiple places by category (for "See More" functionality)
- */
+
 export async function getMorePlacesByCategory(
   category: string,
-  offset: number = 4
-): Promise<Place[]> {
-  try {
-    const { data, error } = await supabase
+  offset: number = 0
+) {
+  const { data, error } = await safeSupabaseQuery<Place[]>(
+    async () => await supabase
       .from('places')
       .select('*')
       .eq('category', category)
       .order('created_at', { ascending: false })
-      .range(offset, offset + 4);
+      .range(offset, offset + 4),
+    `getMorePlacesByCategory(${category}, offset: ${offset})`
+  );
 
-    if (error) throw error;
-    return (data as Place[]) || [];
-  } catch (error) {
+  if (error) {
     console.error(`Error fetching more places for category ${category}:`, error);
     return [];
   }
+
+  return (data as Place[]) || [];
 }
 
 /**
  * Search places by keyword
  */
 export async function searchPlaces(query: string): Promise<Place[]> {
-  try {
-    const { data, error } = await supabase
+  const { data, error } = await safeSupabaseQuery<Place[]>(
+    async () => await supabase
       .from('places')
       .select('*')
       .or(
         `name.ilike.%${query}%,state.ilike.%${query}%,description.ilike.%${query}%`
-      );
+      ),
+    `searchPlaces(${query})`
+  );
 
-    if (error) throw error;
-    return (data as Place[]) || [];
-  } catch (error) {
+  if (error) {
     console.error(`Error searching places with query "${query}":`, error);
     return [];
   }
+
+  return (data as Place[]) || [];
 }

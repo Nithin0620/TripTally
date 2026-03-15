@@ -71,6 +71,7 @@ export interface Receipt {
   created_at: string;      // ISO timestamp
 }
 
+
 /**
  * Add receipt input
  */

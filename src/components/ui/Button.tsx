@@ -17,11 +17,11 @@ interface ButtonProps {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-accent text-brand-bg font-bold shadow-[0_0_24px_rgba(239,236,7,0.35)] hover:shadow-[0_0_30px_rgba(239,236,7,0.55)] hover:brightness-95",
+    "bg-brand-accent text-brand-text font-bold shadow-[0_0_24px_rgba(239,236,7,0.35)] hover:shadow-[0_0_30px_rgba(239,236,7,0.55)] hover:brightness-95",
   secondary:
-    "bg-brand-surface text-brand-text backdrop-blur-md border border-white/20 hover:border-brand-accent hover:shadow-[0_0_20px_rgba(239,236,7,0.2)]",
+    "bg-brand-surface text-brand-text backdrop-blur-md border border-[#b9d3c5] hover:border-brand-accent hover:shadow-[0_0_20px_rgba(239,236,7,0.2)]",
   outline:
-    "border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-bg",
+    "border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-text",
 };
 
 export default function Button({

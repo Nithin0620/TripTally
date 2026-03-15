@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import CategorySection from '@/components/explore/CategorySection';
-import { ExploreCategory } from '@/types';
+import PlaceCard from '@/components/explore/PlaceCard';
+import { ExploreCategory, Place, PlacesApiResponse, SearchApiResponse } from '@/types';
 import { useEffect, useState } from 'react';
+import { Search, Loader2 } from 'lucide-react';
 
 /**
  * Hero Section Component
@@ -11,7 +14,7 @@ function ExploreHero() {
   return (
     <section className="relative py-20 md:py-32 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#17394B]/30 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#E7F3EC]/70 to-transparent pointer-events-none" />
 
       <div
         className="relative z-10 max-w-5xl mx-auto text-center px-4 md:px-8 animate-fadeInUp"
@@ -25,7 +28,7 @@ function ExploreHero() {
         </div>
 
         <h1
-          className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fadeInUp"
+          className="text-5xl md:text-7xl font-bold text-[#163427] mb-6 leading-tight animate-fadeInUp"
           style={{ animationDelay: '0.1s' }}
         >
           Explore India's
@@ -36,7 +39,7 @@ function ExploreHero() {
         </h1>
 
         <p
-          className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
+          className="text-lg md:text-xl text-[#4f6f5e] max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
           style={{ animationDelay: '0.2s' }}
         >
           From serene beaches to majestic mountains, spiritual retreats to luxurious escapes—
@@ -45,7 +48,7 @@ function ExploreHero() {
 
         {/* Feature Pills */}
         <div
-          className="flex flex-wrap justify-center gap-4 mb-12 animate-fadeInUp"
+          className="flex flex-wrap justify-center gap-4 animate-fadeInUp"
           style={{ animationDelay: '0.3s' }}
         >
           {[
@@ -57,9 +60,9 @@ function ExploreHero() {
           ].map((pill, idx) => (
             <div
               key={idx}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
+              className="px-4 py-2 bg-white/80 border border-[#d8e7df] rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
             >
-              <span className="text-sm text-gray-300">{pill}</span>
+              <span className="text-sm text-[#4f6f5e]">{pill}</span>
             </div>
           ))}
         </div>
@@ -127,12 +130,12 @@ function ExploreCTA() {
       `}</style>
 
       <h2
-        className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fadeInUp"
+        className="text-4xl md:text-5xl font-bold text-[#163427] mb-6 animate-fadeInUp"
       >
         Ready to Plan Your Next Adventure?
       </h2>
 
-      <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
+      <p className="text-[#4f6f5e] text-lg mb-8 max-w-2xl mx-auto">
         Use our AI-powered planner to create personalized itineraries, manage
         budgets, and split expenses with your travel companions.
       </p>
@@ -140,10 +143,10 @@ function ExploreCTA() {
       <div
         className="flex flex-col sm:flex-row gap-4 justify-center"
       >
-        <button className="px-8 py-4 bg-[#EFEC07] text-[#02131B] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+        <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
           Start Planning
         </button>
-        <button className="px-8 py-4 bg-white/10 border border-white/30 text-white rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white/20">
+        <button className="px-8 py-4 bg-white/85 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
           Get Inspiration
         </button>
       </div>
@@ -157,6 +160,11 @@ function ExploreCTA() {
 export default function ExplorePage() {
   const [categories, setCategories] = useState<ExploreCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<Place[]>([]);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [searchSource, setSearchSource] = useState<'database' | 'ai' | null>(null);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -175,29 +183,110 @@ export default function ExplorePage() {
     loadCategories();
   }, []);
 
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setSearchResults([]);
+      setSearchMessage('Please enter at least 2 characters.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchMessage('');
+
+    try {
+      const response = await fetch(`/api/explore/search?q=${encodeURIComponent(trimmedQuery)}`);
+      const data = (await response.json()) as SearchApiResponse;
+
+      if (!response.ok || !data.success) {
+        setSearchResults([]);
+        setSearchSource(null);
+        setSearchMessage(data.error || 'Search failed. Please try again.');
+        return;
+      }
+
+      setSearchResults(data.data || []);
+      setSearchSource(data.source || null);
+      setSearchMessage(data.message || (data.data?.length ? 'Search complete.' : 'No places found.'));
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+      setSearchSource(null);
+      setSearchMessage('Search failed. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#02131B] text-white">
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
+    <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8">
         {/* Hero */}
-        <ExploreHero />
+        <div className="py-8">
+          <ExploreHero />
+        </div>
+
+        {/* Sticky Search Section */}
+        <section className="sticky top-0 z-50 mb-10 -mx-4 md:-mx-6 lg:-mx-8 bg-[#F6FBF8] px-4 md:px-6 lg:px-8 py-6 shadow-md">
+          <div className="rounded-2xl border border-[#d8e7df] bg-white p-4 md:p-6">
+            <form onSubmit={handleSearch} className="flex flex-col gap-3 md:flex-row">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search places by name or description"
+                className="w-full rounded-full border border-[#cfe0d7] px-4 py-3 text-[#163427] placeholder-[#8ca196] focus:border-[#EFEC07] focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={searchLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#163427] px-5 py-3 font-semibold text-white disabled:opacity-60 whitespace-nowrap"
+              >
+                {searchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                {searchLoading ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+
+            {searchMessage && (
+              <p className="mt-3 text-sm text-[#4f6f5e]">
+                {searchSource === 'ai' ? '🤖 ' : ''}
+                {searchMessage}
+              </p>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {searchResults.map((place) => (
+                  <PlaceCard key={place.id} place={place} isAI={searchSource === 'ai'} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Categories */}
         {loading ? (
           <div className="py-20 text-center">
             <div className="inline-block">
               <div className="w-12 h-12 border-2 border-[#EFEC07] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-400">Loading amazing destinations...</p>
+              <p className="text-[#5f7a6c]">Loading amazing destinations...</p>
             </div>
           </div>
         ) : categories.length === 0 ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#163427] mb-3">
                 No Places Found
               </h2>
-              <p className="text-gray-400">
+              <p className="text-[#5f7a6c] mb-6">
                 We're working on loading amazing destinations for you.
               </p>
+              <Link href="/map">
+                <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+                  View on Map
+                </button>
+              </Link>
             </div>
           </div>
         ) : (
@@ -207,15 +296,25 @@ export default function ExplorePage() {
                 key={categoryData.category}
                 category={categoryData.category}
                 places={categoryData.places}
+                hasMore={categoryData.hasMore}
                 onLoadMore={async (category, offset) => {
                   const response = await fetch(
                     `/api/explore/places?category=${encodeURIComponent(category)}&offset=${offset}`
                   );
                   if (!response.ok) {
                     console.error('API returned error:', response.status);
-                    return [];
+                    return { places: [], hasMore: false };
                   }
-                  return await response.json();
+
+                  const payload = (await response.json()) as PlacesApiResponse;
+                  if (!payload.success) {
+                    return { places: [], hasMore: false };
+                  }
+
+                  return {
+                    places: payload.data || [],
+                    hasMore: payload.pagination?.hasMore ?? false,
+                  };
                 }}
               />
             ))}

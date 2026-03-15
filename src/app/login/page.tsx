@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -25,33 +25,68 @@ export default function LoginPage() {
   const router = useRouter();
   const { toasts, showToast, removeToast } = useToast();
 
-  useEffect(() => {
-    // Initialize Google Sign-In
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        callback: handleGoogleLogin,
-      });
-    }
-  }, []);
-
-  const handleGoogleLogin = async (response: any) => {
+  // Define callback with useCallback to prevent re-initialization
+  const handleGoogleLogin = useCallback(async (response: any) => {
     if (!response.credential) {
       showToast('Google sign-in failed', 'error');
+      console.error('No credential in Google response:', response);
       return;
     }
 
     setLoading(true);
-    const result = await loginWithGoogle(response.credential);
-    
-    if (result.error) {
-      showToast(result.error, 'error');
-    } else {
-      showToast('Login successful!', 'success');
-      setTimeout(() => router.push('/dashboard'), 1000);
+    try {
+      const result = await loginWithGoogle(response.credential);
+      
+      if (result.error) {
+        showToast(result.error, 'error');
+      } else {
+        showToast('Login successful!', 'success');
+        setTimeout(() => router.push('/dashboard'), 1000);
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      showToast('An error occurred during login', 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [loginWithGoogle, router, showToast]);
+
+  // Initialize Google Sign-In only after script loads
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+          if (!clientId) {
+            console.error('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set');
+            return;
+          }
+
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleLogin,
+            auto_select: false,
+          });
+          
+          console.log('Google Sign-In initialized successfully');
+        } catch (error) {
+          console.error('Error initializing Google Sign-In:', error);
+        }
+      } else {
+        console.warn('Google Sign-In script not loaded yet');
+      }
+    };
+
+    // Wait for Google script to load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeGoogleSignIn);
+      return () => {
+        document.removeEventListener('DOMContentLoaded', initializeGoogleSignIn);
+      };
+    } else {
+      initializeGoogleSignIn();
+    }
+  }, [handleGoogleLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,15 +119,15 @@ export default function LoginPage() {
         >
           <GlassCard className="p-8">
             <motion.div variants={fadeInUp} className="mb-8 text-center">
-              <h1 className="mb-2 text-4xl font-black text-white">
+              <h1 className="mb-2 text-4xl font-black text-[#163427]">
                 Welcome Back
               </h1>
-              <p className="text-white/70">Sign in to continue your journey</p>
+              <p className="text-[#5f7a6c]">Sign in to continue your journey</p>
             </motion.div>
 
             <motion.form variants={fadeInUp} onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Email
                 </label>
                 <input
@@ -102,12 +137,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Password
                 </label>
                 <input
@@ -117,12 +152,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 />
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-white/70">
+                <label className="flex items-center gap-2 text-[#5f7a6c]">
                   <input type="checkbox" className="rounded border-white/20" />
                   Remember me
                 </label>
@@ -137,10 +172,10 @@ export default function LoginPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/20" />
+                  <div className="w-full border-t border-[#d8e7df]" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-brand-bg px-2 text-white/60">
+                  <span className="bg-brand-bg px-2 text-[#7a9186]">
                     Or continue with
                   </span>
                 </div>
@@ -150,13 +185,27 @@ export default function LoginPage() {
                 type="button"
                 variant="secondary"
                 className="w-full"
+                disabled={loading}
                 onClick={() => {
-                  if (window.google?.accounts?.id) {
-                    window.google.accounts.id.prompt((notification: any) => {
-                      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        showToast('Please enable popups for Google Sign-In', 'error');
-                      }
-                    });
+                  if (window.google && window.google.accounts && window.google.accounts.id) {
+                    try {
+                      // Trigger the One Tap UI or the browser's native prompt
+                      window.google.accounts.id.prompt((notification: any) => {
+                        if (notification.isNotDisplayed()) {
+                          console.warn('Google Sign-In prompt not displayed');
+                          showToast('Please enable popups for Google Sign-In', 'error');
+                        }
+                        if (notification.isSkippedMoment()) {
+                          console.info('Google Sign-In prompt skipped by user');
+                        }
+                      });
+                    } catch (error) {
+                      console.error('Error triggering Google Sign-In:', error);
+                      showToast('Google Sign-In error. Please try again.', 'error');
+                    }
+                  } else {
+                    console.error('Google Sign-In not initialized');
+                    showToast('Google Sign-In is not available', 'error');
                   }
                 }}
               >
@@ -178,11 +227,11 @@ export default function LoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Continue with Google
+                {loading ? 'Signing In...' : 'Continue with Google'}
               </Button>
             </motion.form>
 
-            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-white/70">
+            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-[#5f7a6c]">
               Don't have an account?{" "}
               <Link href="/register" className="text-brand-accent hover:underline">
                 Sign up

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Place } from '@/types';
 import { NextResponse, NextRequest } from 'next/server';
+import { safeSupabaseQuery, isHTMLError, parseHTMLError } from '@/lib/supabase-health';
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +22,10 @@ export async function GET(
 
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
-        { error: 'Missing Supabase configuration' },
+        { 
+          error: 'Missing Supabase configuration',
+          hint: 'Check your .env.local file for NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
+        },
         { status: 500 }
       );
     }
@@ -34,16 +38,33 @@ export async function GET(
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
 
-    const { data, error } = await supabase
-      .from('places')
-      .select('*')
-      .ilike('name', formattedName)
-      .limit(1);
+    // Use safe query wrapper with better error handling
+    const { data, error, errorType } = await safeSupabaseQuery<Place[]>(
+      () => supabase
+        .from('places')
+        .select('*')
+        .ilike('name', formattedName)
+        .limit(1),
+      `GET /api/explore/place/${placename}`
+    );
 
     if (error) {
       console.error(`Error fetching place ${placename}:`, error);
+      
+      // Return more helpful error message for SSL/connection issues
+      if (errorType === 'SSL_ERROR') {
+        return NextResponse.json(
+          { 
+            error: error,
+            hint: 'Please verify your Supabase project is active at https://supabase.com/dashboard',
+            errorType: 'CONNECTION_ERROR'
+          },
+          { status: 503 } // Service Unavailable
+        );
+      }
+      
       return NextResponse.json(
-        { error: `Failed to fetch place ${placename}` },
+        { error: error, errorType },
         { status: 500 }
       );
     }
@@ -56,10 +77,25 @@ export async function GET(
     }
 
     return NextResponse.json(data[0] as Place);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in /api/explore/place/[name]:', error);
+    
+    // Check for HTML errors in catch block too
+    if (isHTMLError(error)) {
+      const htmlError = parseHTMLError(error.message || String(error));
+      
+      return NextResponse.json(
+        { 
+          error: `Database connection failed (${htmlError.code}): ${htmlError.message}`,
+          hint: 'Your Supabase project may be paused. Visit https://supabase.com/dashboard to check.',
+          errorType: 'SSL_ERROR'
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch place' },
+      { error: 'Failed to fetch place', details: error.message },
       { status: 500 }
     );
   }

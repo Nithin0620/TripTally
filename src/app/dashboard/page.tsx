@@ -64,7 +64,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-2xl font-bold text-white">Loading...</div>
+        <div className="text-2xl font-bold text-[#163427]">Loading...</div>
       </div>
     );
   }
@@ -75,11 +75,11 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex min-h-screen py-20">
+      <div className="flex min-h-screen py-20 bg-brand-bg">
         {/* Sidebar */}
-        <aside className="w-64 border-r border-white/10 bg-brand-surface/90 p-6 backdrop-blur-lg">
+        <aside className="w-64 border-r border-[#d8e7df] bg-brand-surface p-6 backdrop-blur-lg">
           <div className="mb-8">
-            <h2 className="text-2xl font-black text-white">
+            <h2 className="text-2xl font-black text-[#163427]">
               <span className="text-brand-accent">Trip</span>Tally
             </h2>
           </div>
@@ -87,25 +87,25 @@ export default function DashboardPage() {
           <nav className="space-y-2">
             <Link
               href="/dashboard"
-              className="block rounded-xl bg-white/10 px-4 py-3 font-medium text-white transition hover:bg-white/20"
+              className="block rounded-xl bg-white px-4 py-3 font-medium text-[#163427] transition hover:bg-[#f5fbf7]"
             >
               📊 Dashboard
             </Link>
             <Link
               href="/dashboard/trips"
-              className="block rounded-xl px-4 py-3 font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+              className="block rounded-xl px-4 py-3 font-medium text-[#5f7a6c] transition hover:bg-white hover:text-[#163427]"
             >
               ✈️ My Trips
             </Link>
             <Link
               href="/dashboard/expenses"
-              className="block rounded-xl px-4 py-3 font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+              className="block rounded-xl px-4 py-3 font-medium text-[#5f7a6c] transition hover:bg-white hover:text-[#163427]"
             >
               💰 Expenses
             </Link>
             <Link
               href="/dashboard/templates"
-              className="block rounded-xl px-4 py-3 font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+              className="block rounded-xl px-4 py-3 font-medium text-[#5f7a6c] transition hover:bg-white hover:text-[#163427]"
             >
               📋 Templates
             </Link>
@@ -121,10 +121,10 @@ export default function DashboardPage() {
             className="mb-8 flex items-center justify-between"
           >
             <div>
-              <h1 className="text-4xl font-black text-white">
+              <h1 className="text-4xl font-black text-[#163427]">
                 Welcome back, {user.name}!
               </h1>
-              <p className="mt-2 text-white/70">
+              <p className="mt-2 text-[#5f7a6c]">
                 You have {trips.length} active {trips.length === 1 ? 'trip' : 'trips'}
               </p>
             </div>
@@ -142,22 +142,22 @@ export default function DashboardPage() {
           >
             <motion.div variants={staggerItem}>
               <GlassCard className="p-6">
-                <p className="mb-2 text-sm text-white/60">Total Trips</p>
-                <p className="text-3xl font-bold text-white">{trips.length}</p>
+                <p className="mb-2 text-sm text-[#5f7a6c]">Total Trips</p>
+                <p className="text-3xl font-bold text-[#163427]">{trips.length}</p>
               </GlassCard>
             </motion.div>
             <motion.div variants={staggerItem}>
               <GlassCard className="p-6">
-                <p className="mb-2 text-sm text-white/60">Upcoming</p>
-                <p className="text-3xl font-bold text-white">
+                <p className="mb-2 text-sm text-[#5f7a6c]">Upcoming</p>
+                <p className="text-3xl font-bold text-[#163427]">
                   {trips.filter(t => new Date(t.start_date) > new Date()).length}
                 </p>
               </GlassCard>
             </motion.div>
             <motion.div variants={staggerItem}>
               <GlassCard className="p-6">
-                <p className="mb-2 text-sm text-white/60">Completed</p>
-                <p className="text-3xl font-bold text-white">
+                <p className="mb-2 text-sm text-[#5f7a6c]">Completed</p>
+                <p className="text-3xl font-bold text-[#163427]">
                   {trips.filter(t => new Date(t.end_date) < new Date()).length}
                 </p>
               </GlassCard>
@@ -170,13 +170,13 @@ export default function DashboardPage() {
             initial="hidden"
             animate="visible"
           >
-            <h2 className="mb-6 text-2xl font-bold text-white">Your Trips</h2>
+            <h2 className="mb-6 text-2xl font-bold text-[#163427]">Your Trips</h2>
             {trips.length === 0 ? (
               <div className="py-20 text-center">
-                <h3 className="mb-4 text-xl font-bold text-white/80">
+                <h3 className="mb-4 text-xl font-bold text-[#163427]">
                   No trips yet
                 </h3>
-                <p className="mb-8 text-white/60">
+                <p className="mb-8 text-[#5f7a6c]">
                   Create your first trip to get started
                 </p>
                 <Button onClick={() => setShowCreateModal(true)}>
@@ -201,14 +201,14 @@ export default function DashboardPage() {
                         </Link>
                         <div className="p-6">
                           <Link href={`/trips/${trip.id}`}>
-                            <h3 className="mb-2 text-xl font-bold text-white group-hover:text-brand-accent transition">
+                            <h3 className="mb-2 text-xl font-bold text-[#163427] group-hover:text-brand-accent transition">
                               {trip.title}
                             </h3>
                           </Link>
-                          <p className="mb-3 line-clamp-2 text-sm text-white/70">
+                          <p className="mb-3 line-clamp-2 text-sm text-[#5f7a6c]">
                             {trip.description || 'No description'}
                           </p>
-                          <p className="mb-1 text-sm text-white/70">
+                          <p className="mb-1 text-sm text-[#5f7a6c]">
                             📅 {new Date(trip.start_date).toLocaleDateString()} → {new Date(trip.end_date).toLocaleDateString()}
                           </p>
                           <div className="mt-4 flex gap-2">
@@ -307,11 +307,11 @@ function CreateTripModal({
         className="w-full max-w-md"
       >
         <GlassCard className="p-8">
-          <h2 className="mb-6 text-2xl font-bold text-white">Create New Trip</h2>
+          <h2 className="mb-6 text-2xl font-bold text-[#163427]">Create New Trip</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                 Trip Title
               </label>
               <input
@@ -320,13 +320,13 @@ function CreateTripModal({
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="e.g., Summer Europe Trip"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/80">
+              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                 Description
               </label>
               <textarea
@@ -334,14 +334,14 @@ function CreateTripModal({
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
                 rows={3}
-                className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white placeholder-white/50 backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 placeholder="Optional description"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   Start Date
                 </label>
                 <input
@@ -350,12 +350,12 @@ function CreateTripModal({
                   onChange={(e) => setStartDate(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/80">
+                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
                   End Date
                 </label>
                 <input
@@ -364,7 +364,7 @@ function CreateTripModal({
                   onChange={(e) => setEndDate(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-white/20 bg-brand-surface/85 px-4 py-3 text-white backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
                 />
               </div>
             </div>

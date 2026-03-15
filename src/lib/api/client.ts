@@ -1,5 +1,6 @@
 // ============================================
 // API Client - Base fetch wrapper
+// Uses HTTP-only cookies for authentication
 // ============================================
 
 export interface ApiResponse<T = any> {
@@ -38,23 +39,17 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      // Get token from localStorage if available
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         ...options.headers,
       };
 
-      // Add Authorization header if token exists
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
+      // Authentication is handled via HTTP-only cookies
+      // No need to manually add Authorization header
       const response = await fetch(this.buildUrl(endpoint), {
         ...options,
         headers,
-        credentials: 'include', // Include cookies for JWT auth
+        credentials: 'include', // Critical: send cookies with every request
       });
 
       const contentType = response.headers.get('content-type') || '';
@@ -63,22 +58,12 @@ class ApiClient {
       const fallbackText = isJson ? '' : await response.text();
 
       if (!response.ok) {
-        // If 401, clear token as it's invalid
-        if (response.status === 401 && token) {
-          localStorage.removeItem('auth_token');
-        }
-
         return {
           error:
             (data && typeof data === 'object' && 'error' in data ? String((data as { error?: string }).error) : '') ||
             fallbackText ||
             `Request failed with status ${response.status}`,
         };
-      }
-
-      // If response contains a new token, update it in localStorage
-      if (data && typeof data === 'object' && 'token' in data) {
-        localStorage.setItem('auth_token', (data as { token?: string }).token as string);
       }
 
       return { data: data as T };

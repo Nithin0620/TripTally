@@ -62,12 +62,12 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
             </div>
 
             {/* Name */}
-            <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h3 className="text-3xl md:text-4xl font-bold text-[#163427] mb-4">
               {restaurant.name}
             </h3>
 
             {/* Description */}
-            <p className="text-gray-300 text-base leading-relaxed mb-6">
+            <p className="text-[#4f6f5e] text-base leading-relaxed mb-6">
               {restaurant.description}
             </p>
 
@@ -80,7 +80,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
               ].map((highlight, idx) => (
                 <li
                   key={idx}
-                  className="text-gray-200 text-sm flex items-center gap-2"
+                  className="text-[#345847] text-sm flex items-center gap-2"
                 >
                   <span className="text-[#EFEC07]">{highlight.split(' ')[0]}</span>
                   {highlight.substring(2)}
@@ -93,7 +93,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
               href={`https://www.google.com/search?q=${encodeURIComponent(restaurant.name + ' reservation')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group px-8 py-3 bg-[#EFEC07] text-[#02131B] rounded-full font-bold transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/30 hover:scale-105 flex items-center gap-2 inline-flex"
+              className="group px-8 py-3 bg-[#EFEC07] text-[#163427] rounded-full font-bold transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/30 hover:scale-105 items-center gap-2 inline-flex"
             >
               Reserve Table
               <span className="group-hover:translate-x-1 transition-transform">→</span>

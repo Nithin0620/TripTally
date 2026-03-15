@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <p>
-            <a href="${inviteLink}" style="background: #EFEC07; color: #02131B; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-weight: bold; display: inline-block;">
+            <a href="${inviteLink}" style="background: #EFEC07; color: #163427; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-weight: bold; display: inline-block;">
               Accept Invitation
             </a>
           </p>

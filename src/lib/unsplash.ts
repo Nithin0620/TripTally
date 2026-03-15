@@ -53,3 +53,39 @@ export async function getUnsplashImageForPlace(placeName: string): Promise<Unspl
     photographerProfile: firstPhoto.user.links.html,
   };
 }
+
+/**
+ * Fetch multiple high-quality images for a place
+ * Used for hero image and gallery images
+ */
+export async function getUnsplashImagesForPlace(
+  placeName: string,
+  limit: number = 8
+): Promise<UnsplashImage[]> {
+  const unsplash = getUnsplashClient();
+  if (!unsplash) {
+    return [];
+  }
+
+  const query = `${placeName} India travel landscape`;
+
+  const response = await unsplash.search.getPhotos({
+    query,
+    page: 1,
+    perPage: Math.min(limit, 30),
+    orientation: "landscape",
+    contentFilter: "high",
+  });
+
+  if (response.type === "error") {
+    return [];
+  }
+
+  return response.response.results.map((photo) => ({
+    imageUrl: photo.urls.regular,
+    imageThumbUrl: photo.urls.small,
+    imageAlt: photo.alt_description || `${placeName} travel image`,
+    photographerName: photo.user.name,
+    photographerProfile: photo.user.links.html,
+  }));
+}

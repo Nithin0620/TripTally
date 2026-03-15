@@ -9,9 +9,9 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          bg: "#02131B",
-          surface: "#17394B",
-          text: "#FFFFFF",
+          bg: "#F6FBF8",
+          surface: "#E7F3EC",
+          text: "#163427",
           accent: "#EFEC07",
         },
       },

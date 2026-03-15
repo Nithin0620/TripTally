@@ -1,4 +1,4 @@
-type OpenAIChatCompletionResponse = {
+type GroqChatCompletionResponse = {
   choices?: Array<{
     message?: {
       content?: string;
@@ -32,16 +32,16 @@ export async function getOpenAIJson<T>(
   userPrompt: string,
   maxTokens = 1200
 ): Promise<T | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.warn('[OpenAI] API key not configured');
+    console.warn('[Groq] API key not configured');
     return null;
   }
 
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,14 +61,14 @@ export async function getOpenAIJson<T>(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[OpenAI] API error (${response.status}):`, errorText);
+      console.error(`[Groq] API error (${response.status}):`, errorText);
       return null;
     }
 
-    const data = (await response.json()) as OpenAIChatCompletionResponse;
+    const data = (await response.json()) as GroqChatCompletionResponse;
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
-      console.error('[OpenAI] No content in response:', data);
+      console.error('[Groq] No content in response:', data);
       return null;
     }
 
@@ -76,11 +76,11 @@ export async function getOpenAIJson<T>(
       const jsonText = extractJsonObject(content);
       return JSON.parse(jsonText) as T;
     } catch (parseError) {
-      console.error('[OpenAI] Failed to parse JSON:', parseError, 'Content:', content);
+      console.error('[Groq] Failed to parse JSON:', parseError, 'Content:', content);
       return null;
     }
   } catch (error) {
-    console.error('[OpenAI] Fetch error:', error);
+    console.error('[Groq] Fetch error:', error);
     return null;
   }
 }

@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import FooterSection from "@/components/FooterSection";
+import AmbientBackground from "@/components/ui/AmbientBackground";
 
 export const metadata: Metadata = {
   title: "TripTally",
@@ -22,11 +23,14 @@ export default function RootLayout({
           src="https://accounts.google.com/gsi/client"
         ></script>
       </head>
-      <body>
+      <body className="bg-[#f6fbf8]">
+        <AmbientBackground />
         <AuthProvider>
-          <Navbar />
-          <main>{children}</main>
-          <FooterSection />
+          <div className="relative z-10 min-h-screen overflow-x-hidden">
+            <Navbar />
+            <main>{children}</main>
+            <FooterSection />
+          </div>
         </AuthProvider>
       </body>
     </html>
