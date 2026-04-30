@@ -4,44 +4,52 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { OAuth2Client } from 'google-auth-library';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
 import { badRequestResponse, serverErrorResponse, unauthorizedResponse } from '@/middleware/auth';
 
+const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
 export async function POST(request: NextRequest) {
   try {
     const dbClient = supabaseAdmin ?? supabase;
-    const body = await request.json();
-    const { googleToken } = body;
+    const body = await request.json().catch(() => null);
+    const { googleToken } = body || {};
 
     if (!googleToken) {
       return badRequestResponse('Missing googleToken');
     }
 
-    // Verify token with Google
-    let payload;
+    // Verify token with Google Identity Services and ensure the audience matches this app.
+    let ticketPayload;
     try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=' + googleToken);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Google tokeninfo error:', errorText);
-        return unauthorizedResponse('Invalid Google token');
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        return serverErrorResponse('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID');
       }
-      
-      payload = await response.json();
+
+      const ticket = await googleClient.verifyIdToken({
+        idToken: googleToken,
+        audience: clientId,
+      });
+
+      ticketPayload = ticket.getPayload();
     } catch (error) {
       console.error('Google token verification failed:', error);
       return unauthorizedResponse('Invalid Google token');
     }
 
-    if (!payload || !payload.email) {
+    if (!ticketPayload || !ticketPayload.email) {
       return unauthorizedResponse('Invalid Google token payload');
     }
 
-    const email = payload.email;
-    const name = payload.name || email.split('@')[0];
-    const picture = payload.picture;
+    const email = ticketPayload.email;
+    const name = ticketPayload.name || email.split('@')[0];
+    const picture = ticketPayload.picture;
+    if (!ticketPayload.sub) {
+      return unauthorizedResponse('Missing Google subject');
+    }
 
     const isUpstreamSslFailure = (message?: string) => {
       if (!message) return false;
@@ -113,6 +121,8 @@ export async function POST(request: NextRequest) {
     const token = await signToken({
       userId: user.id,
       email: user.email,
+      name: user.name,
+      profile_image: user.profile_image,
     });
 
     // Create response

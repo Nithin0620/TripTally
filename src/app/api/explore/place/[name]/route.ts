@@ -40,11 +40,14 @@ export async function GET(
 
     // Use safe query wrapper with better error handling
     const { data, error, errorType } = await safeSupabaseQuery<Place[]>(
-      () => supabase
-        .from('places')
-        .select('*')
-        .ilike('name', formattedName)
-        .limit(1),
+      // ensure we pass a Promise-returning function (Postgrest builder isn't a Promise type)
+      () =>
+        supabase
+          .from('places')
+          .select('*')
+          .ilike('name', formattedName)
+          .limit(1)
+          .then((res) => res),
       `GET /api/explore/place/${placename}`
     );
 

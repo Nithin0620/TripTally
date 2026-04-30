@@ -17,12 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <script
-          async
-          src="https://accounts.google.com/gsi/client"
-        ></script>
-      </head>
+      <head />
       <body className="bg-[#f6fbf8]">
         <AmbientBackground />
         <AuthProvider>

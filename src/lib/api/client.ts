@@ -17,6 +17,10 @@ class ApiClient {
   }
 
   private buildUrl(endpoint: string): string {
+    if (/^https?:\/\//i.test(endpoint)) {
+      return endpoint;
+    }
+
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
     if (!this.baseUrl) {
@@ -27,8 +31,12 @@ class ApiClient {
       ? this.baseUrl.slice(0, -1)
       : this.baseUrl;
 
-    if (normalizedBase.endsWith('/api') && normalizedEndpoint.startsWith('/api/')) {
-      return `${normalizedBase}${normalizedEndpoint.slice(4)}`;
+    if (normalizedBase.endsWith('/api')) {
+      const endpointWithoutDuplicateApi = normalizedEndpoint.startsWith('/api/')
+        ? normalizedEndpoint.slice(4)
+        : normalizedEndpoint;
+
+      return `${normalizedBase}${endpointWithoutDuplicateApi}`;
     }
 
     return `${normalizedBase}${normalizedEndpoint}`;

@@ -74,4 +74,21 @@ export function clearAuthCookie(): string {
  */
 export const verifyJWT = verifyToken;
 
+/**
+ * Client helper to read auth token from cookies in the browser.
+ * Returns `null` on server or when token missing.
+ */
+export async function getAuthToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+
+  const cookieHeader = typeof document !== 'undefined' ? document.cookie : '';
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  const authCookie = cookies.find(c => c.startsWith('auth_token='));
+  if (!authCookie) return null;
+
+  return decodeURIComponent(authCookie.split('=')[1] || '');
+}
+
 

@@ -299,8 +299,8 @@ export async function calculateTripSettlement(tripId: string) {
     // Enrich settlements with user details
     const enrichedSettlements = settlements.map(settlement => ({
       ...settlement,
-      from_user: userMap.get(settlement.from) || { id: settlement.from },
-      to_user: userMap.get(settlement.to) || { id: settlement.to },
+      from_user: userMap.get(settlement.from_user_id) || { id: settlement.from_user_id },
+      to_user: userMap.get(settlement.to_user_id) || { id: settlement.to_user_id },
     }));
 
     return {

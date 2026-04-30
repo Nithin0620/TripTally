@@ -132,7 +132,7 @@ export async function checkSupabaseHealth(
  * Wrap Supabase queries with better error handling
  */
 export async function safeSupabaseQuery<T>(
-  queryFn: () => Promise<{ data: T | null; error: any }>,
+  queryFn: () => PromiseLike<{ data: T | null; error: any }> | Promise<{ data: T | null; error: any }>,
   context: string
 ): Promise<{ data: T | null; error: string | null; errorType?: string }> {
   try {
