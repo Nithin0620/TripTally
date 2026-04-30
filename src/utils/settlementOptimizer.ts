@@ -9,6 +9,9 @@ interface UserBalance {
   balance: number;
 }
 
+const CENTS = 100;
+const EPSILON = 0.000001;
+
 /**
  * Optimize settlement transactions to minimize number of transfers
  * Uses a greedy algorithm to match debtors with creditors
@@ -21,17 +24,17 @@ export function optimizeSettlements(
   const creditors: UserBalance[] = [];
 
   for (const [userId, balance] of Object.entries(balances)) {
-    if (balance < 0) {
-      // User owes money
-      debtors.push({ userId, balance: Math.abs(balance) });
-    } else if (balance > 0) {
-      // User is owed money
-      creditors.push({ userId, balance });
+    const rounded = Math.round(balance * CENTS) / CENTS;
+    if (rounded < 0) {
+      // Debtor amount stored as positive owed amount
+      debtors.push({ userId, balance: Math.abs(rounded) });
+    } else if (rounded > 0) {
+      creditors.push({ userId, balance: rounded });
     }
   }
 
-  // Sort for deterministic ordering
-  debtors.sort((a, b) => b.balance - a.balance);
+  // Smallest debtor with largest creditor (deterministic ordering)
+  debtors.sort((a, b) => a.balance - b.balance);
   creditors.sort((a, b) => b.balance - a.balance);
 
   const settlements: Settlement[] = [];
@@ -44,22 +47,26 @@ export function optimizeSettlements(
     const debtor = debtors[debtorIdx];
     const creditor = creditors[creditorIdx];
 
-    const amount = Math.min(debtor.balance, creditor.balance);
+    const amount = Math.round(Math.min(debtor.balance, creditor.balance) * CENTS) / CENTS;
+    if (amount <= 0) {
+      break;
+    }
 
     settlements.push({
       from_user_id: debtor.userId,
       to_user_id: creditor.userId,
-      amount: Math.round(amount * 100) / 100, // Round to 2 decimals
+      amount,
     });
 
-    debtor.balance -= amount;
-    creditor.balance -= amount;
+    debtor.balance = Math.round((debtor.balance - amount) * CENTS) / CENTS;
+    creditor.balance = Math.round((creditor.balance - amount) * CENTS) / CENTS;
 
-    if (debtor.balance === 0) debtorIdx++;
-    if (creditor.balance === 0) creditorIdx++;
+    if (debtor.balance <= EPSILON) debtorIdx++;
+    if (creditor.balance <= EPSILON) creditorIdx++;
   }
 
-  return settlements;
+  // Filter any zero-value rows to avoid redundant transfers.
+  return settlements.filter(settlement => settlement.amount > 0);
 }
 
 /**
@@ -89,8 +96,8 @@ export function getSettlementPlan(
  */
 export function validateSettlement(balances: Record<string, number>): boolean {
   const total = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
-  // Allow small rounding error (within 0.01)
-  return Math.abs(total) < 0.01;
+  // Allow 1 cent tolerance.
+  return Math.abs(total) <= 0.01;
 }
 
 /**

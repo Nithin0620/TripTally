@@ -88,18 +88,25 @@ export async function requireTripRole(
 /**
  * Get all trips for user
  */
-export async function getUserTrips(userId: string) {
+export async function getUserTrips(userId: string, limit?: number, offset?: number) {
   try {
-    const { data, error } = await supabase
+    const resolvedLimit = typeof limit === 'number' ? limit : 20;
+    const resolvedOffset = typeof offset === 'number' ? offset : 0;
+    const from = Math.max(0, resolvedOffset);
+    const to = from + Math.max(1, resolvedLimit) - 1;
+
+    const { data, error, count } = await supabase
       .from('trip_members')
-      .select('trip_id, role, trips(id, title, description, start_date, end_date, cover_image, created_by)')
-      .eq('user_id', userId);
+      .select('trip_id, role, trips(id, title, description, start_date, end_date, cover_image, created_by)', {
+        count: 'exact',
+      })
+      .eq('user_id', userId)
+      .range(from, to);
 
     if (error) throw error;
 
-    return { trips: data || [], error: null };
-  } catch (error) {
-    console.error('Error fetching user trips:', error);
-    return { trips: [], error: 'Failed to fetch trips' };
+    return { trips: data || [], total: count || 0, error: null };
+  } catch {
+    return { trips: [], total: 0, error: 'Failed to fetch trips' };
   }
 }
