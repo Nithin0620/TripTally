@@ -13,6 +13,7 @@ interface ButtonProps {
   className?: string;
   variant?: ButtonVariant;
   type?: "button" | "submit";
+  disabled?: boolean;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -31,6 +32,7 @@ export default function Button({
   className = "",
   variant = "primary",
   type = "button",
+  disabled = false,
 }: ButtonProps) {
   const buttonClasses = `inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 ${variantStyles[variant]} ${className}`;
 
@@ -42,6 +44,7 @@ export default function Button({
           whileTap={{ scale: 0.95 }}
           className={buttonClasses}
           type={type}
+          disabled={disabled}
         >
           {children}
         </motion.button>
@@ -56,6 +59,7 @@ export default function Button({
       onClick={onClick}
       className={buttonClasses}
       type={type}
+      disabled={disabled}
     >
       {children}
     </motion.button>

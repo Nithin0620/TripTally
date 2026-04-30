@@ -67,9 +67,9 @@ export default function AddExpenseModal({ tripId, onClose, onExpenseAdded }: Add
       }
 
       const users = members
-        .map(m => m.users)
+        .map((m: any) => (Array.isArray(m.users) ? m.users[0] : m.users))
         .filter(Boolean)
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
       setTripMembers(users);
 

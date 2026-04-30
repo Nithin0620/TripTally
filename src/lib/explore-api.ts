@@ -103,8 +103,12 @@ export async function fetchPlacesByCategory(
   try {
     // This would typically call your database
     // For now, it's a placeholder for client code
+    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const placesUrl = new URL('/api/explore/places', apiBaseUrl);
+    placesUrl.searchParams.set('category', category);
+
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/explore/places?category=${encodeURIComponent(category)}`
+      placesUrl.toString()
     );
 
     if (!response.ok) {

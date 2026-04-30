@@ -119,6 +119,8 @@ export interface Settlement {
 export interface AppJWTPayload {
   userId: string;
   email: string;
+  name?: string;
+  profile_image?: string;
   iat?: number;
   exp?: number;
 }

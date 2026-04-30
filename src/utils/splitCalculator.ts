@@ -255,3 +255,32 @@ export function sumUpMemberBalances(allBreakdowns: SplitBreakdown[][]): Record<s
 
   return memberBalances;
 }
+
+/**
+ * Backwards-compatible helper used by services - calculates net balance per user
+ * from expense records. Each expense object should contain: { id, paid_by, amount, shares }
+ */
+export function calculateUserBalances(
+  expenseData: { id: string; paid_by: string; amount: number; shares: Record<string, number> }[],
+  memberIds: string[]
+): Record<string, number> {
+  const balances: Record<string, number> = {};
+
+  // initialize
+  for (const id of memberIds) balances[id] = 0;
+
+  for (const expense of expenseData) {
+    for (const memberId of memberIds) {
+      const paid = expense.paid_by === memberId ? expense.amount : 0;
+      const share = expense.shares?.[memberId] || 0;
+      balances[memberId] += paid - share;
+    }
+  }
+
+  // Round to cents
+  for (const k of Object.keys(balances)) {
+    balances[k] = Math.round(balances[k] * 100) / 100;
+  }
+
+  return balances;
+}

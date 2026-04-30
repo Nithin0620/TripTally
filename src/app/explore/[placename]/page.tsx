@@ -84,7 +84,7 @@ async function RelatedDestinationsGrid({
   try {
     const response = await fetch(
       `/api/explore/places?category=${encodeURIComponent(category)}&offset=0`,
-      { cache: 'revalidate' }
+      { next: { revalidate: 60 } }
     );
 
     if (!response.ok) {
