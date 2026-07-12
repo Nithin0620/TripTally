@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 interface CategorySectionProps {
   category: string;
   places: Place[];
-  hasMore?: boolean; // Initial hasMore from API
+  hasMore?: boolean;
   onLoadMore?: (
     category: string,
     offset: number
@@ -26,7 +26,6 @@ export default function CategorySection({
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
 
-  // Sync displayedPlaces with places prop when it changes
   useEffect(() => {
     setDisplayedPlaces(places);
     setHasMore(initialHasMore);
@@ -53,7 +52,6 @@ export default function CategorySection({
     }
   };
 
-  // Get emoji for category
   const getCategoryEmoji = (cat: string) => {
     const emojis: Record<string, string> = {
       Beaches: '🏖️',
@@ -75,11 +73,11 @@ export default function CategorySection({
         viewport={{ once: true }}
         className="mb-12"
       >
-        <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3 flex items-center gap-3">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3 flex items-center gap-3">
           <span className="text-3xl">{getCategoryEmoji(category)}</span>
           {category}
         </h2>
-        <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+        <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
       </motion.div>
 
       {/* Places Grid */}
@@ -114,9 +112,9 @@ export default function CategorySection({
         </AnimatePresence>
       </motion.div>
 
-      {/* Debug info - shows count */}
+      {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-[#7a9186] text-center mb-4">
+        <div className="text-xs text-slate-400 text-center mb-4">
           Showing {displayedPlaces.length} places ({places.length} from DB)
         </div>
       )}
@@ -133,7 +131,7 @@ export default function CategorySection({
           <button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="relative group px-8 py-3 bg-white hover:bg-[#f5fbf7] border border-[#cfe0d7] hover:border-[#EFEC07]/30 rounded-full text-[#163427] font-semibold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative group px-8 py-3 neu-glass hover:bg-white/80 border border-slate-200 hover:border-[#3B82F6]/30 rounded-full text-[#0F172A] font-semibold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

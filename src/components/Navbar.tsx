@@ -44,7 +44,6 @@ export default function Navbar() {
       <motion.div
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: [0, 0, 0] }}
-        // whileHover={{ y: -8 }}
         transition={{
           opacity: { duration: 0.00, ease: "easeInOut" },
           y: { duration: 2.5, ease: "easeInOut", repeat: Infinity },
@@ -52,10 +51,10 @@ export default function Navbar() {
         className="mx-auto mt-4 max-w-7xl px-6"
       >
         <div
-          className="flex h-[64px] items-center justify-between rounded-full border border-[#cfe0d7] px-6 bg-white/90 shadow-lg transition-all ease-in-out duration-500"
+          className="glass-card flex h-[64px] items-center justify-between rounded-full px-6 transition-all ease-in-out duration-500"
         >
-          <Link href="/" className="text-xl font-bold text-[#163427] sm:text-2xl">
-            TripTally
+          <Link href="/" className="text-xl font-bold text-[#0F172A] sm:text-2xl">
+            Trip<span className="text-brand-accent">Tally</span>
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">
@@ -67,12 +66,12 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={`group relative text-sm font-medium transition-all duration-300 hover:scale-105 ${
-                    isActive ? "text-[#163427]" : "text-[#4f6f5e] hover:text-[#163427]"
+                    isActive ? "text-[#0F172A]" : "text-[#64748B] hover:text-[#0F172A]"
                   }`}
                 >
                   {item.label}
                   <span
-                    className={`absolute -bottom-1 left-0 h-0.5 bg-[#EFEC07] transition-all duration-300 ${
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-brand-accent transition-all duration-300 ${
                       isActive ? "w-full" : "w-0 group-hover:w-full"
                     }`}
                   />
@@ -85,14 +84,14 @@ export default function Navbar() {
             {!user && (
               <Link
                 href="/login"
-                className="rounded-full px-3 py-2 text-sm font-medium text-[#4f6f5e] transition-all duration-300 hover:scale-105 hover:text-[#163427]"
+                className="rounded-full px-3 py-2 text-sm font-medium text-[#64748B] transition-all duration-300 hover:scale-105 hover:text-[#0F172A]"
               >
                 Login
               </Link>
             )}
 
             {user && (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#b9d3c5] bg-[#edf6f1] text-xs font-semibold text-[#163427]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full neu-raised text-xs font-semibold text-[#0F172A]">
                 {getInitials(user.name || user.email)}
               </div>
             )}
@@ -101,7 +100,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-full px-3 py-2 text-sm font-medium text-[#4f6f5e] transition-all duration-300 hover:scale-105 hover:text-[#163427]"
+                className="rounded-full px-3 py-2 text-sm font-medium text-[#64748B] transition-all duration-300 hover:scale-105 hover:text-[#0F172A]"
               >
                 Logout
               </button>
@@ -109,7 +108,7 @@ export default function Navbar() {
 
             <Link
               href={user ? "/dashboard" : "/register"}
-              className="rounded-full bg-[#EFEC07] px-6 py-2.5 text-sm font-semibold text-[#163427] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_25px_rgba(250,204,21,0.4)]"
+              className="rounded-full bg-[#EFEC07] px-6 py-2.5 text-sm font-semibold text-[#0F172A] transition-all duration-300 hover:scale-105 hover:shadow-neu-yellow"
             >
               Get Started
             </Link>
@@ -118,23 +117,23 @@ export default function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe0d7] bg-white text-[#163427] transition-all duration-300 hover:bg-[#f3faf6] md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full neu-button text-[#0F172A] transition-all duration-300 md:hidden"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
             <div className="relative h-4 w-5">
               <span
-                className={`absolute left-0 top-0 h-0.5 w-5 bg-[#163427] transition-all duration-300 ${
+                className={`absolute left-0 top-0 h-0.5 w-5 bg-[#0F172A] transition-all duration-300 ${
                   mobileOpen ? "translate-y-[7px] rotate-45" : ""
                 }`}
               />
               <span
-                className={`absolute left-0 top-[7px] h-0.5 w-5 bg-[#163427] transition-all duration-300 ${
+                className={`absolute left-0 top-[7px] h-0.5 w-5 bg-[#0F172A] transition-all duration-300 ${
                   mobileOpen ? "opacity-0" : "opacity-100"
                 }`}
               />
               <span
-                className={`absolute left-0 top-[14px] h-0.5 w-5 bg-[#163427] transition-all duration-300 ${
+                className={`absolute left-0 top-[14px] h-0.5 w-5 bg-[#0F172A] transition-all duration-300 ${
                   mobileOpen ? "-translate-y-[7px] -rotate-45" : ""
                 }`}
               />

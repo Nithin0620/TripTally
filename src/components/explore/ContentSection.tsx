@@ -39,7 +39,7 @@ export default function ContentSection({
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-96 object-cover rounded-3xl shadow-2xl hover:scale-105 transition-transform duration-300"
+            className="w-full h-96 object-cover rounded-3xl shadow-lg neu-glass hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
         </div>
@@ -49,17 +49,17 @@ export default function ContentSection({
           className="w-full md:w-1/2 animate-slideInRight"
           style={{ animationDelay: `${(index + 1) * 0.1}s` }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-6">
             {title}
           </h2>
-          <p className="text-[#4f6f5e] text-lg leading-relaxed mb-6">
+          <p className="text-[#64748B] text-lg leading-relaxed mb-6">
             {content}
           </p>
           <a
             href={`https://www.google.com/search?q=${encodeURIComponent(title)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-[#EFEC07] font-semibold hover:gap-3 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 text-[#3B82F6] font-semibold hover:gap-3 transition-all cursor-pointer"
           >
             <span>Learn more</span>
             <svg

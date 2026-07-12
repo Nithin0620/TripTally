@@ -17,7 +17,6 @@ export default function HeroSection() {
     offset: ["start start", "end start"],
   });
 
-  // Fade out from full opacity to invisible
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
   return (
@@ -46,7 +45,7 @@ export default function HeroSection() {
         <div className="text-center">
           {/* Hero Text */}
           <motion.h1
-            className="mb-6 text-5xl font-black text-[#163427] md:text-7xl"
+            className="mb-6 text-5xl font-black text-[#0F172A] md:text-7xl"
             variants={fadeIn}
             initial="hidden"
             animate="visible"
@@ -57,7 +56,7 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="mb-8 text-xl text-[#101642] md:text-2xl"
+            className="mb-8 text-xl text-[#64748B] md:text-2xl"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -86,61 +85,51 @@ export default function HeroSection() {
             initial="hidden"
             animate="visible"
           >
-            <h3 className="mb-6 text-2xl font-bold text-[#163427]">
+            <h3 className="mb-6 text-2xl font-bold text-[#0F172A]">
               Generate Your Dream Trip
             </h3>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
                   Where To?
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Tokyo, Paris"
+                  placeholder="e.g., Manali, Goa"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-slate-400 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
                   Travel Style
                 </label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 >
-                  <option value="" className="bg-brand-surface">
-                    Select style
-                  </option>
-                  <option value="adventure" className="bg-brand-surface">
-                    Adventure
-                  </option>
-                  <option value="luxury" className="bg-brand-surface">
-                    Luxury
-                  </option>
-                  <option value="budget" className="bg-brand-surface">
-                    Budget
-                  </option>
-                  <option value="cultural" className="bg-brand-surface">
-                    Cultural
-                  </option>
+                  <option value="">Select style</option>
+                  <option value="adventure">Adventure</option>
+                  <option value="luxury">Luxury</option>
+                  <option value="budget">Budget</option>
+                  <option value="cultural">Cultural</option>
                 </select>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
                   Budget Range
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., $2000-$5000"
+                  placeholder="e.g., ₹15,000-₹30,000"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-slate-400 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
                 />
               </div>
             </div>

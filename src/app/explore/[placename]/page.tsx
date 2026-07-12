@@ -21,17 +21,17 @@ interface PlaceDetailPageProps {
  */
 function PlaceLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-[#F6FBF8]">
+    <div className="min-h-screen bg-brand-bg">
       {/* Hero Skeleton */}
-      <div className="h-96 bg-gray-800 animate-pulse" />
+      <div className="h-96 bg-slate-200 animate-pulse" />
       
       {/* Content Skeleton */}
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
         <div className="space-y-12">
           {[...Array(3)].map((_, idx) => (
             <div key={idx} className="space-y-4">
-              <div className="h-12 bg-gray-800 animate-pulse rounded-lg w-1/3" />
-              <div className="h-32 bg-gray-800 animate-pulse rounded-lg" />
+              <div className="h-12 bg-slate-200 animate-pulse rounded-lg w-1/3" />
+              <div className="h-32 bg-slate-200 animate-pulse rounded-lg" />
             </div>
           ))}
         </div>
@@ -45,22 +45,22 @@ function PlaceLoadingSkeleton() {
  */
 function PlaceErrorState({ placeName }: { placeName: string }) {
   return (
-    <main className="min-h-screen bg-[#F6FBF8] flex items-center justify-center">
+    <main className="min-h-screen bg-brand-bg flex items-center justify-center">
       <div className="text-center px-4">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
           Unable to Load Destination
         </h2>
-        <p className="text-[#5f7a6c] text-lg mb-8 max-w-2xl">
+        <p className="text-[#475569] text-lg mb-8 max-w-2xl">
           We couldn't find or generate details for "{placeName}". Please try searching for another destination.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/explore">
-            <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+            <button className="px-8 py-4 bg-[#EFEC07] text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#EFEC07]/40 hover:scale-105">
               Back to Explore
             </button>
           </Link>
           <Link href="/map">
-            <button className="px-8 py-4 bg-white/90 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
+            <button className="px-8 py-4 neu-glass border border-slate-200 text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#3B82F6]/50 hover:bg-white">
               View on Map
             </button>
           </Link>
@@ -72,7 +72,6 @@ function PlaceErrorState({ placeName }: { placeName: string }) {
 
 /**
  * Related Destinations Grid Component
- * Fetches and displays places from the same category
  */
 async function RelatedDestinationsGrid({
   placeName,
@@ -90,20 +89,19 @@ async function RelatedDestinationsGrid({
     if (!response.ok) {
       return (
         <div className="text-center py-12">
-          <p className="text-[#4f6f5e]">Unable to load related destinations</p>
+          <p className="text-[#64748B]">Unable to load related destinations</p>
         </div>
       );
     }
 
     const places: Place[] = await response.json();
     
-    // Filter out the current place and get up to 4
     const relatedPlaces = places.filter((p) => p.name !== placeName).slice(0, 4);
 
     if (relatedPlaces.length === 0) {
       return (
         <div className="text-center py-12">
-          <p className="text-[#4f6f5e]">No related destinations found</p>
+          <p className="text-[#64748B]">No related destinations found</p>
         </div>
       );
     }
@@ -119,7 +117,7 @@ async function RelatedDestinationsGrid({
     console.error('Error fetching related destinations:', error);
     return (
       <div className="text-center py-12">
-        <p className="text-[#4f6f5e]">Failed to load related destinations</p>
+        <p className="text-[#64748B]">Failed to load related destinations</p>
       </div>
     );
   }
@@ -138,7 +136,7 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
   const place = result.place;
 
   return (
-    <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
+    <main className="min-h-screen bg-brand-bg text-[#0F172A]">
       {/* Hero Section */}
       <PlaceHero
         name={place.name}
@@ -153,8 +151,8 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
         {/* Rich Description Section */}
         <section className="py-20 animate-fadeIn">
           <div className="max-w-3xl">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-8">Discover the Magic</h2>
-            <p className="text-[#4f6f5e] text-lg leading-relaxed mb-6">{place.description}</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-8">Discover the Magic</h2>
+            <p className="text-[#64748B] text-lg leading-relaxed mb-6">{place.description}</p>
           </div>
         </section>
 
@@ -198,8 +196,8 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
         {/* Hotels Section */}
         <section className="py-20">
           <div className="mb-12 animate-fadeIn">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3">🏨 Best Hotels to Stay</h2>
-            <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+            <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">🏨 Best Hotels to Stay</h2>
+            <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
           </div>
 
           <div className="space-y-12">
@@ -212,8 +210,8 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
         {/* Restaurants Section */}
         <section className="py-20">
           <div className="mb-12 animate-fadeIn">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3">🍽️ Best Restaurants</h2>
-            <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+            <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">🍽️ Best Restaurants</h2>
+            <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
           </div>
 
           <div className="space-y-12">
@@ -231,15 +229,15 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
         />
 
         {/* More Destinations Section - Related Places */}
-        <section className="py-20 md:py-24 border-t border-[#d8e7df]">
+        <section className="py-20 md:py-24 border-t border-slate-200">
           <div className="mb-12 animate-fadeIn">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">
               ✨ More Destinations to Explore
             </h2>
-            <p className="text-[#4f6f5e] text-lg mb-6">
+            <p className="text-[#64748B] text-lg mb-6">
               Discover other amazing places in the {place.category} category
             </p>
-            <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+            <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
           </div>
 
           {/* Destinations Grid - Same as Explore Page */}
@@ -247,20 +245,20 @@ async function PlaceDetailContent({ placename }: { placename: string }) {
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-20 md:py-32 text-center border-t border-[#d8e7df] animate-fadeIn">
-          <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-6">Plan Your Trip to {place.name}</h2>
-          <p className="text-[#4f6f5e] text-lg mb-8 max-w-2xl mx-auto">
+        <section className="py-20 md:py-32 text-center border-t border-slate-200 animate-fadeIn">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-6">Plan Your Trip to {place.name}</h2>
+          <p className="text-[#64748B] text-lg mb-8 max-w-2xl mx-auto">
             Create a collaborative trip plan with friends, manage shared expenses, and make unforgettable memories together.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/dashboard">
-              <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+              <button className="px-8 py-4 bg-[#EFEC07] text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#EFEC07]/40 hover:scale-105">
                 Create Trip
               </button>
             </Link>
             <Link href="/explore">
-              <button className="px-8 py-4 bg-white/90 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
+              <button className="px-8 py-4 neu-glass border border-slate-200 text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#3B82F6]/50 hover:bg-white">
                 Explore More
               </button>
             </Link>

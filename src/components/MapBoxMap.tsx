@@ -188,11 +188,11 @@ export default function MapBoxMap() {
 
   if (mapError) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-3xl border border-[#cfe0d7] bg-white p-6 text-center text-sm text-[#4f6f5e]">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl border border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
         {mapError}
       </div>
     );
   }
 
-  return <div ref={mapContainerRef} className="h-full w-full rounded-3xl border border-[#cfe0d7]" />;
+  return <div ref={mapContainerRef} className="h-full w-full rounded-3xl border border-slate-300" />;
 }

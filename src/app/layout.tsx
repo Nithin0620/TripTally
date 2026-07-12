@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head />
-      <body className="bg-[#f6fbf8]">
+      <body className="bg-[#F0F4F8]">
         <AmbientBackground />
         <AuthProvider>
           <div className="relative z-10 min-h-screen overflow-x-hidden">

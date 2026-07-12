@@ -13,6 +13,8 @@ export interface CreateTripData {
   cover_image?: string;
 }
 
+export type UpdateTripData = Partial<CreateTripData>;
+
 export interface TripDetailsResponse {
   trip: Trip;
   members: any[];
@@ -21,30 +23,22 @@ export interface TripDetailsResponse {
 }
 
 export const tripsApi = {
-  /**
-   * Get all user trips
-   */
   async getTrips(): Promise<ApiResponse<{ trips: Trip[] }>> {
     return apiClient.get<{ trips: Trip[] }>('/api/trips');
   },
 
-  /**
-   * Create new trip
-   */
   async createTrip(data: CreateTripData): Promise<ApiResponse<{ trip: Trip }>> {
     return apiClient.post<{ trip: Trip }>('/api/trips', data);
   },
 
-  /**
-   * Get trip details
-   */
   async getTripById(tripId: string): Promise<ApiResponse<TripDetailsResponse>> {
     return apiClient.get<TripDetailsResponse>(`/api/trips/${tripId}`);
   },
 
-  /**
-   * Delete trip
-   */
+  async updateTrip(tripId: string, data: UpdateTripData): Promise<ApiResponse<{ trip: Trip }>> {
+    return apiClient.put<{ trip: Trip }>(`/api/trips/${tripId}`, data);
+  },
+
   async deleteTrip(tripId: string): Promise<ApiResponse<{ message: string }>> {
     return apiClient.delete<{ message: string }>(`/api/trips/${tripId}`);
   },

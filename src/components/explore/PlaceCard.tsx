@@ -22,10 +22,10 @@ export default function PlaceCard({ place, isAI = false }: PlaceCardProps) {
       className="group"
     >
       <Link href={`/explore/${slug}`}>
-        <div className="relative rounded-3xl overflow-hidden bg-gray-900 cursor-pointer h-96">
+        <div className="relative rounded-3xl overflow-hidden bg-slate-900 cursor-pointer h-96">
           {/* Image with ratio maintenance */}
           {loading ? (
-            <div className="w-full h-full bg-gray-800 animate-pulse" />
+            <div className="w-full h-full bg-slate-800 animate-pulse" />
           ) : (
             <img
               src={image?.url || place.hero_image}
@@ -73,7 +73,7 @@ export default function PlaceCard({ place, isAI = false }: PlaceCardProps) {
           {/* Glow Effect on Hover */}
           <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
             style={{
-              boxShadow: 'inset 0 0 20px rgba(239, 236, 7, 0.2)',
+              boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.2)',
             }}
           />
         </div>

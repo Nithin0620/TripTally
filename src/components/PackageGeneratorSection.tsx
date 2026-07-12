@@ -20,16 +20,16 @@ export default function PackageGeneratorSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={scaleIn}
         >
-          <h2 className="mb-6 text-center text-4xl font-black text-[#163427] md:text-5xl">
+          <h2 className="mb-6 text-center text-4xl font-black text-[#0F172A] md:text-5xl">
             Dream Trip Builder
           </h2>
-          <p className="mb-8 text-center text-xl text-[#5f7a6c]">
+          <p className="mb-8 text-center text-xl text-[#64748B]">
             Tell us your vision, and our AI will craft the perfect itinerary.
           </p>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
                 Destination
               </label>
               <input
@@ -37,50 +37,38 @@ export default function PackageGeneratorSection() {
                 placeholder="Where do you want to go?"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-slate-400 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
                 Travel Vibe
               </label>
               <select
                 value={vibe}
                 onChange={(e) => setVibe(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               >
-                <option value="" className="bg-brand-surface">
-                  Choose your style
-                </option>
-                <option value="relaxation" className="bg-brand-surface">
-                  Relaxation & Wellness
-                </option>
-                <option value="adventure" className="bg-brand-surface">
-                  Adventure & Thrill
-                </option>
-                <option value="cultural" className="bg-brand-surface">
-                  Cultural Immersion
-                </option>
-                <option value="luxury" className="bg-brand-surface">
-                  Luxury & Comfort
-                </option>
-                <option value="budget" className="bg-brand-surface">
-                  Budget-Friendly
-                </option>
+                <option value="">Choose your style</option>
+                <option value="relaxation">Relaxation & Wellness</option>
+                <option value="adventure">Adventure & Thrill</option>
+                <option value="cultural">Cultural Immersion</option>
+                <option value="luxury">Luxury & Comfort</option>
+                <option value="budget">Budget-Friendly</option>
               </select>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                Budget (USD)
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
+                Budget (INR)
               </label>
               <input
                 type="text"
-                placeholder="e.g., $3000 or $1000-$2000"
+                placeholder="e.g., ₹20,000 or ₹15,000-₹30,000"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-slate-400 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
               />
             </div>
 

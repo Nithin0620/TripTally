@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import GlassCard from "./ui/GlassCard";
+import NeuCard from "./ui/NeuCard";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 
 const features = [
@@ -39,10 +39,10 @@ export default function FeatureSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-[#163427] md:text-5xl">
+          <h2 className="mb-4 text-4xl font-black text-[#0F172A] md:text-5xl">
             Our AI Simplifies Every Step
           </h2>
-          <p className="text-xl text-[#5f7a6c]">
+          <p className="text-xl text-[#64748B]">
             From planning to payment, we've got you covered.
           </p>
         </motion.div>
@@ -56,19 +56,19 @@ export default function FeatureSection() {
         >
           {features.map((feature, index) => (
             <motion.div key={index} variants={staggerItem}>
-              <GlassCard className="h-full overflow-hidden p-0">
+              <NeuCard className="h-full overflow-hidden !p-0">
                 <div
                   className="h-48 bg-cover bg-center"
                   style={{ backgroundImage: `url(${feature.image})` }}
                 />
                 <div className="p-6">
                   <div className="mb-3 text-4xl">{feature.icon}</div>
-                  <h3 className="mb-3 text-2xl font-bold text-[#163427]">
+                  <h3 className="mb-3 text-2xl font-bold text-[#0F172A]">
                     {feature.title}
                   </h3>
-                  <p className="text-[#5f7a6c]">{feature.description}</p>
+                  <p className="text-[#64748B]">{feature.description}</p>
                 </div>
-              </GlassCard>
+              </NeuCard>
             </motion.div>
           ))}
         </motion.div>

@@ -2,7 +2,7 @@
 // Role-Based Access Control Middleware
 // ============================================
 
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { forbiddenResponse } from './auth';
 
 type TripRole = 'owner' | 'editor' | 'viewer';
@@ -22,7 +22,7 @@ export async function checkTripRole(
   requiredRole: TripRole
 ) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('trip_members')
       .select('role')
       .eq('trip_id', tripId)
@@ -95,7 +95,7 @@ export async function getUserTrips(userId: string, limit?: number, offset?: numb
     const from = Math.max(0, resolvedOffset);
     const to = from + Math.max(1, resolvedLimit) - 1;
 
-    const { data, error, count } = await supabase
+    const { data, error, count } = await supabaseAdmin
       .from('trip_members')
       .select('trip_id, role, trips(id, title, description, start_date, end_date, cover_image, created_by)', {
         count: 'exact',

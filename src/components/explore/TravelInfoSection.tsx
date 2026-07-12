@@ -26,15 +26,15 @@ export default function TravelInfoSection({
       icon: Clock,
       label: 'Travel Duration',
       value: duration,
-      color: 'from-emerald-500/20 to-emerald-500/5',
-      borderColor: 'border-emerald-500/30',
+      color: 'from-blue-500/20 to-blue-500/5',
+      borderColor: 'border-blue-500/30',
     },
     {
       icon: Calendar,
       label: 'Best Time to Visit',
       value: bestTime,
-      color: 'from-emerald-500/20 to-emerald-500/5',
-      borderColor: 'border-emerald-500/30',
+      color: 'from-blue-500/20 to-blue-500/5',
+      borderColor: 'border-blue-500/30',
     },
   ];
 
@@ -62,10 +62,10 @@ export default function TravelInfoSection({
         viewport={{ once: true }}
         className="mb-12"
       >
-        <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">
           Travel Information
         </h2>
-        <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+        <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
       </motion.div>
 
       <motion.div
@@ -85,12 +85,12 @@ export default function TravelInfoSection({
               transition={{ duration: 0.3 }}
             >
               <div
-                className={`relative rounded-2xl border ${item.borderColor} bg-gradient-to-br ${item.color} backdrop-blur-sm p-8 overflow-hidden group cursor-default`}
+                className={`relative rounded-2xl border ${item.borderColor} bg-gradient-to-br ${item.color} backdrop-blur-sm p-8 overflow-hidden group cursor-default neu-glass`}
               >
                 {/* Glowing background effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: `radial-gradient(600px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(239, 236, 7, 0.15), transparent 80%)`,
+                    background: `radial-gradient(600px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(59, 130, 246, 0.15), transparent 80%)`,
                   }}
                 />
 
@@ -101,16 +101,16 @@ export default function TravelInfoSection({
                     whileHover={{ rotate: 12, scale: 1.1 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Icon size={24} className="text-[#EFEC07]" />
+                    <Icon size={24} className="text-[#3B82F6]" />
                   </motion.div>
 
                   {/* Label */}
-                  <p className="text-sm text-[#5f7a6c] font-medium mb-2">
+                  <p className="text-sm text-[#475569] font-medium mb-2">
                     {item.label}
                   </p>
 
                   {/* Value */}
-                  <p className="text-2xl md:text-3xl font-bold text-[#163427] break-words">
+                  <p className="text-2xl md:text-3xl font-bold text-[#0F172A] break-words">
                     {item.value}
                   </p>
                 </div>

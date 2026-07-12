@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, badRequestResponse, serverErrorResponse } from '@/middleware/auth';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 /**
  * POST /api/templates - Create template
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return badRequestResponse('Missing required field: title');
     }
 
-    const { data: template, error } = await supabase
+    const { data: template, error } = await supabaseAdmin
       .from('templates')
       .insert({
         title,
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const includePrivate = searchParams.get('includePrivate') === 'true';
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('templates')
       .select(
         `

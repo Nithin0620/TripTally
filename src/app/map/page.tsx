@@ -5,7 +5,7 @@ import MapBoxMap from "@/components/MapBoxMap";
 
 export default function MapPage() {
   return (
-    <main className="min-h-screen bg-[#F6FBF8] px-4 pb-5 pt-24 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-brand-bg px-4 pb-5 pt-24 sm:px-6 lg:px-8">
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

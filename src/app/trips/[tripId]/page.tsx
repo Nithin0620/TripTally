@@ -7,10 +7,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
-import GlassCard from "@/components/ui/GlassCard";
+import NeuCard from "@/components/ui/NeuCard";
+import NeuInput from "@/components/ui/NeuInput";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import EmptyState from "@/components/ui/EmptyState";
+import EditTripModal from "@/components/trips/EditTripModal";
 import { tripsApi, activitiesApi, expensesApi, settlementApi } from "@/lib/api";
 import { Trip, Activity, Expense, Settlement } from "@/types";
-import { fadeInUp } from "@/lib/animations";
+import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 import Link from "next/link";
 
 export default function TripDetailsPage() {
@@ -21,33 +25,36 @@ export default function TripDetailsPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'activities' | 'expenses' | 'settlement'>('activities');
+  const [activeTab, setActiveTab] = useState<
+    "activities" | "expenses" | "settlement"
+  >("activities");
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
-  
+  const [showEditTrip, setShowEditTrip] = useState(false);
+
   const { user } = useAuth();
   const router = useRouter();
   const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
-   const loadTripData = async () => {
+    const loadTripData = async () => {
       setLoading(true);
       const response = await tripsApi.getTripById(tripId);
-      
+
       if (response.error) {
-        showToast(response.error, 'error');
-        router.push('/dashboard');
+        showToast(response.error, "error");
+        router.push("/dashboard");
       } else if (response.data) {
         setTrip(response.data.trip);
         setActivities(response.data.activities || []);
         setExpenses(response.data.expenses || []);
       }
-      
+
       setLoading(false);
     };
 
@@ -64,40 +71,42 @@ export default function TripDetailsPage() {
   };
 
   const handleDeleteActivity = async (activityId: string) => {
-    if (!confirm('Delete this activity?')) return;
-    
+    if (!confirm("Delete this activity?")) return;
+
     const response = await activitiesApi.deleteActivity(activityId);
     if (response.error) {
-      showToast(response.error, 'error');
+      showToast(response.error, "error");
     } else {
-      setActivities(activities.filter(a => a.id !== activityId));
-      showToast('Activity deleted', 'success');
+      setActivities(activities.filter((a) => a.id !== activityId));
+      showToast("Activity deleted", "success");
     }
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm('Delete this expense?')) return;
-    
+    if (!confirm("Delete this expense?")) return;
+
     const response = await expensesApi.deleteExpense(expenseId);
     if (response.error) {
-      showToast(response.error, 'error');
+      showToast(response.error, "error");
     } else {
-      setExpenses(expenses.filter(e => e.id !== expenseId));
-      showToast('Expense deleted', 'success');
+      setExpenses(expenses.filter((e) => e.id !== expenseId));
+      showToast("Expense deleted", "success");
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-2xl font-bold text-[#163427]">Loading trip...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Loading trip..." />;
   }
 
   if (!trip) return null;
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const tabs = [
+    { key: "activities" as const, label: "Activities", icon: "🎯" },
+    { key: "expenses" as const, label: "Expenses", icon: "💰" },
+    { key: "settlement" as const, label: "Settlement", icon: "🤝" },
+  ];
 
   return (
     <>
@@ -109,84 +118,106 @@ export default function TripDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Link href="/dashboard" className="mb-4 inline-flex items-center text-sm text-[#5f7a6c] hover:text-[#163427]">
+            <Link
+              href="/dashboard"
+              className="mb-4 inline-flex items-center text-sm text-[#64748B] hover:text-[#0F172A] transition-colors"
+            >
               ← Back to Dashboard
             </Link>
-            
-            <div className="relative h-64 overflow-hidden rounded-3xl">
+
+            <div className="glass-card relative h-64 overflow-hidden rounded-3xl">
               <img
-                src={trip.cover_image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80'}
+                src={
+                  trip.cover_image ||
+                  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80"
+                }
                 alt={trip.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/50 to-transparent" />
-              <div className="absolute bottom-6 left-6">
-                <h1 className="text-5xl font-black text-white">{trip.title}</h1>
-                <p className="mt-2 text-lg text-white/90">
-                  {new Date(trip.start_date).toLocaleDateString()} → {new Date(trip.end_date).toLocaleDateString()}
-                </p>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/80 via-[#0F172A]/30 to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+                <div>
+                  <h1 className="text-5xl font-black text-white drop-shadow-lg">
+                    {trip.title}
+                  </h1>
+                  <p className="mt-2 text-lg text-white/90">
+                    📅{" "}
+                    {new Date(trip.start_date).toLocaleDateString()} →{" "}
+                    {new Date(trip.end_date).toLocaleDateString()}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowEditTrip(true)}
+                  className="!bg-white/20 !text-white backdrop-blur-md border border-white/30 hover:!bg-white/30"
+                >
+                  ✏️ Edit
+                </Button>
               </div>
             </div>
 
-            <p className="mt-6 text-lg text-[#4f6f5e]">{trip.description || 'No description'}</p>
+            <p className="mt-6 text-lg text-[#64748B]">
+              {trip.description || "No description"}
+            </p>
           </motion.div>
 
           {/* Stats */}
-          <div className="mb-8 grid gap-6 md:grid-cols-3">
-            <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-[#5f7a6c]">Activities</p>
-              <p className="text-3xl font-bold text-[#163427]">{activities.length}</p>
-            </GlassCard>
-            <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-[#5f7a6c]">Total Expenses</p>
-              <p className="text-3xl font-bold text-[#163427]">${totalExpenses.toFixed(2)}</p>
-            </GlassCard>
-            <GlassCard className="p-6">
-              <p className="mb-2 text-sm text-[#5f7a6c]">Settlements</p>
-              <p className="text-3xl font-bold text-[#163427]">{settlements.length}</p>
-            </GlassCard>
-          </div>
+          <motion.div
+            className="mb-8 grid gap-6 md:grid-cols-3"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div variants={staggerItem}>
+              <NeuCard className="!p-6">
+                <p className="mb-2 text-sm text-[#64748B]">Activities</p>
+                <p className="text-3xl font-bold text-[#0F172A]">
+                  {activities.length}
+                </p>
+              </NeuCard>
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <NeuCard className="!p-6">
+                <p className="mb-2 text-sm text-[#64748B]">Total Expenses</p>
+                <p className="text-3xl font-bold text-[#0F172A]">
+                  ${totalExpenses.toFixed(2)}
+                </p>
+              </NeuCard>
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <NeuCard className="!p-6">
+                <p className="mb-2 text-sm text-[#64748B]">Settlements</p>
+                <p className="text-3xl font-bold text-[#0F172A]">
+                  {settlements.length}
+                </p>
+              </NeuCard>
+            </motion.div>
+          </motion.div>
 
-          {/* Tabs */}
-          <div className="mb-6 flex gap-4">
-            <button
-              onClick={() => setActiveTab('activities')}
-              className={`rounded-xl px-6 py-3 font-semibold transition ${
-                activeTab === 'activities'
-                    ? 'bg-brand-accent text-brand-text'
-                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
-              }`}
-            >
-              Activities
-            </button>
-            <button
-              onClick={() => setActiveTab('expenses')}
-              className={`rounded-xl px-6 py-3 font-semibold transition ${
-                activeTab === 'expenses'
-                    ? 'bg-brand-accent text-brand-text'
-                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
-              }`}
-            >
-              Expenses
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('settlement');
-                loadSettlement();
-              }}
-              className={`rounded-xl px-6 py-3 font-semibold transition ${
-                activeTab === 'settlement'
-                    ? 'bg-brand-accent text-brand-text'
-                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface/80'
-              }`}
-            >
-              Settlement
-            </button>
+          {/* Tabs - Neumorphic pill bar */}
+          <div className="mb-6 flex gap-1 rounded-2xl bg-white/50 p-1.5 backdrop-blur-md border border-white/40 w-fit">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  if (tab.key === "settlement") loadSettlement();
+                }}
+                className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300 ${
+                  activeTab === tab.key
+                    ? "neu-inset text-[#0F172A]"
+                    : "text-[#64748B] hover:text-[#0F172A] hover:bg-white/60"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
-            {activeTab === 'activities' && (
+            {activeTab === "activities" && (
               <motion.div
                 key="activities"
                 initial={{ opacity: 0, y: 20 }}
@@ -194,47 +225,71 @@ export default function TripDetailsPage() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#163427]">Activities</h2>
-                  <Button onClick={() => setShowAddActivity(true)}>+ Add Activity</Button>
+                  <h2 className="text-2xl font-bold text-[#0F172A]">
+                    Activities
+                  </h2>
+                  <Button onClick={() => setShowAddActivity(true)}>
+                    + Add Activity
+                  </Button>
                 </div>
 
                 {activities.length === 0 ? (
-                  <GlassCard className="p-12 text-center">
-                    <p className="text-[#5f7a6c]">No activities yet. Add your first activity!</p>
-                  </GlassCard>
+                  <EmptyState
+                    icon="🎯"
+                    title="No activities yet"
+                    description="Add your first activity to get started"
+                    actionLabel="Add Activity"
+                    onAction={() => setShowAddActivity(true)}
+                  />
                 ) : (
-                  <div className="space-y-4">
+                  <motion.div
+                    className="space-y-4"
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {activities.map((activity) => (
-                      <GlassCard key={activity.id} className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="text-xl font-bold text-[#163427]">{activity.title}</h3>
-                            <p className="mt-1 text-sm text-[#5f7a6c]">
-                              📅 {new Date(activity.activity_date).toLocaleDateString()}
-                            </p>
-                            {activity.location && (
-                              <p className="mt-1 text-sm text-[#5f7a6c]">📍 {activity.location}</p>
-                            )}
-                            {activity.notes && (
-                              <p className="mt-2 text-[#345847]">{activity.notes}</p>
-                            )}
+                      <motion.div key={activity.id} variants={staggerItem}>
+                        <NeuCard className="!p-6">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="text-xl font-bold text-[#0F172A]">
+                                {activity.title}
+                              </h3>
+                              <p className="mt-1 text-sm text-[#64748B]">
+                                📅{" "}
+                                {new Date(
+                                  activity.activity_date
+                                ).toLocaleDateString()}
+                              </p>
+                              {activity.location && (
+                                <p className="mt-1 text-sm text-[#64748B]">
+                                  📍 {activity.location}
+                                </p>
+                              )}
+                              {activity.notes && (
+                                <p className="mt-2 text-[#475569]">
+                                  {activity.notes}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              onClick={() => handleDeleteActivity(activity.id)}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              Delete
+                            </Button>
                           </div>
-                          <Button
-                            onClick={() => handleDeleteActivity(activity.id)}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </GlassCard>
+                        </NeuCard>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
 
-            {activeTab === 'expenses' && (
+            {activeTab === "expenses" && (
               <motion.div
                 key="expenses"
                 initial={{ opacity: 0, y: 20 }}
@@ -242,77 +297,116 @@ export default function TripDetailsPage() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#163427]">Expenses</h2>
-                  <Button onClick={() => setShowAddExpense(true)}>+ Add Expense</Button>
+                  <h2 className="text-2xl font-bold text-[#0F172A]">
+                    Expenses
+                  </h2>
+                  <Button onClick={() => setShowAddExpense(true)}>
+                    + Add Expense
+                  </Button>
                 </div>
 
                 {expenses.length === 0 ? (
-                  <GlassCard className="p-12 text-center">
-                    <p className="text-[#5f7a6c]">No expenses yet. Add your first expense!</p>
-                  </GlassCard>
+                  <EmptyState
+                    icon="💰"
+                    title="No expenses yet"
+                    description="Add your first expense to start tracking"
+                    actionLabel="Add Expense"
+                    onAction={() => setShowAddExpense(true)}
+                  />
                 ) : (
-                  <div className="space-y-4">
+                  <motion.div
+                    className="space-y-4"
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {expenses.map((expense) => (
-                      <GlassCard key={expense.id} className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-bold text-[#163427]">{expense.title}</h3>
-                            <div className="mt-2 flex gap-4 text-sm text-[#5f7a6c]">
-                              <span>💵 ${expense.amount.toFixed(2)}</span>
-                              <span>👤 Paid by {expense.paidByUser?.name || 'Unknown'}</span>
-                              <span>📊 {expense.split_type}</span>
-                              {expense.category && <span>🏷️ {expense.category}</span>}
+                      <motion.div key={expense.id} variants={staggerItem}>
+                        <NeuCard className="!p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold text-[#0F172A]">
+                                {expense.title}
+                              </h3>
+                              <div className="mt-2 flex flex-wrap gap-4 text-sm text-[#64748B]">
+                                <span className="font-semibold text-brand-blue">
+                                  💵 ${expense.amount.toFixed(2)}
+                                </span>
+                                <span>
+                                  👤 Paid by{" "}
+                                  {expense.paidByUser?.name || "Unknown"}
+                                </span>
+                                <span>📊 {expense.split_type}</span>
+                                {expense.category && (
+                                  <span>🏷️ {expense.category}</span>
+                                )}
+                              </div>
                             </div>
+                            <Button
+                              onClick={() => handleDeleteExpense(expense.id)}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              Delete
+                            </Button>
                           </div>
-                          <Button
-                            onClick={() => handleDeleteExpense(expense.id)}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </GlassCard>
+                        </NeuCard>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
 
-            {activeTab === 'settlement' && (
+            {activeTab === "settlement" && (
               <motion.div
                 key="settlement"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <h2 className="mb-6 text-2xl font-bold text-[#163427]">Settlement</h2>
-                
+                <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
+                  Settlement
+                </h2>
+
                 {settlements.length === 0 ? (
-                  <GlassCard className="p-12 text-center">
-                    <p className="text-[#5f7a6c]">All settled up! 🎉</p>
-                  </GlassCard>
+                  <EmptyState
+                    icon="🎉"
+                    title="All settled up!"
+                    description="No pending settlements for this trip"
+                  />
                 ) : (
-                  <div className="space-y-4">
+                  <motion.div
+                    className="space-y-4"
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {settlements.map((settlement, idx) => (
-                      <GlassCard key={idx} className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <p className="text-lg text-[#163427]">
-                              <span className="font-bold">{settlement.from_user?.name || 'User'}</span>
-                              {' owes '}
-                              <span className="font-bold">{settlement.to_user?.name || 'User'}</span>
-                            </p>
+                      <motion.div key={idx} variants={staggerItem}>
+                        <NeuCard className="!p-6">
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              <p className="text-lg text-[#0F172A]">
+                                <span className="font-bold">
+                                  {settlement.from_user?.name || "User"}
+                                </span>
+                                {" owes "}
+                                <span className="font-bold">
+                                  {settlement.to_user?.name || "User"}
+                                </span>
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-brand-blue">
+                                ${settlement.amount.toFixed(2)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-brand-accent">
-                              ${settlement.amount.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      </GlassCard>
+                        </NeuCard>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
@@ -321,33 +415,52 @@ export default function TripDetailsPage() {
       </div>
 
       {/* Add Activity Modal */}
-      {showAddActivity && (
-        <AddActivityModal
-          tripId={tripId}
-          onClose={() => setShowAddActivity(false)}
-          onSuccess={(newActivity) => {
-            setActivities([...activities, newActivity]);
-            setShowAddActivity(false);
-            showToast('Activity added!', 'success');
-          }}
-          showToast={showToast}
-        />
-      )}
+      <AnimatePresence>
+        {showAddActivity && (
+          <AddActivityModal
+            tripId={tripId}
+            onClose={() => setShowAddActivity(false)}
+            onSuccess={(newActivity) => {
+              setActivities([...activities, newActivity]);
+              setShowAddActivity(false);
+              showToast("Activity added!", "success");
+            }}
+            showToast={showToast}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Add Expense Modal */}
-      {showAddExpense && (
-        <AddExpenseModal
-          tripId={tripId}
-          userId={user?.id || ''}
-          onClose={() => setShowAddExpense(false)}
-          onSuccess={(newExpense) => {
-            setExpenses([...expenses, newExpense]);
-            setShowAddExpense(false);
-            showToast('Expense added!', 'success');
-          }}
-          showToast={showToast}
-        />
-      )}
+      <AnimatePresence>
+        {showAddExpense && (
+          <AddExpenseModal
+            tripId={tripId}
+            userId={user?.id || ""}
+            onClose={() => setShowAddExpense(false)}
+            onSuccess={(newExpense) => {
+              setExpenses([...expenses, newExpense]);
+              setShowAddExpense(false);
+              showToast("Expense added!", "success");
+            }}
+            showToast={showToast}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Edit Trip Modal */}
+      <AnimatePresence>
+        {showEditTrip && trip && (
+          <EditTripModal
+            trip={trip}
+            onClose={() => setShowEditTrip(false)}
+            onSuccess={(updatedTrip) => {
+              setTrip(updatedTrip);
+              setShowEditTrip(false);
+            }}
+            showToast={showToast}
+          />
+        )}
+      </AnimatePresence>
 
       <Toast toasts={toasts} onRemove={removeToast} />
     </>
@@ -355,16 +468,16 @@ export default function TripDetailsPage() {
 }
 
 // Add Activity Modal
-function AddActivityModal({ 
+function AddActivityModal({
   tripId,
-  onClose, 
+  onClose,
   onSuccess,
-  showToast 
-}: { 
+  showToast,
+}: {
   tripId: string;
-  onClose: () => void; 
+  onClose: () => void;
   onSuccess: (activity: Activity) => void;
-  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -387,7 +500,7 @@ function AddActivityModal({
     setLoading(false);
 
     if (response.error) {
-      showToast(response.error, 'error');
+      showToast(response.error, "error");
     } else if (response.data?.activity) {
       onSuccess(response.data.activity);
     }
@@ -397,91 +510,98 @@ function AddActivityModal({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
+        exit={{ scale: 0.95 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md"
       >
-        <GlassCard className="p-8">
-          <h2 className="mb-6 text-2xl font-bold text-[#163427]">Add Activity</h2>
+        <div className="glass-card rounded-3xl p-8">
+          <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
+            Add Activity
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <NeuInput
+              label="Title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="e.g., Visit Eiffel Tower"
+            />
+            <NeuInput
+              label="Date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <NeuInput
+              label="Location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              disabled={loading}
+              placeholder="Optional"
+            />
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                placeholder="e.g., Visit Eiffel Tower"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Location</label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                placeholder="Optional"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Notes</label>
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
+                Notes
+              </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={loading}
                 rows={3}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-[#94A3B8] transition-all duration-300 disabled:opacity-50"
                 placeholder="Optional notes"
               />
             </div>
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+                className="flex-1"
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" className="flex-1" onClick={undefined}>
-                {loading ? 'Adding...' : 'Add Activity'}
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                onClick={undefined}
+              >
+                {loading ? "Adding..." : "Add Activity"}
               </Button>
             </div>
           </form>
-        </GlassCard>
+        </div>
       </motion.div>
     </motion.div>
   );
 }
 
 // Add Expense Modal
-function AddExpenseModal({ 
+function AddExpenseModal({
   tripId,
   userId,
-  onClose, 
+  onClose,
   onSuccess,
-  showToast 
-}: { 
+  showToast,
+}: {
   tripId: string;
   userId: string;
-  onClose: () => void; 
+  onClose: () => void;
   onSuccess: (expense: Expense) => void;
-  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 }) {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -497,15 +617,15 @@ function AddExpenseModal({
       title,
       amount: parseFloat(amount),
       paid_by: userId,
-      split_type: 'equal',
+      split_type: "equal",
+      involved_members: [userId],
       category,
-      shares: [{ user_id: userId, share_amount: parseFloat(amount) }],
     });
 
     setLoading(false);
 
     if (response.error) {
-      showToast(response.error, 'error');
+      showToast(response.error, "error");
     } else if (response.data?.expense) {
       onSuccess(response.data.expense);
     }
@@ -515,64 +635,69 @@ function AddExpenseModal({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
+        exit={{ scale: 0.95 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md"
       >
-        <GlassCard className="p-8">
-          <h2 className="mb-6 text-2xl font-bold text-[#163427]">Add Expense</h2>
+        <div className="glass-card rounded-3xl p-8">
+          <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
+            Add Expense
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                placeholder="e.g., Hotel Booking"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Amount</label>
-              <input
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">Category</label>
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                disabled={loading}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                placeholder="e.g., Accommodation, Food, Transport"
-              />
-            </div>
+            <NeuInput
+              label="Title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="e.g., Hotel Booking"
+            />
+            <NeuInput
+              label="Amount"
+              type="number"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="0.00"
+            />
+            <NeuInput
+              label="Category"
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={loading}
+              placeholder="e.g., Accommodation, Food, Transport"
+            />
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+                className="flex-1"
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" className="flex-1" onClick={undefined}>
-                {loading ? 'Adding...' : 'Add Expense'}
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                onClick={undefined}
+              >
+                {loading ? "Adding..." : "Add Expense"}
               </Button>
             </div>
           </form>
-        </GlassCard>
+        </div>
       </motion.div>
     </motion.div>
   );

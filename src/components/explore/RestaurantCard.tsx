@@ -34,12 +34,12 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
           transition={{ duration: 0.3 }}
         >
           {loading ? (
-            <div className="w-full h-80 bg-gray-800 animate-pulse rounded-3xl" />
+            <div className="w-full h-80 bg-slate-200 animate-pulse rounded-3xl" />
           ) : (
             <img
               src={image?.url || restaurant.image}
               alt={image?.alt || restaurant.name}
-              className="w-full h-80 object-cover rounded-3xl shadow-2xl"
+              className="w-full h-80 object-cover rounded-3xl shadow-lg"
               loading="lazy"
             />
           )}
@@ -62,12 +62,12 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
             </div>
 
             {/* Name */}
-            <h3 className="text-3xl md:text-4xl font-bold text-[#163427] mb-4">
+            <h3 className="text-3xl md:text-4xl font-bold text-[#0F172A] mb-4">
               {restaurant.name}
             </h3>
 
             {/* Description */}
-            <p className="text-[#4f6f5e] text-base leading-relaxed mb-6">
+            <p className="text-[#64748B] text-base leading-relaxed mb-6">
               {restaurant.description}
             </p>
 
@@ -80,7 +80,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
               ].map((highlight, idx) => (
                 <li
                   key={idx}
-                  className="text-[#345847] text-sm flex items-center gap-2"
+                  className="text-[#475569] text-sm flex items-center gap-2"
                 >
                   <span className="text-[#EFEC07]">{highlight.split(' ')[0]}</span>
                   {highlight.substring(2)}
@@ -93,7 +93,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
               href={`https://www.google.com/search?q=${encodeURIComponent(restaurant.name + ' reservation')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group px-8 py-3 bg-[#EFEC07] text-[#163427] rounded-full font-bold transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/30 hover:scale-105 items-center gap-2 inline-flex"
+              className="group px-8 py-3 bg-[#EFEC07] text-[#0F172A] rounded-full font-bold transition-all duration-300 hover:shadow-lg hover:shadow-[#EFEC07]/30 hover:scale-105 items-center gap-2 inline-flex"
             >
               Reserve Table
               <span className="group-hover:translate-x-1 transition-transform">→</span>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "outline";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
 interface ButtonProps {
   href?: string;
@@ -18,11 +18,13 @@ interface ButtonProps {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-accent text-brand-text font-bold shadow-[0_0_24px_rgba(239,236,7,0.35)] hover:shadow-[0_0_30px_rgba(239,236,7,0.55)] hover:brightness-95",
+    "bg-brand-accent text-brand-text font-bold shadow-neu-yellow hover:shadow-neu-yellow-lg hover:brightness-95 active:shadow-neu-inset-sm",
   secondary:
-    "bg-brand-surface text-brand-text backdrop-blur-md border border-[#b9d3c5] hover:border-brand-accent hover:shadow-[0_0_20px_rgba(239,236,7,0.2)]",
+    "neu-button text-[#0F172A] hover:border-brand-blue/30 hover:shadow-[4px_4px_8px_rgba(163,177,198,0.35),-4px_-4px_8px_rgba(255,255,255,0.5),0_0_8px_rgba(59,130,246,0.07)]",
   outline:
-    "border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-text",
+    "border-2 border-brand-blue text-brand-blue bg-transparent hover:bg-brand-blue hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.25)]",
+  ghost:
+    "text-[#475569] hover:text-[#0F172A] hover:bg-white/50",
 };
 
 export default function Button({
@@ -40,8 +42,8 @@ export default function Button({
     return (
       <Link href={href}>
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           className={buttonClasses}
           type={type}
           disabled={disabled}
@@ -54,8 +56,8 @@ export default function Button({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
       onClick={onClick}
       className={buttonClasses}
       type={type}

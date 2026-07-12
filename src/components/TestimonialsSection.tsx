@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import GlassCard from "./ui/GlassCard";
+import NeuCard from "./ui/NeuCard";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 
 const testimonials = [
@@ -39,10 +39,10 @@ export default function TestimonialsSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-[#163427] md:text-5xl">
+          <h2 className="mb-4 text-4xl font-black text-[#0F172A] md:text-5xl">
             Loved by Travelers Worldwide
           </h2>
-          <p className="text-xl text-[#5f7a6c]">
+          <p className="text-xl text-[#64748B]">
             Join thousands of happy adventurers using TripTally.
           </p>
         </motion.div>
@@ -56,7 +56,7 @@ export default function TestimonialsSection() {
         >
           {testimonials.map((testimonial, index) => (
             <motion.div key={index} variants={staggerItem}>
-              <GlassCard className="h-full p-8">
+              <NeuCard className="h-full !p-8">
                 {/* Rating Stars */}
                 <div className="mb-4 flex gap-1">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -67,21 +67,21 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* Testimonial Text */}
-                <p className="mb-6 text-[#4f6f5e]">{testimonial.text}</p>
+                <p className="mb-6 text-[#64748B]">{testimonial.text}</p>
 
                 {/* Author */}
                 <div className="flex items-center gap-4">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="h-12 w-12 rounded-full"
+                    className="h-12 w-12 rounded-full border-2 border-blue-200"
                   />
                   <div>
-                    <h4 className="font-bold text-[#163427]">{testimonial.name}</h4>
-                    <p className="text-sm text-[#5f7a6c]">{testimonial.role}</p>
+                    <h4 className="font-bold text-[#0F172A]">{testimonial.name}</h4>
+                    <p className="text-sm text-[#475569]">{testimonial.role}</p>
                   </div>
                 </div>
-              </GlassCard>
+              </NeuCard>
             </motion.div>
           ))}
         </motion.div>

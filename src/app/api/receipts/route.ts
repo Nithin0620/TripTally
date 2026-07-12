@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, badRequestResponse, serverErrorResponse } from '@/middleware/auth';
 import { checkTripEditAccess } from '@/middleware/role';
 import { forbiddenResponse } from '@/middleware/auth';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { uploadToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
 
 /**
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store receipt in database
-    const { data: receipt, error: dbError } = await supabase
+    const { data: receipt, error: dbError } = await supabaseAdmin
       .from('receipts')
       .insert({
         expense_id: expenseId,
@@ -107,7 +107,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get receipt
-    const { data: receipt, error: getError } = await supabase
+    const { data: receipt, error: getError } = await supabaseAdmin
       .from('receipts')
       .select('*')
       .eq('id', receiptId)
@@ -128,7 +128,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete from database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseAdmin
       .from('receipts')
       .delete()
       .eq('id', receiptId);

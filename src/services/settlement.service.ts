@@ -2,7 +2,7 @@
 // Settlement Service
 // ============================================
 
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { Settlement, User } from '@/types';
 import { calculateUserBalances } from '@/utils/splitCalculator';
 import { optimizeSettlements, validateSettlement } from '@/utils/settlementOptimizer';
@@ -13,7 +13,7 @@ import { optimizeSettlements, validateSettlement } from '@/utils/settlementOptim
 export async function calculateTripSettlements(tripId: string) {
   try {
     // Get all trip members
-    const { data: members, error: membersError } = await supabase
+    const { data: members, error: membersError } = await supabaseAdmin
       .from('trip_members')
       .select('user_id, users(id, name, email, profile_image)')
       .eq('trip_id', tripId);
@@ -34,7 +34,7 @@ export async function calculateTripSettlements(tripId: string) {
     }
 
     // Get all expenses with shares
-    const { data: expenses, error: expensesError } = await supabase
+    const { data: expenses, error: expensesError } = await supabaseAdmin
       .from('expenses')
       .select(
         `
@@ -94,7 +94,7 @@ export async function calculateTripSettlements(tripId: string) {
 export async function getUserTripBalance(tripId: string, userId: string) {
   try {
     // Get all trip members
-    const { data: members } = await supabase
+    const { data: members } = await supabaseAdmin
       .from('trip_members')
       .select('user_id')
       .eq('trip_id', tripId);
@@ -106,7 +106,7 @@ export async function getUserTripBalance(tripId: string, userId: string) {
     const memberIds = members.map(m => m.user_id);
 
     // Get all expenses
-    const { data: expenses, error: expensesError } = await supabase
+    const { data: expenses, error: expensesError } = await supabaseAdmin
       .from('expenses')
       .select(
         `
@@ -150,7 +150,7 @@ export async function getUserTripBalance(tripId: string, userId: string) {
  */
 export async function getTripBalances(tripId: string) {
   try {
-    const { data: members } = await supabase
+    const { data: members } = await supabaseAdmin
       .from('trip_members')
       .select('user_id')
       .eq('trip_id', tripId);
@@ -161,7 +161,7 @@ export async function getTripBalances(tripId: string) {
 
     const memberIds = members.map(m => m.user_id);
 
-    const { data: expenses, error: expensesError } = await supabase
+    const { data: expenses, error: expensesError } = await supabaseAdmin
       .from('expenses')
       .select(
         `

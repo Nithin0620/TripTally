@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
+import { neuCardHover } from "@/lib/animations";
 
 interface GlassCardProps {
   children: ReactNode;
@@ -12,9 +13,11 @@ interface GlassCardProps {
 export default function GlassCard({ children, className = "", hover = true }: GlassCardProps) {
   return (
     <motion.div
-      whileHover={hover ? { y: -8, boxShadow: "0 20px 40px rgba(239, 236, 7, 0.2)" } : {}}
-      transition={{ duration: 0.3 }}
-      className={`glass-card rounded-3xl p-6 ${className}`}
+      initial="rest"
+      whileHover={hover ? "hover" : undefined}
+      animate="rest"
+      variants={neuCardHover}
+      className={`glass-card rounded-3xl p-6 transition-all duration-300 ${className}`}
     >
       {children}
     </motion.div>

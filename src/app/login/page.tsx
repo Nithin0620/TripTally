@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import GlassCard from "@/components/ui/GlassCard";
+import NeuInput from "@/components/ui/NeuInput";
 import GoogleIdentityScript from "@/components/GoogleIdentityScript";
 import { fadeIn, fadeInUp } from "@/lib/animations";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,49 +81,39 @@ export default function LoginPage() {
         >
           <GlassCard className="p-8">
             <motion.div variants={fadeInUp} className="mb-8 text-center">
-              <h1 className="mb-2 text-4xl font-black text-[#163427]">
+              <h1 className="mb-2 text-4xl font-black text-[#0F172A]">
                 Welcome Back
               </h1>
-              <p className="text-[#5f7a6c]">Sign in to continue your journey</p>
+              <p className="text-[#64748B]">Sign in to continue your journey</p>
             </motion.div>
 
             <motion.form variants={fadeInUp} onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                />
-              </div>
+              <NeuInput
+                label="Email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                />
-              </div>
+              <NeuInput
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-[#5f7a6c]">
-                  <input type="checkbox" className="rounded border-white/20" />
+                <label className="flex items-center gap-2 text-[#64748B]">
+                  <input type="checkbox" className="rounded border-[#CBD5E1]" />
                   Remember me
                 </label>
-                <a href="#" className="text-brand-accent hover:underline">
+                <a href="#" className="text-brand-blue hover:underline">
                   Forgot password?
                 </a>
               </div>
@@ -133,10 +124,10 @@ export default function LoginPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#d8e7df]" />
+                  <div className="w-full border-t border-[#E2E8F0]" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-brand-bg px-2 text-[#7a9186]">
+                  <span className="bg-brand-bg px-2 text-[#94A3B8]">
                     Or continue with
                   </span>
                 </div>
@@ -145,9 +136,9 @@ export default function LoginPage() {
               <div ref={googleButtonRef} className="flex justify-center" />
             </motion.form>
 
-            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-[#5f7a6c]">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-brand-accent hover:underline">
+            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-[#64748B]">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="font-semibold text-brand-blue hover:underline">
                 Sign up
               </Link>
             </motion.p>

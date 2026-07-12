@@ -14,7 +14,7 @@ function ExploreHero() {
   return (
     <section className="relative py-20 md:py-32 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#E7F3EC]/70 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50/70 to-transparent pointer-events-none" />
 
       <div
         className="relative z-10 max-w-5xl mx-auto text-center px-4 md:px-8 animate-fadeInUp"
@@ -28,7 +28,7 @@ function ExploreHero() {
         </div>
 
         <h1
-          className="text-5xl md:text-7xl font-bold text-[#163427] mb-6 leading-tight animate-fadeInUp"
+          className="text-5xl md:text-7xl font-bold text-[#0F172A] mb-6 leading-tight animate-fadeInUp"
           style={{ animationDelay: '0.1s' }}
         >
           Explore India's
@@ -39,7 +39,7 @@ function ExploreHero() {
         </h1>
 
         <p
-          className="text-lg md:text-xl text-[#4f6f5e] max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
+          className="text-lg md:text-xl text-[#64748B] max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
           style={{ animationDelay: '0.2s' }}
         >
           From serene beaches to majestic mountains, spiritual retreats to luxurious escapes—
@@ -60,9 +60,9 @@ function ExploreHero() {
           ].map((pill, idx) => (
             <div
               key={idx}
-              className="px-4 py-2 bg-white/80 border border-[#d8e7df] rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
+              className="px-4 py-2 neu-glass rounded-full hover:border-[#3B82F6]/30 transition-colors cursor-pointer hover:scale-105"
             >
-              <span className="text-sm text-[#4f6f5e]">{pill}</span>
+              <span className="text-sm text-[#64748B]">{pill}</span>
             </div>
           ))}
         </div>
@@ -130,12 +130,12 @@ function ExploreCTA() {
       `}</style>
 
       <h2
-        className="text-4xl md:text-5xl font-bold text-[#163427] mb-6 animate-fadeInUp"
+        className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-6 animate-fadeInUp"
       >
         Ready to Plan Your Next Adventure?
       </h2>
 
-      <p className="text-[#4f6f5e] text-lg mb-8 max-w-2xl mx-auto">
+      <p className="text-[#64748B] text-lg mb-8 max-w-2xl mx-auto">
         Use our AI-powered planner to create personalized itineraries, manage
         budgets, and split expenses with your travel companions.
       </p>
@@ -143,10 +143,10 @@ function ExploreCTA() {
       <div
         className="flex flex-col sm:flex-row gap-4 justify-center"
       >
-        <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+        <button className="px-8 py-4 bg-[#EFEC07] text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#EFEC07]/40 hover:scale-105">
           Start Planning
         </button>
-        <button className="px-8 py-4 bg-white/85 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
+        <button className="px-8 py-4 neu-glass border border-slate-200 text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#3B82F6]/50 hover:bg-white">
           Get Inspiration
         </button>
       </div>
@@ -221,7 +221,7 @@ export default function ExplorePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
+    <main className="min-h-screen bg-brand-bg text-[#0F172A]">
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         {/* Hero */}
         <div className="py-8">
@@ -229,19 +229,19 @@ export default function ExplorePage() {
         </div>
 
         {/* Sticky Search Section */}
-        <section className="sticky top-0 z-50 mb-10 -mx-4 md:-mx-6 lg:-mx-8 bg-[#F6FBF8] px-4 md:px-6 lg:px-8 py-6 shadow-md">
-          <div className="rounded-2xl border border-[#d8e7df] bg-white p-4 md:p-6">
+        <section className="sticky top-0 z-50 mb-10 -mx-4 md:-mx-6 lg:-mx-8 bg-brand-bg/90 backdrop-blur-md px-4 md:px-6 lg:px-8 py-6 shadow-sm">
+          <div className="neu-glass rounded-2xl p-4 md:p-6">
             <form onSubmit={handleSearch} className="flex flex-col gap-3 md:flex-row">
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search places by name or description"
-                className="w-full rounded-full border border-[#cfe0d7] px-4 py-3 text-[#163427] placeholder-[#8ca196] focus:border-[#EFEC07] focus:outline-none"
+                className="w-full rounded-full neu-input px-4 py-3 text-[#0F172A] placeholder-slate-400 focus:border-[#3B82F6] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={searchLoading}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#163427] px-5 py-3 font-semibold text-white disabled:opacity-60 whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-5 py-3 font-semibold text-white disabled:opacity-60 whitespace-nowrap hover:bg-[#1E293B] transition-colors"
               >
                 {searchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                 {searchLoading ? 'Searching...' : 'Search'}
@@ -249,7 +249,7 @@ export default function ExplorePage() {
             </form>
 
             {searchMessage && (
-              <p className="mt-3 text-sm text-[#4f6f5e]">
+              <p className="mt-3 text-sm text-[#64748B]">
                 {searchSource === 'ai' ? '🤖 ' : ''}
                 {searchMessage}
               </p>
@@ -269,21 +269,21 @@ export default function ExplorePage() {
         {loading ? (
           <div className="py-20 text-center">
             <div className="inline-block">
-              <div className="w-12 h-12 border-2 border-[#EFEC07] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-[#5f7a6c]">Loading amazing destinations...</p>
+              <div className="w-12 h-12 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-[#475569]">Loading amazing destinations...</p>
             </div>
           </div>
         ) : categories.length === 0 ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-[#163427] mb-3">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A] mb-3">
                 No Places Found
               </h2>
-              <p className="text-[#5f7a6c] mb-6">
+              <p className="text-[#475569] mb-6">
                 We're working on loading amazing destinations for you.
               </p>
               <Link href="/map">
-                <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
+                <button className="px-8 py-4 bg-[#EFEC07] text-[#0F172A] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#EFEC07]/40 hover:scale-105">
                   View on Map
                 </button>
               </Link>
