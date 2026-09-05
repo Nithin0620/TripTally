@@ -66,10 +66,13 @@ export default function DiscoverSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-[#0F172A] md:text-5xl">
+          <span className="mb-4 inline-block rounded-full border border-brand-sand/50 bg-brand-sand/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-accent">
+            Destinations
+          </span>
+          <h2 className="mb-4 font-serif text-4xl font-bold text-brand-text md:text-5xl tracking-tight">
             Discover Popular Destinations
           </h2>
-          <p className="text-xl text-[#64748B]">
+          <p className="mx-auto max-w-xl text-lg text-brand-text/60">
             Handpicked packages curated by our AI travel experts.
           </p>
         </motion.div>
@@ -86,10 +89,10 @@ export default function DiscoverSection() {
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`rounded-full px-6 py-2 font-medium transition-all duration-300 ${
+              className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 activeFilter === filter
-                  ? "bg-brand-accent text-brand-text shadow-neu-yellow"
-                  : "neu-glass text-[#64748B] hover:text-[#0F172A] hover:border-[#3B82F6]/30"
+                  ? "bg-brand-accent text-white shadow-sm"
+                  : "border border-brand-sand/60 bg-white/60 text-brand-text/70 hover:border-brand-accent/40 hover:text-brand-text backdrop-blur-sm"
               }`}
             >
               {filter}
@@ -110,26 +113,24 @@ export default function DiscoverSection() {
             <motion.div
               key={index}
               variants={staggerItem}
-              className="glass-card group overflow-hidden rounded-3xl p-0"
+              className="group overflow-hidden rounded-3xl bg-white border border-brand-sand/30 shadow-sm transition-all duration-300 hover:shadow-md"
             >
               <div className="relative h-64 overflow-hidden">
                 <motion.div
-                  className="h-full w-full bg-cover bg-center"
+                  className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                   style={{ backgroundImage: `url(${destination.image})` }}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.5 }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <h3 className="text-2xl font-bold text-white">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-5">
+                  <h3 className="font-serif text-2xl font-bold text-white drop-shadow-sm">
                     {destination.name}
                   </h3>
                 </div>
-                <div className="absolute right-4 top-4 rounded-full bg-brand-accent px-4 py-2 text-sm font-bold text-brand-text">
+                <div className="absolute right-4 top-4 rounded-full bg-white/90 px-4 py-1.5 text-sm font-bold text-brand-accent backdrop-blur-sm border border-white/50">
                   {destination.price}
                 </div>
               </div>
-              <div className="p-6">
+              <div className="p-5">
                 <Button variant="outline" className="w-full">
                   Explore
                 </Button>

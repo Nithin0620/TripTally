@@ -9,31 +9,25 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          bg: "#F0F4F8",
-          surface: "#E2E8F0",
-          text: "#0F172A",
-          accent: "#EFEC07",
-          blue: "#3B82F6",
+          bg: "#FBFBF9",
+          surface: "#FFFFFF",
+          text: "#1F2937",
+          accent: "#C2593F",
+          sand: "#EADCD6",
+          blue: "#2563EB",
           "blue-deep": "#1D4ED8",
-          "surface-alt": "#DBEAFE",
+          "surface-alt": "#F5EBE6",
         },
       },
       boxShadow: {
-        neu: "4px 4px 10px rgba(163, 177, 198, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.5)",
-        "neu-sm":
-          "2px 2px 5px rgba(163, 177, 198, 0.3), -2px -2px 5px rgba(255, 255, 255, 0.45)",
-        "neu-lg":
-          "6px 6px 14px rgba(163, 177, 198, 0.35), -6px -6px 14px rgba(255, 255, 255, 0.5)",
-        "neu-inset":
-          "inset 3px 3px 6px rgba(163, 177, 198, 0.3), inset -3px -3px 6px rgba(255, 255, 255, 0.45)",
-        "neu-inset-sm":
-          "inset 2px 2px 4px rgba(163, 177, 198, 0.25), inset -2px -2px 4px rgba(255, 255, 255, 0.4)",
-        "neu-glass":
-          "6px 6px 14px rgba(163, 177, 198, 0.3), -6px -6px 14px rgba(255, 255, 255, 0.45)",
-        "neu-yellow":
-          "0 0 16px rgba(239, 236, 7, 0.2), 4px 4px 10px rgba(163, 177, 198, 0.25), -4px -4px 10px rgba(255, 255, 255, 0.45)",
-        "neu-yellow-lg":
-          "0 0 24px rgba(239, 236, 7, 0.28), 6px 6px 14px rgba(163, 177, 198, 0.3), -6px -6px 14px rgba(255, 255, 255, 0.5)",
+        neu: "0 4px 20px -2px rgba(194, 89, 63, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.02)",
+        "neu-sm": "0 2px 8px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.01)",
+        "neu-lg": "0 12px 40px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02)",
+        "neu-inset": "inset 0 2px 4px rgba(0, 0, 0, 0.03)",
+        "neu-inset-sm": "inset 0 1px 2px rgba(0, 0, 0, 0.02)",
+        "neu-glass": "0 8px 32px rgba(0, 0, 0, 0.03)",
+        "neu-yellow": "0 0 16px rgba(194, 89, 63, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03)",
+        "neu-yellow-lg": "0 0 24px rgba(194, 89, 63, 0.12), 0 8px 24px rgba(0, 0, 0, 0.04)",
       },
     },
   },

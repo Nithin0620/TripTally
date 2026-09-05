@@ -11,6 +11,8 @@ export interface CreateTripData {
   start_date: string;
   end_date: string;
   cover_image?: string;
+  currency?: string;
+  budget_limit?: number;
 }
 
 export type UpdateTripData = Partial<CreateTripData>;

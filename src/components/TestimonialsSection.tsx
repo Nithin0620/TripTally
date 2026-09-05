@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import NeuCard from "./ui/NeuCard";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
+import { Quote } from "lucide-react";
 
 const testimonials = [
   {
@@ -39,10 +40,13 @@ export default function TestimonialsSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
         >
-          <h2 className="mb-4 text-4xl font-black text-[#0F172A] md:text-5xl">
+          <span className="mb-4 inline-block rounded-full border border-brand-sand/50 bg-brand-sand/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-accent">
+            Testimonials
+          </span>
+          <h2 className="mb-4 font-serif text-4xl font-bold text-brand-text md:text-5xl tracking-tight">
             Loved by Travelers Worldwide
           </h2>
-          <p className="text-xl text-[#64748B]">
+          <p className="mx-auto max-w-xl text-lg text-brand-text/60">
             Join thousands of happy adventurers using TripTally.
           </p>
         </motion.div>
@@ -57,28 +61,33 @@ export default function TestimonialsSection() {
           {testimonials.map((testimonial, index) => (
             <motion.div key={index} variants={staggerItem}>
               <NeuCard className="h-full !p-8">
+                {/* Quote Icon */}
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-sand/30">
+                  <Quote className="h-5 w-5 text-brand-accent" />
+                </div>
+
                 {/* Rating Stars */}
                 <div className="mb-4 flex gap-1">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <span key={i} className="text-brand-accent">
+                    <span key={i} className="text-brand-accent text-lg">
                       ★
                     </span>
                   ))}
                 </div>
 
                 {/* Testimonial Text */}
-                <p className="mb-6 text-[#64748B]">{testimonial.text}</p>
+                <p className="mb-6 text-brand-text/70 leading-relaxed italic">&ldquo;{testimonial.text}&rdquo;</p>
 
                 {/* Author */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 border-t border-brand-sand/30 pt-5">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="h-12 w-12 rounded-full border-2 border-blue-200"
+                    className="h-12 w-12 rounded-full border-2 border-brand-sand/60 object-cover"
                   />
                   <div>
-                    <h4 className="font-bold text-[#0F172A]">{testimonial.name}</h4>
-                    <p className="text-sm text-[#475569]">{testimonial.role}</p>
+                    <h4 className="font-bold text-brand-text">{testimonial.name}</h4>
+                    <p className="text-sm text-brand-text/55">{testimonial.role}</p>
                   </div>
                 </div>
               </NeuCard>

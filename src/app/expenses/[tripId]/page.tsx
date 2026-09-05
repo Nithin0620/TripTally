@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { getTripExpenses, calculateTripSettlement } from "@/services/expense.service";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -13,25 +15,24 @@ import NeuCard from "@/components/ui/NeuCard";
 import AddExpenseModal from "@/components/expenses/AddExpenseModal";
 import EditExpenseModal from "@/components/expenses/EditExpenseModal";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
+import ExpenseSearchFilter from "@/components/expenses/ExpenseSearchFilter";
 import BalanceSummary from "@/components/expenses/BalanceSummary";
 import InviteSection from "@/components/expenses/InviteSection";
+import RealtimePresence from "@/components/trips/RealtimePresence";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 
 export default function ExpensesPage() {
   const params = useParams();
   const tripId = params?.tripId as string;
   const { toasts, showToast, removeToast } = useToast();
+  const { user } = useAuth();
 
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [filteredExpenses, setFilteredExpenses] = useState<any[]>([]);
   const [settlement, setSettlement] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
-
-  useEffect(() => {
-    if (!tripId) return;
-    loadExpenses();
-  }, [tripId]);
 
   const loadExpenses = async () => {
     try {
@@ -62,11 +63,27 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleExpenseChange = useCallback(() => {
+    loadExpenses();
+  }, [tripId]);
+
+  const { onlineMembers, isConnected } = useRealtimeTrip({
+    tripId,
+    userId: user?.id,
+    userName: user?.name || user?.email,
+    onExpenseChange: handleExpenseChange,
+  });
+
   const handleExpenseAdded = () => {
     setShowAddExpense(false);
     loadExpenses();
     showToast("Expense added successfully", "success");
   };
+
+  useEffect(() => {
+    if (!tripId) return;
+    loadExpenses();
+  }, [tripId]);
 
   if (loading) {
     return <LoadingSpinner text="Loading expenses..." />;
@@ -82,12 +99,21 @@ export default function ExpensesPage() {
           variants={fadeInUp}
           className="mb-8"
         >
-          <h1 className="text-4xl font-black text-[#0F172A] mb-2">
-            Trip Expenses
-          </h1>
-          <p className="text-[#64748B]">
-            Manage costs and calculate settlements
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-black text-[#0F172A] mb-2">
+                Trip Expenses
+              </h1>
+              <p className="text-[#64748B]">
+                Manage costs and calculate settlements
+              </p>
+            </div>
+            <RealtimePresence
+              onlineMembers={onlineMembers}
+              isConnected={isConnected}
+              currentUserId={user?.id}
+            />
+          </div>
         </motion.div>
 
         {/* Action Buttons */}
@@ -121,15 +147,28 @@ export default function ExpensesPage() {
                   onAction={() => setShowAddExpense(true)}
                 />
               ) : (
-                expenses.map((expense, index) => (
-                  <ExpenseCard
-                    key={expense.id}
-                    expense={expense}
-                    index={index}
-                    onUpdate={loadExpenses}
-                    onEdit={(exp) => setEditingExpense(exp)}
+                <>
+                  <ExpenseSearchFilter
+                    expenses={expenses}
+                    onFilter={setFilteredExpenses}
                   />
-                ))
+                  {filteredExpenses.length > 0 ? (
+                    filteredExpenses.map((expense, index) => (
+                      <ExpenseCard
+                        key={expense.id}
+                        expense={expense}
+                        index={index}
+                        onUpdate={loadExpenses}
+                        onEdit={(exp) => setEditingExpense(exp)}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-[#64748B]">
+                      <p className="text-3xl mb-2">🔍</p>
+                      <p className="text-sm">No expenses match your filters</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>

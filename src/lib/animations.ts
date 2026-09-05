@@ -76,20 +76,20 @@ export const gentleFloat: Variants = {
   },
 };
 
-// Neumorphic interaction variants
+// Premium interaction variants
 export const neuPress: Variants = {
   rest: {
     scale: 1,
-    boxShadow: "4px 4px 10px rgba(163, 177, 198, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.5)",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)",
   },
   hover: {
-    scale: 1.02,
-    boxShadow: "2px 2px 5px rgba(163, 177, 198, 0.3), -2px -2px 5px rgba(255, 255, 255, 0.45)",
+    scale: 1.01,
+    boxShadow: "0 4px 12px rgba(194, 89, 63, 0.08)",
     transition: { duration: 0.2, ease: "easeOut" },
   },
   tap: {
-    scale: 0.98,
-    boxShadow: "inset 2px 2px 5px rgba(163, 177, 198, 0.3), inset -2px -2px 5px rgba(255, 255, 255, 0.45)",
+    scale: 0.99,
+    boxShadow: "inset 0 1px 3px rgba(0, 0, 0, 0.03)",
     transition: { duration: 0.1 },
   },
 };
@@ -97,11 +97,11 @@ export const neuPress: Variants = {
 export const neuCardHover: Variants = {
   rest: {
     y: 0,
-    boxShadow: "6px 6px 14px rgba(163, 177, 198, 0.3), -6px -6px 14px rgba(255, 255, 255, 0.45)",
+    boxShadow: "0 4px 20px -2px rgba(194, 89, 63, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.01)",
   },
   hover: {
-    y: -6,
-    boxShadow: "8px 8px 18px rgba(163, 177, 198, 0.35), -8px -8px 18px rgba(255, 255, 255, 0.55), 0 0 20px rgba(59, 130, 246, 0.05)",
+    y: -4,
+    boxShadow: "0 12px 30px -4px rgba(194, 89, 63, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.02)",
     transition: { duration: 0.3, ease: "easeOut" },
   },
 };

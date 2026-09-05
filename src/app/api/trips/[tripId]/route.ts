@@ -83,7 +83,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, start_date, end_date, cover_image } = body;
+    const { title, description, start_date, end_date, cover_image, currency, budget_limit } = body;
 
     const updateData = {
       ...(title && { title }),
@@ -91,6 +91,8 @@ export async function PUT(
       ...(start_date && { start_date }),
       ...(end_date && { end_date }),
       ...(cover_image !== undefined && { cover_image }),
+      ...(currency && { currency }),
+      ...(budget_limit !== undefined && { budget_limit }),
     };
 
     const { trip, error } = await updateTrip(tripId, updateData);

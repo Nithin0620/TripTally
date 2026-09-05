@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import 'mapbox-gl/dist/mapbox-gl.css';
 
 @tailwind base;
@@ -16,114 +16,93 @@ html {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: transparent;
-  color: #0F172A;
+  color: #1F2937;
   min-height: 100vh;
   line-height: 1.6;
   position: relative;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* ============================================
-   Glassmorphism + Neumorphism Fusion
+   Glassmorphism + Premium Flat Fusion
    ============================================ */
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow:
-    6px 6px 14px rgba(163, 177, 198, 0.3),
-    -6px -6px 14px rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(234, 220, 214, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(194, 89, 63, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.01);
 }
 
 .glass-card-hover:hover {
-  box-shadow:
-    8px 8px 18px rgba(163, 177, 198, 0.35),
-    -8px -8px 18px rgba(255, 255, 255, 0.55),
-    0 0 20px rgba(59, 130, 246, 0.05);
+  box-shadow: 0 12px 30px -4px rgba(194, 89, 63, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Neumorphic raised surface */
+/* Premium surface */
 .neu-raised {
-  background: #E8EDF2;
-  box-shadow:
-    4px 4px 10px rgba(163, 177, 198, 0.35),
-    -4px -4px 10px rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px -2px rgba(194, 89, 63, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.01);
+  border: 1px solid rgba(234, 220, 214, 0.45);
 }
 
-/* Neumorphic inset / pressed */
+/* Premium inset / pressed */
 .neu-inset {
-  background: #E2E8F0;
-  box-shadow:
-    inset 3px 3px 6px rgba(163, 177, 198, 0.3),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(163, 177, 198, 0.12);
+  background: #F5EBE6;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(234, 220, 214, 0.5);
 }
 
-/* Neumorphic button */
+/* Premium button */
 .neu-button {
-  background: linear-gradient(145deg, #f0f5fa, #dce3ec);
-  box-shadow:
-    4px 4px 8px rgba(163, 177, 198, 0.35),
-    -4px -4px 8px rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  transition: all 0.2s ease;
+  background: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(234, 220, 214, 0.6);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .neu-button:hover {
-  box-shadow:
-    2px 2px 5px rgba(163, 177, 198, 0.3),
-    -2px -2px 5px rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 12px rgba(194, 89, 63, 0.08);
+  border-color: rgba(194, 89, 63, 0.4);
 }
 
 .neu-button:active, .neu-button-pressed {
-  background: #E2E8F0;
-  box-shadow:
-    inset 2px 2px 5px rgba(163, 177, 198, 0.3),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.45);
+  background: #F5EBE6;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
-/* Neumorphic input */
+/* Premium input */
 .neu-input {
-  background: #E8EDF2;
-  box-shadow:
-    inset 2px 2px 5px rgba(163, 177, 198, 0.28),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(163, 177, 198, 0.15);
-  transition: all 0.3s ease;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
+  border: 1px solid rgba(234, 220, 214, 0.8);
+  transition: all 0.2s ease;
 }
 
 .neu-input:focus {
-  box-shadow:
-    inset 2px 2px 5px rgba(163, 177, 198, 0.28),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.4),
-    0 0 0 3px rgba(59, 130, 246, 0.15);
-  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(194, 89, 63, 0.1);
+  border-color: #C2593F;
   outline: none;
 }
 
-/* Neumorphic toggle track */
+/* Premium toggle track */
 .neu-toggle {
-  background: #E2E8F0;
-  box-shadow:
-    inset 2px 2px 5px rgba(163, 177, 198, 0.3),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.45);
+  background: #EADCD6;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .neu-toggle-active {
-  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
-  box-shadow:
-    inset 2px 2px 3px rgba(29, 78, 216, 0.3),
-    inset -2px -2px 3px rgba(96, 165, 250, 0.2),
-    0 0 8px rgba(59, 130, 246, 0.2);
+  background: #C2593F;
+  box-shadow: 0 2px 6px rgba(194, 89, 63, 0.2);
 }
 
 /* ============================================
@@ -135,15 +114,15 @@ h1, h2, h3, h4, h5, h6 {
   width: 16px;
   border-radius: 9999px;
   border: 2px solid rgba(255, 255, 255, 0.95);
-  background: radial-gradient(circle at 35% 35%, #fff899 0%, #efec07 55%, #d1b800 100%);
-  box-shadow: 0 0 0 5px rgba(239, 236, 7, 0.2), 0 8px 22px rgba(15, 23, 42, 0.3);
+  background: #C2593F;
+  box-shadow: 0 0 0 4px rgba(194, 89, 63, 0.2), 0 4px 12px rgba(15, 23, 42, 0.2);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
 .triptally-map-marker:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 0 6px rgba(239, 236, 7, 0.28), 0 12px 28px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 0 0 6px rgba(194, 89, 63, 0.3), 0 6px 16px rgba(15, 23, 42, 0.25);
 }
 
 .triptally-map-marker-active {
@@ -159,40 +138,38 @@ h1, h2, h3, h4, h5, h6 {
   padding: 24px 12px 12px 12px;
   position: relative;
   z-index: 1000;
-  box-shadow:
-    6px 6px 14px rgba(163, 177, 198, 0.3),
-    -6px -6px 14px rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
 }
 
 .triptally-map-popup-title {
   margin-bottom: 6px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-size: 14px;
   font-weight: 700;
-  color: #0F172A;
+  color: #111827;
 }
 
 .triptally-map-popup-description {
   margin-bottom: 10px;
   font-size: 12px;
   line-height: 1.45;
-  color: #475569;
+  color: #4B5563;
 }
 
 .triptally-map-popup-button {
   border-radius: 9999px;
   border: 0;
-  background: #efec07;
+  background: #C2593F;
   padding: 8px 14px;
   font-size: 12px;
   font-weight: 600;
-  color: #0F172A;
+  color: #FFFFFF;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .triptally-map-popup-button:hover {
   transform: scale(1.04);
-  box-shadow: 0 8px 18px rgba(239, 236, 7, 0.34);
+  box-shadow: 0 6px 16px rgba(194, 89, 63, 0.25);
 }
 
 .triptally-map-popup-close {
@@ -202,7 +179,7 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   background: transparent;
   font-size: 18px;
-  color: #475569;
+  color: #4B5563;
   cursor: pointer;
   padding: 4px 6px;
   line-height: 1;
@@ -234,9 +211,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
-  box-shadow:
-    4px 4px 10px rgba(163, 177, 198, 0.28),
-    -4px -4px 10px rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .mapboxgl-ctrl button {
@@ -248,12 +223,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   Ambient Background (Blue Theme)
+   Ambient Background (Warm Theme)
    ============================================ */
 
 .ambient-universe {
   z-index: 1;
-  mix-blend-mode: screen;
+  mix-blend-mode: multiply;
   pointer-events: none;
   position: fixed;
   top: 0;
@@ -265,10 +240,10 @@ h1, h2, h3, h4, h5, h6 {
 .ambient-orb {
   position: absolute;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.9) 0%, rgba(59, 130, 246, 0.5) 42%, rgba(37, 99, 235, 0.12) 74%, rgba(37, 99, 235, 0) 100%);
-  box-shadow: 0 0 150px rgba(59, 130, 246, 0.5), 0 0 280px rgba(147, 197, 253, 0.4), 0 0 420px rgba(191, 219, 254, 0.3);
-  filter: blur(14px);
-  opacity: 0.38;
+  background: radial-gradient(circle at 30% 30%, rgba(234, 220, 214, 0.7) 0%, rgba(194, 89, 63, 0.12) 42%, rgba(194, 89, 63, 0.03) 74%, rgba(194, 89, 63, 0) 100%);
+  box-shadow: 0 0 120px rgba(234, 220, 214, 0.4), 0 0 240px rgba(245, 235, 230, 0.3);
+  filter: blur(40px);
+  opacity: 0.25;
   will-change: transform;
 }
 
@@ -398,8 +373,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+  0%, 100% { box-shadow: 0 0 8px rgba(194, 89, 63, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(194, 89, 63, 0.25); }
 }
 
 .animate-pulse-glow {

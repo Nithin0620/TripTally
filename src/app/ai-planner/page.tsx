@@ -1,22 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import NeuInput from "@/components/ui/NeuInput";
 import Button from "@/components/ui/Button";
 import NeuCard from "@/components/ui/NeuCard";
-import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
-import { Sparkles, MapPin, Calendar, DollarSign, Loader2, ArrowRight } from "lucide-react";
+import Toast from "@/components/ui/Toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/useToast";
+import { tripsApi } from "@/lib/api";
+import { fadeInUp } from "@/lib/animations";
+import { Sparkles, MapPin, Calendar, DollarSign, Loader2, ArrowRight, ChevronLeft, Clock, IndianRupee, Lightbulb, CheckCircle } from "lucide-react";
 
 type Step = "destination" | "details" | "result";
+
+interface Activity {
+  time: string;
+  title: string;
+  description: string;
+  location?: string;
+  estimated_cost?: string;
+}
+
+interface DayPlan {
+  day: number;
+  title: string;
+  activities: Activity[];
+}
 
 interface PlanResult {
   destination: string;
   duration: string;
   budget: string;
-  vibe: string;
+  overview: string;
+  days: DayPlan[];
+  tips: string[];
+  estimated_total_budget: string;
 }
+
+const vibeOptions = [
+  { value: "relaxation", label: "Relaxation & Wellness", emoji: "🧘" },
+  { value: "adventure", label: "Adventure & Thrill", emoji: "🏔️" },
+  { value: "cultural", label: "Cultural Immersion", emoji: "🏛️" },
+  { value: "luxury", label: "Luxury & Comfort", emoji: "✨" },
+  { value: "budget", label: "Budget-Friendly", emoji: "💰" },
+  { value: "spiritual", label: "Spiritual Journey", emoji: "🙏" },
+];
 
 export default function AIPlannerPage() {
   const [step, setStep] = useState<Step>("destination");
@@ -26,15 +57,12 @@ export default function AIPlannerPage() {
   const [vibe, setVibe] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<PlanResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [creatingTrip, setCreatingTrip] = useState(false);
 
-  const vibeOptions = [
-    { value: "relaxation", label: "Relaxation & Wellness", emoji: "🧘" },
-    { value: "adventure", label: "Adventure & Thrill", emoji: "🏔️" },
-    { value: "cultural", label: "Cultural Immersion", emoji: "🏛️" },
-    { value: "luxury", label: "Luxury & Comfort", emoji: "✨" },
-    { value: "budget", label: "Budget-Friendly", emoji: "💰" },
-    { value: "spiritual", label: "Spiritual Journey", emoji: "🙏" },
-  ];
+  const { user } = useAuth();
+  const router = useRouter();
+  const { toasts, showToast, removeToast } = useToast();
 
   const handleDestinationNext = () => {
     if (destination.trim().length >= 2) {
@@ -44,18 +72,81 @@ export default function AIPlannerPage() {
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setError(null);
 
-    // Simulate AI generation (in real app, call /api/explore/generate)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const res = await fetch("/api/ai/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          destination: destination.trim(),
+          duration: duration || undefined,
+          budget: budget || undefined,
+          vibe: vibe || undefined,
+        }),
+      });
 
-    setResult({
-      destination: destination.trim(),
-      duration: duration || "3-5 days",
-      budget: budget || "₹15,000 - ₹30,000",
-      vibe: vibe || "Exploration",
-    });
-    setStep("result");
-    setGenerating(false);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate plan");
+      }
+
+      setResult(data.plan);
+      setStep("result");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCreateTrip = async () => {
+    if (!user) {
+      router.push("/login?redirect=/ai-planner");
+      return;
+    }
+
+    if (!result) return;
+
+    setCreatingTrip(true);
+    try {
+      const today = new Date();
+      const endDate = new Date(today);
+      const dayMatch = result.duration.match(/(\d+)/);
+      const numDays = dayMatch ? parseInt(dayMatch[1]) : 5;
+      endDate.setDate(today.getDate() + numDays);
+
+      const budgetMatch = result.estimated_total_budget.match(/(\d[\d,]*)/);
+      const budgetInCents = budgetMatch
+        ? Math.round(parseFloat(budgetMatch[1].replace(/,/g, "")) * 100)
+        : undefined;
+
+      const response = await tripsApi.createTrip({
+        title: `Trip to ${result.destination}`,
+        description: result.overview,
+        start_date: today.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        currency: "INR",
+        budget_limit: budgetInCents,
+      });
+
+      if (response.error) {
+        showToast(response.error, "error");
+        return;
+      }
+
+      const tripId = response.data?.trip?.id;
+      if (tripId) {
+        showToast("Trip created! Redirecting...", "success");
+        setTimeout(() => router.push(`/trips/${tripId}`), 1000);
+      }
+    } catch {
+      showToast("Failed to create trip", "error");
+    } finally {
+      setCreatingTrip(false);
+    }
   };
 
   const handleStartOver = () => {
@@ -65,6 +156,7 @@ export default function AIPlannerPage() {
     setBudget("");
     setVibe("");
     setResult(null);
+    setError(null);
   };
 
   return (
@@ -198,7 +290,6 @@ export default function AIPlannerPage() {
                       placeholder="e.g., ₹20,000, ₹15,000-₹30,000"
                     />
 
-                    {/* Vibe Selection */}
                     <div>
                       <label className="mb-3 block text-sm font-medium text-[#475569]">
                         Travel Style
@@ -208,7 +299,7 @@ export default function AIPlannerPage() {
                           <button
                             key={option.value}
                             type="button"
-                            onClick={() => setVibe(option.value)}
+                            onClick={() => setVibe(vibe === option.value ? "" : option.value)}
                             className={`p-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                               vibe === option.value
                                 ? "neu-inset text-[#0F172A] border border-[#3B82F6]/30"
@@ -223,13 +314,19 @@ export default function AIPlannerPage() {
                     </div>
                   </div>
 
+                  {error && (
+                    <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  )}
+
                   <div className="mt-6 flex gap-3">
                     <Button
                       variant="ghost"
                       onClick={() => setStep("destination")}
                       disabled={generating}
                     >
-                      Back
+                      <ChevronLeft size={16} className="mr-1" /> Back
                     </Button>
                     <Button
                       variant="primary"
@@ -240,7 +337,7 @@ export default function AIPlannerPage() {
                       {generating ? (
                         <>
                           <Loader2 size={16} className="mr-2 animate-spin" />
-                          Generating...
+                          Generating Plan...
                         </>
                       ) : (
                         <>
@@ -264,6 +361,7 @@ export default function AIPlannerPage() {
                 transition={{ duration: 0.4, type: "spring" }}
               >
                 <NeuCard className="!p-8">
+                  {/* Header */}
                   <div className="text-center mb-8">
                     <motion.div
                       initial={{ scale: 0 }}
@@ -276,44 +374,104 @@ export default function AIPlannerPage() {
                     <h2 className="text-2xl font-bold text-[#0F172A] mb-2">
                       Your Trip to {result.destination}
                     </h2>
-                    <p className="text-[#64748B]">
-                      Here's your AI-crafted trip plan
-                    </p>
+                    <p className="text-[#64748B]">{result.overview}</p>
                   </div>
 
-                  <div className="space-y-4 mb-8">
-                    <div className="neu-inset rounded-xl p-4 flex items-center gap-4">
-                      <MapPin size={20} className="text-[#3B82F6]" />
-                      <div>
-                        <p className="text-xs text-[#64748B]">Destination</p>
-                        <p className="font-semibold text-[#0F172A]">{result.destination}</p>
-                      </div>
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-3 gap-3 mb-8">
+                    <div className="neu-inset rounded-xl p-3 text-center">
+                      <Calendar size={18} className="mx-auto mb-1 text-[#3B82F6]" />
+                      <p className="text-xs text-[#64748B]">Duration</p>
+                      <p className="font-semibold text-[#0F172A] text-sm">{result.duration}</p>
                     </div>
-                    <div className="neu-inset rounded-xl p-4 flex items-center gap-4">
-                      <Calendar size={20} className="text-[#3B82F6]" />
-                      <div>
-                        <p className="text-xs text-[#64748B]">Duration</p>
-                        <p className="font-semibold text-[#0F172A]">{result.duration}</p>
-                      </div>
+                    <div className="neu-inset rounded-xl p-3 text-center">
+                      <IndianRupee size={18} className="mx-auto mb-1 text-[#3B82F6]" />
+                      <p className="text-xs text-[#64748B]">Budget</p>
+                      <p className="font-semibold text-[#0F172A] text-sm">{result.budget}</p>
                     </div>
-                    <div className="neu-inset rounded-xl p-4 flex items-center gap-4">
-                      <DollarSign size={20} className="text-[#3B82F6]" />
-                      <div>
-                        <p className="text-xs text-[#64748B]">Estimated Budget</p>
-                        <p className="font-semibold text-[#0F172A]">{result.budget}</p>
-                      </div>
+                    <div className="neu-inset rounded-xl p-3 text-center">
+                      <MapPin size={18} className="mx-auto mb-1 text-[#3B82F6]" />
+                      <p className="text-xs text-[#64748B]">Days</p>
+                      <p className="font-semibold text-[#0F172A] text-sm">{result.days.length}</p>
                     </div>
                   </div>
 
+                  {/* Day-by-Day Itinerary */}
+                  <div className="space-y-6 mb-8">
+                    <h3 className="text-lg font-bold text-[#0F172A]">Day-by-Day Itinerary</h3>
+                    {result.days.map((day) => (
+                      <div key={day.day} className="border border-white/40 rounded-2xl overflow-hidden">
+                        <div className="bg-[#3B82F6]/5 px-4 py-3 border-b border-white/30">
+                          <h4 className="font-bold text-[#0F172A]">
+                            Day {day.day}: {day.title}
+                          </h4>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {day.activities.map((activity, idx) => (
+                            <div key={idx} className="flex gap-3">
+                              <div className="flex-shrink-0 w-16 text-center">
+                                <div className="inline-flex items-center gap-1 text-xs font-medium text-[#3B82F6] bg-blue-50 rounded-full px-2 py-1">
+                                  <Clock size={10} />
+                                  {activity.time}
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-[#0F172A] text-sm">{activity.title}</p>
+                                <p className="text-xs text-[#64748B] mt-0.5">{activity.description}</p>
+                                <div className="flex gap-3 mt-1">
+                                  {activity.location && (
+                                    <span className="text-xs text-[#94A3B8]">📍 {activity.location}</span>
+                                  )}
+                                  {activity.estimated_cost && (
+                                    <span className="text-xs text-[#94A3B8]">💰 {activity.estimated_cost}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tips */}
+                  {result.tips && result.tips.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-lg font-bold text-[#0F172A] mb-3 flex items-center gap-2">
+                        <Lightbulb size={18} className="text-[#EFEC07]" />
+                        Travel Tips
+                      </h3>
+                      <div className="space-y-2">
+                        {result.tips.map((tip, idx) => (
+                          <div key={idx} className="flex gap-2 text-sm text-[#475569]">
+                            <CheckCircle size={16} className="flex-shrink-0 mt-0.5 text-[#3B82F6]" />
+                            <span>{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
                   <div className="flex gap-3">
                     <Button variant="ghost" onClick={handleStartOver} className="flex-1">
                       Start Over
                     </Button>
-                    <Link href={`/explore/${result.destination.toLowerCase().replace(/\s+/g, "-")}`} className="flex-1">
-                      <Button variant="primary" className="w-full">
-                        Explore {result.destination}
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="primary"
+                      onClick={handleCreateTrip}
+                      disabled={creatingTrip}
+                      className="flex-1"
+                    >
+                      {creatingTrip ? (
+                        <>
+                          <Loader2 size={16} className="mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Create This Trip"
+                      )}
+                    </Button>
                   </div>
                 </NeuCard>
               </motion.div>
@@ -321,6 +479,8 @@ export default function AIPlannerPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </main>
   );
 }

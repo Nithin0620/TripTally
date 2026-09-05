@@ -48,4 +48,21 @@ export const activitiesApi = {
   async deleteActivity(activityId: string): Promise<ApiResponse<{ message: string }>> {
     return apiClient.delete<{ message: string }>(`/api/activities?id=${activityId}`);
   },
+
+  /**
+   * Reorder activities
+   */
+  async reorderActivities(
+    activities: Array<{ id: string; order_index: number }>
+  ): Promise<ApiResponse<{ message: string }>> {
+    // Reorder via individual updates (batch)
+    const results = await Promise.all(
+      activities.map(({ id, order_index }) =>
+        apiClient.put<{ activity: Activity }>('/api/activities', { id, order_index })
+      )
+    );
+    const error = results.find((r) => r.error);
+    if (error) return { error: error.error };
+    return { data: { message: 'Reordered successfully' } };
+  },
 };

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, start_date, end_date, cover_image } = body;
+    const { title, description, start_date, end_date, cover_image, currency, budget_limit } = body;
 
     // Validation
     if (!title || !start_date || !end_date) {
@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
       start_date,
       end_date,
       cover_image,
+      currency: currency || 'INR',
+      budget_limit,
     };
 
     const { trip, error } = await createTrip(auth.user!.userId, tripData);

@@ -38,6 +38,8 @@ export interface Trip {
   start_date: string;
   end_date: string;
   cover_image?: string;
+  currency: string;
+  budget_limit?: number;
   created_by: string;
   created_at: string;
 }
@@ -147,6 +149,8 @@ export interface CreateTripRequest {
   start_date: string;
   end_date: string;
   cover_image?: string;
+  currency?: string;
+  budget_limit?: number;
 }
 
 export interface CreateActivityRequest {
@@ -249,4 +253,20 @@ export interface ExploreCategory {
   category: string; // Dynamically fetched from database, not hardcoded
   places: Place[];
   hasMore?: boolean;
+}
+
+// ============================================
+// Notification Types
+// ============================================
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'trip_invite' | 'expense_added' | 'activity_added' | 'settlement_updated' | 'member_joined' | 'system';
+  title: string;
+  message: string;
+  trip_id?: string;
+  data?: Record<string, any>;
+  read: boolean;
+  created_at: string;
 }

@@ -14,6 +14,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EmptyState from "@/components/ui/EmptyState";
 import { tripsApi } from "@/lib/api";
 import { Trip } from "@/types";
+import { CURRENCIES } from "@/utils/currency";
 import {
   fadeInUp,
   staggerContainer,
@@ -287,6 +288,7 @@ function CreateTripModal({
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [currency, setCurrency] = useState("INR");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,6 +300,7 @@ function CreateTripModal({
       description,
       start_date: startDate,
       end_date: endDate,
+      currency,
     });
 
     setLoading(false);
@@ -373,6 +376,24 @@ function CreateTripModal({
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
+                Currency
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                disabled={loading}
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol} {c.name} ({c.code})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex gap-3 pt-4">

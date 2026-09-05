@@ -12,14 +12,14 @@ const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="mb-2 block text-sm font-medium text-[#475569]">
+          <label className="mb-2 block text-sm font-medium text-brand-text/75">
             {label}
           </label>
         )}
         <input
           ref={ref}
-          className={`neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-[#94A3B8] transition-all duration-300 disabled:opacity-50 ${
-            error ? "border-red-400" : ""
+          className={`neu-input w-full rounded-2xl px-4 py-3 text-brand-text placeholder-brand-text/40 transition-all duration-300 disabled:opacity-50 ${
+            error ? "border-red-400 focus:box-shadow-none" : ""
           } ${className}`}
           {...props}
         />

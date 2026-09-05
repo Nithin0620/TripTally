@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { User } from "@/types";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 type NavItem = {
   label: string;
@@ -50,10 +51,10 @@ export default function MobileMenu({
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
-                  className={`group relative block rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                  className={`group relative block rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "neu-inset text-[#0F172A]"
-                      : "text-[#64748B] hover:bg-white/50 hover:text-[#0F172A]"
+                      ? "bg-brand-sand/30 text-brand-text"
+                      : "text-brand-text/60 hover:bg-brand-sand/20 hover:text-brand-text"
                   }`}
                 >
                   <span>{item.label}</span>
@@ -67,12 +68,21 @@ export default function MobileMenu({
             })}
           </div>
 
-          <div className="mt-4 space-y-2 border-t border-[#E2E8F0] pt-4">
+          <div className="mt-4 space-y-2 border-t border-brand-sand/30 pt-4">
+            {user && (
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-semibold text-brand-text">
+                  {user.name || user.email}
+                </span>
+                <NotificationCenter />
+              </div>
+            )}
+
             {!user && (
               <Link
                 href="/login"
                 onClick={onClose}
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-[#64748B] transition-all duration-300 hover:bg-white/50 hover:text-[#0F172A]"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
               >
                 Login
               </Link>
@@ -82,7 +92,7 @@ export default function MobileMenu({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#64748B] transition-all duration-300 hover:bg-white/50 hover:text-[#0F172A]"
+                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
               >
                 Logout
               </button>
@@ -91,7 +101,7 @@ export default function MobileMenu({
             <Link
               href={user ? "/dashboard" : "/register"}
               onClick={onClose}
-              className="block rounded-full bg-[#EFEC07] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all duration-300 hover:shadow-neu-yellow"
+              className="block rounded-full bg-brand-accent px-4 py-3 text-center text-sm font-semibold text-white transition-all duration-200 hover:brightness-105"
             >
               Get Started
             </Link>
