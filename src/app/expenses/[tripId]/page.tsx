@@ -2,16 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getTripExpenses, calculateTripSettlement } from "@/services/expense.service";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
-import NeuCard from "@/components/ui/NeuCard";
 import AddExpenseModal from "@/components/expenses/AddExpenseModal";
 import EditExpenseModal from "@/components/expenses/EditExpenseModal";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
@@ -19,7 +18,18 @@ import ExpenseSearchFilter from "@/components/expenses/ExpenseSearchFilter";
 import BalanceSummary from "@/components/expenses/BalanceSummary";
 import InviteSection from "@/components/expenses/InviteSection";
 import RealtimePresence from "@/components/trips/RealtimePresence";
-import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
+import Link from "next/link";
+import {
+  CreditCard,
+  Plus,
+  ArrowLeft,
+  DollarSign,
+  TrendingUp,
+  Receipt,
+  Users,
+  CheckCircle2,
+  ArrowRight
+} from "lucide-react";
 
 export default function ExpensesPage() {
   const params = useParams();
@@ -37,22 +47,18 @@ export default function ExpensesPage() {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const { expenses: expenseData, error: expensesError } =
-        await getTripExpenses(tripId);
+      const { expenses: expenseData, error: expensesError } = await getTripExpenses(tripId);
 
       if (expensesError) {
         showToast(expensesError, "error");
         return;
       }
 
-      setExpenses(expenseData);
+      setExpenses(expenseData || []);
+      setFilteredExpenses(expenseData || []);
 
-      const { data: settlementData, error: settlementError } =
-        await calculateTripSettlement(tripId);
-
-      if (settlementError) {
-        console.error("Settlement calculation error:", settlementError);
-      } else {
+      const { data: settlementData, error: settlementError } = await calculateTripSettlement(tripId);
+      if (!settlementError && settlementData) {
         setSettlement(settlementData);
       }
     } catch (error) {
@@ -85,156 +91,176 @@ export default function ExpensesPage() {
     loadExpenses();
   }, [tripId]);
 
-  if (loading) {
-    return <LoadingSpinner text="Loading expenses..." />;
-  }
+  const totalSpent = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-brand-bg">
-      <div className="max-w-7xl mx-auto px-4 py-24">
-        {/* Header */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUp}
-          className="mb-8"
+    <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      
+      {/* Top Breadcrumb & Presence */}
+      <div className="flex items-center justify-between mb-4">
+        <Link
+          href={`/trips/${tripId}`}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black text-[#0F172A] mb-2">
-                Trip Expenses
-              </h1>
-              <p className="text-[#64748B]">
-                Manage costs and calculate settlements
-              </p>
-            </div>
-            <RealtimePresence
-              onlineMembers={onlineMembers}
-              isConnected={isConnected}
-              currentUserId={user?.id}
-            />
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Trip Overview</span>
+        </Link>
+
+        <RealtimePresence
+          onlineMembers={onlineMembers}
+          isConnected={isConnected}
+          currentUserId={user?.id}
+        />
+      </div>
+
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200/80 mb-8">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <CreditCard className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Financial Ledger & Split Center
+            </span>
           </div>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex gap-4 mb-8"
-        >
-          <Button variant="primary" onClick={() => setShowAddExpense(true)}>
-            + Add Expense
-          </Button>
-        </motion.div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Expenses List */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="lg:col-span-2"
-          >
-            <div className="space-y-4">
-              {expenses.length === 0 ? (
-                <EmptyState
-                  icon="💰"
-                  title="No expenses yet"
-                  description="Add one to get started!"
-                  actionLabel="Add Expense"
-                  onAction={() => setShowAddExpense(true)}
-                />
-              ) : (
-                <>
-                  <ExpenseSearchFilter
-                    expenses={expenses}
-                    onFilter={setFilteredExpenses}
-                  />
-                  {filteredExpenses.length > 0 ? (
-                    filteredExpenses.map((expense, index) => (
-                      <ExpenseCard
-                        key={expense.id}
-                        expense={expense}
-                        index={index}
-                        onUpdate={loadExpenses}
-                        onEdit={(exp) => setEditingExpense(exp)}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-[#64748B]">
-                      <p className="text-3xl mb-2">🔍</p>
-                      <p className="text-sm">No expenses match your filters</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6"
-          >
-            {settlement && <BalanceSummary settlement={settlement} />}
-            <InviteSection tripId={tripId} onInviteSent={() => {}} />
-          </motion.div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Trip Expenses & Settlement
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Track who paid, split bills equally or customly, and settle group balances.
+          </p>
         </div>
 
-        {/* Settlement Plan */}
-        {settlement?.settlements && settlement.settlements.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-8"
-          >
-            <NeuCard>
-              <h2 className="text-2xl font-bold text-[#0F172A] mb-6">
-                Settlement Plan
-              </h2>
-              <p className="text-[#64748B] mb-6">
-                Optimized payment plan to settle all debts with minimum
-                transactions:
-              </p>
-              <div className="space-y-3">
-                {settlement.settlements.map(
-                  (s: any, index: number) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="rounded-xl bg-white/50 border border-white/40 p-4 flex justify-between items-center"
-                    >
-                      <div>
-                        <p className="text-[#0F172A] font-semibold">
-                          {s.from_user?.name || s.from}
-                        </p>
-                        <p className="text-[#64748B] text-sm">pays</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-brand-blue font-bold text-lg">
-                          ${s.amount.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[#0F172A] font-semibold">
-                          {s.to_user?.name || s.to}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )
-                )}
-              </div>
-            </NeuCard>
-          </motion.div>
-        )}
+        <Button
+          variant="primary"
+          onClick={() => setShowAddExpense(true)}
+          className="gap-2 text-xs font-bold py-2.5 px-5 shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add New Expense</span>
+        </Button>
       </div>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 backdrop-blur-sm shadow-sm">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total Group Spend</span>
+          <span className="text-2xl font-black text-slate-900 mt-1 block">
+            ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 backdrop-blur-sm shadow-sm">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Logged Receipts</span>
+          <span className="text-2xl font-black text-slate-900 mt-1 block">{expenses.length} bills</span>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 backdrop-blur-sm shadow-sm">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Settlement Route</span>
+          <span className="text-2xl font-black text-blue-700 mt-1 block">
+            {settlement?.settlements?.length || 0} transfers
+          </span>
+        </div>
+      </div>
+
+      {/* Main Split Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left 2 Cols: Expense List */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-bold text-slate-900">Recorded Expenses</h2>
+            <span className="text-xs font-semibold text-slate-500">{expenses.length} total entries</span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((n) => (
+                <Skeleton key={n} className="h-24 w-full rounded-2xl" />
+              ))}
+            </div>
+          ) : expenses.length === 0 ? (
+            <EmptyState
+              title="No expenses logged yet"
+              description="Keep group finances clear and fair. Add your first restaurant bill, rental car, or hotel cost."
+              actionLabel="+ Add First Expense"
+              onAction={() => setShowAddExpense(true)}
+            />
+          ) : (
+            <>
+              <ExpenseSearchFilter expenses={expenses} onFilter={setFilteredExpenses} />
+              {filteredExpenses.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredExpenses.map((expense, index) => (
+                    <ExpenseCard
+                      key={expense.id}
+                      expense={expense}
+                      index={index}
+                      onUpdate={loadExpenses}
+                      onEdit={(exp) => setEditingExpense(exp)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200 bg-white/50 text-slate-500">
+                  <p className="text-sm font-semibold">No expenses match your search query</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right 1 Col: Balance & Invite Sidebar */}
+        <div className="space-y-6">
+          {settlement && <BalanceSummary settlement={settlement} />}
+          <InviteSection tripId={tripId} onInviteSent={() => {}} />
+        </div>
+      </div>
+
+      {/* Debt Settlement Matrix */}
+      {settlement?.settlements && settlement.settlements.length > 0 && (
+        <div className="mt-12 rounded-3xl border border-slate-200/90 bg-white/95 p-6 sm:p-8 shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Optimized Settlement Plan</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Minimal transfer route computed to settle all debts with zero circular payments.
+              </p>
+            </div>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
+              Algorithm: Greedy Flow
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {settlement.settlements.map((s: any, index: number) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                    💸
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                      <strong className="text-slate-800">{s.from_user?.name || s.from}</strong>
+                      <ArrowRight className="h-3 w-3 text-slate-400" />
+                      <strong className="text-slate-800">{s.to_user?.name || s.to}</strong>
+                    </div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">
+                      ${s.amount.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                  Pending Transfer
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Add Expense Modal */}
       {showAddExpense && (

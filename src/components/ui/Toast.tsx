@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toast as ToastType } from '@/hooks/useToast';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 interface ToastProps {
   toasts: ToastType[];
@@ -10,40 +11,38 @@ interface ToastProps {
 
 export default function Toast({ toasts, onRemove }: ToastProps) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={`glass-card rounded-2xl px-5 py-3.5 ${
-              toast.type === 'success'
-                ? 'border-green-400/40 shadow-[0_0_16px_rgba(34,197,94,0.15)]'
-                : toast.type === 'error'
-                ? 'border-red-400/40 shadow-[0_0_16px_rgba(239,68,68,0.15)]'
-                : 'border-brand-blue/30 shadow-[0_0_16px_rgba(59,130,246,0.12)]'
-            }`}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className="pointer-events-auto flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-md"
           >
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-semibold ${
-                toast.type === 'success'
-                  ? 'text-green-600'
-                  : toast.type === 'error'
-                  ? 'text-red-500'
-                  : 'text-brand-blue'
-              }`}>
-                {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              {toast.type === 'success' && (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              )}
+              {toast.type === 'error' && (
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+              )}
+              {toast.type === 'info' && (
+                <Info className="h-4 w-4 shrink-0 text-blue-600" />
+              )}
+              <span className="text-xs sm:text-sm font-semibold text-slate-800 truncate">
+                {toast.message}
               </span>
-              <span className="text-sm font-medium text-[#0F172A]">{toast.message}</span>
-              <button
-                onClick={() => onRemove(toast.id)}
-                className="ml-2 text-[#94A3B8] hover:text-[#475569] transition-colors"
-              >
-                ✕
-              </button>
             </div>
+            <button
+              onClick={() => onRemove(toast.id)}
+              className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+              aria-label="Close notification"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </motion.div>
         ))}
       </AnimatePresence>

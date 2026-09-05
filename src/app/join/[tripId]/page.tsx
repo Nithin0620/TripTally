@@ -5,12 +5,11 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import NeuCard from "@/components/ui/NeuCard";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Skeleton from "@/components/ui/Skeleton";
 import Toast from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
-import { fadeInUp } from "@/lib/animations";
+import { Compass, Calendar, Users, CheckCircle2, XCircle, Clock, ArrowRight, Loader2 } from "lucide-react";
 
 interface InviteDetails {
   invite: {
@@ -52,7 +51,7 @@ export default function JoinTripPage() {
 
   useEffect(() => {
     if (!inviteId) {
-      setError("No invite link provided");
+      setError("No invite code found in the invitation link.");
       setLoading(false);
       return;
     }
@@ -63,13 +62,13 @@ export default function JoinTripPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          setError(data.error || "Failed to load invite");
+          setError(data.error || "Failed to load invitation details");
           return;
         }
 
         setInviteDetails(data);
       } catch {
-        setError("Failed to load invite details");
+        setError("Failed to load invitation details");
       } finally {
         setLoading(false);
       }
@@ -102,7 +101,7 @@ export default function JoinTripPage() {
 
       setActionDone("accepted");
       showToast("Welcome to the trip!", "success");
-      setTimeout(() => router.push(`/trips/${tripId}`), 1500);
+      setTimeout(() => router.push(`/trips/${tripId}`), 1200);
     } catch {
       showToast("Something went wrong", "error");
     } finally {
@@ -128,12 +127,12 @@ export default function JoinTripPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        showToast(data.error || "Failed to reject invite", "error");
+        showToast(data.error || "Failed to decline invite", "error");
         return;
       }
 
       setActionDone("rejected");
-      showToast("Invite declined", "info");
+      showToast("Invitation declined", "info");
     } catch {
       showToast("Something went wrong", "error");
     } finally {
@@ -141,185 +140,120 @@ export default function JoinTripPage() {
     }
   };
 
-  if (loading || authLoading) {
-    return <LoadingSpinner text="Loading invitation..." />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
-        <motion.div className="w-full max-w-md" variants={fadeInUp} initial="hidden" animate="visible">
-          <NeuCard className="!p-8 text-center">
-            <div className="text-5xl mb-4">😕</div>
-            <h1 className="text-2xl font-bold text-[#0F172A] mb-2">Invalid Invitation</h1>
-            <p className="text-[#64748B] mb-6">{error}</p>
-            <Link href="/dashboard">
-              <Button variant="primary" className="w-full">Go to Dashboard</Button>
-            </Link>
-          </NeuCard>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (!inviteDetails) return null;
-
-  const { trip, memberCount, isExpired, isAlreadyUsed, invite } = inviteDetails;
-  const isEmailMismatch = user && user.email.toLowerCase() !== invite.email.toLowerCase();
-
-  if (actionDone === "rejected") {
-    return (
-      <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
-        <motion.div className="w-full max-w-md" variants={fadeInUp} initial="hidden" animate="visible">
-          <NeuCard className="!p-8 text-center">
-            <div className="text-5xl mb-4">👋</div>
-            <h1 className="text-2xl font-bold text-[#0F172A] mb-2">Invitation Declined</h1>
-            <p className="text-[#64748B] mb-6">You&apos;ve declined the invitation to join &ldquo;{trip.title}&rdquo;.</p>
-            <Link href="/dashboard">
-              <Button variant="primary" className="w-full">Go to Dashboard</Button>
-            </Link>
-          </NeuCard>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (actionDone === "accepted") {
-    return (
-      <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
-        <motion.div className="w-full max-w-md" variants={fadeInUp} initial="hidden" animate="visible">
-          <NeuCard className="!p-8 text-center">
-            <div className="text-5xl mb-4">🎉</div>
-            <h1 className="text-2xl font-bold text-[#0F172A] mb-2">Welcome Aboard!</h1>
-            <p className="text-[#64748B] mb-6">Redirecting you to &ldquo;{trip.title}&rdquo;...</p>
-          </NeuCard>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-20">
-      <motion.div className="w-full max-w-lg" variants={fadeInUp} initial="hidden" animate="visible">
-        <NeuCard className="!p-8">
-          {/* Trip Cover */}
-          <div className="relative h-48 rounded-2xl overflow-hidden mb-6">
-            <img
-              src={
-                trip.cover_image ||
-                "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80"
-              }
-              alt={trip.title}
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/60 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="text-2xl font-black text-white drop-shadow-lg">{trip.title}</h1>
-            </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-24">
+      <div className="w-full max-w-lg">
+        {loading || authLoading ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 space-y-4 text-center">
+            <Skeleton className="h-44 w-full rounded-2xl" />
+            <Skeleton className="h-6 w-3/4 mx-auto" />
+            <Skeleton className="h-4 w-1/2 mx-auto" />
           </div>
-
-          {/* Trip Info */}
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-3 text-sm text-[#64748B]">
-              <span>📅</span>
-              <span>
-                {new Date(trip.start_date).toLocaleDateString()} →{" "}
-                {new Date(trip.end_date).toLocaleDateString()}
-              </span>
+        ) : error ? (
+          <div className="rounded-3xl border border-slate-200 bg-white/95 p-8 text-center shadow-xl backdrop-blur-md">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+              <XCircle className="h-6 w-6" />
             </div>
-            <div className="flex items-center gap-3 text-sm text-[#64748B]">
-              <span>👥</span>
-              <span>
-                {memberCount} {memberCount === 1 ? "member" : "members"} so far
-              </span>
-            </div>
-            {trip.description && (
-              <p className="text-[#475569] text-sm leading-relaxed">{trip.description}</p>
-            )}
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Invalid Invitation</h2>
+            <p className="text-xs text-slate-500 mb-6">{error}</p>
+            <Button variant="secondary" href="/dashboard" className="text-xs py-2 px-4">
+              Return to Dashboard
+            </Button>
           </div>
-
-          {/* Invite Status Messages */}
-          {isExpired && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-              <p className="text-red-600 text-sm font-medium">
-                This invitation has expired. Ask the trip owner to send a new one.
-              </p>
+        ) : actionDone === "accepted" ? (
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50/90 p-8 text-center shadow-xl backdrop-blur-md">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+              <CheckCircle2 className="h-6 w-6" />
             </div>
-          )}
-
-          {isAlreadyUsed && !isExpired && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-blue-600 text-sm font-medium">
-                This invitation has already been {invite.status}.
-              </p>
-            </div>
-          )}
-
-          {isEmailMismatch && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-              <p className="text-amber-600 text-sm font-medium">
-                This invite is for <strong>{invite.email}</strong>, but you&apos;re logged in as{" "}
-                <strong>{user?.email}</strong>. Please log in with the correct account.
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
-          {!isExpired && !isAlreadyUsed && (
-            <div className="space-y-3">
-              {!user ? (
-                <>
-                  <p className="text-center text-sm text-[#64748B] mb-4">
-                    Sign in or create an account to join this trip
-                  </p>
-                  <Link href={`/login?redirect=/join/${tripId}?invite=${inviteId}`}>
-                    <Button variant="primary" className="w-full">
-                      Sign In to Join
-                    </Button>
-                  </Link>
-                  <Link href={`/register?redirect=/join/${tripId}?invite=${inviteId}`}>
-                    <Button variant="secondary" className="w-full">
-                      Create Account
-                    </Button>
-                  </Link>
-                </>
-              ) : isEmailMismatch ? (
-                <Link href="/login">
-                  <Button variant="primary" className="w-full">
-                    Sign In with {invite.email}
-                  </Button>
-                </Link>
-              ) : (
-                <>
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={handleAccept}
-                    disabled={accepting || rejecting}
-                  >
-                    {accepting ? "Joining..." : "Join Trip"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={handleReject}
-                    disabled={accepting || rejecting}
-                  >
-                    {rejecting ? "Declining..." : "Decline"}
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="mt-6 pt-4 border-t border-white/30 text-center">
-            <Link href="/dashboard" className="text-xs text-[#94A3B8] hover:text-[#64748B] transition-colors">
-              ← Back to TripTally
-            </Link>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">You're on the Expedition!</h2>
+            <p className="text-xs text-slate-600 mb-6">Opening your collaborative itinerary...</p>
           </div>
-        </NeuCard>
-      </motion.div>
+        ) : actionDone === "rejected" ? (
+          <div className="rounded-3xl border border-slate-200 bg-white/95 p-8 text-center shadow-xl backdrop-blur-md">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Invitation Declined</h2>
+            <p className="text-xs text-slate-500 mb-6">You have declined this expedition invitation.</p>
+            <Button variant="secondary" href="/dashboard" className="text-xs py-2 px-4">
+              Return to Dashboard
+            </Button>
+          </div>
+        ) : inviteDetails ? (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl border border-slate-200/90 bg-white/95 overflow-hidden shadow-2xl backdrop-blur-md"
+          >
+            {/* Trip Cover Image */}
+            <div className="relative h-44 bg-slate-900 overflow-hidden">
+              <img
+                src={
+                  inviteDetails.trip.cover_image ||
+                  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80"
+                }
+                alt={inviteDetails.trip.title}
+                className="h-full w-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-6 right-6 text-white">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 block mb-1">
+                  Trip Invitation
+                </span>
+                <h1 className="text-2xl font-black">{inviteDetails.trip.title}</h1>
+              </div>
+            </div>
+
+            {/* Invite Details Body */}
+            <div className="p-6 sm:p-8 space-y-6">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {inviteDetails.trip.description || "You have been invited to join this collaborative travel itinerary."}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3.5 rounded-2xl text-xs font-medium text-slate-700">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span>
+                    {new Date(inviteDetails.trip.start_date).toLocaleDateString()} →{" "}
+                    {new Date(inviteDetails.trip.end_date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>{inviteDetails.memberCount} member{inviteDetails.memberCount === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={handleReject}
+                  disabled={rejecting || accepting}
+                  className="flex-1 text-xs py-2.5"
+                >
+                  {rejecting ? "Declining..." : "Decline"}
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleAccept}
+                  disabled={accepting || rejecting}
+                  className="flex-1 text-xs py-2.5 gap-2"
+                >
+                  {accepting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Joining...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Accept & Join</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </div>
 
       <Toast toasts={toasts} onRemove={removeToast} />
     </div>

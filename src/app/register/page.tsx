@@ -5,14 +5,13 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import GlassCard from "@/components/ui/GlassCard";
 import NeuInput from "@/components/ui/NeuInput";
 import GoogleIdentityScript from "@/components/GoogleIdentityScript";
-import { fadeIn, fadeInUp } from "@/lib/animations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import Toast from "@/components/ui/Toast";
+import { Compass, User, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -40,12 +39,12 @@ export default function RegisterPage() {
         showToast(result.error, 'error');
       } else {
         showToast('Account created successfully!', 'success');
-        setTimeout(() => router.push('/dashboard'), 1000);
+        setTimeout(() => router.push('/dashboard'), 800);
       }
     },
     onError: (error) => {
-      console.error('Error initializing Google Sign-In:', error);
-      showToast('Google Sign-In could not be loaded', 'error');
+      console.error('Google Sign-In initialization error:', error);
+      showToast('Google authentication unavailable', 'error');
     },
     buttonRef: googleButtonRef,
     context: 'signup',
@@ -62,15 +61,15 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const result = await register(name, email, password);
+      const result = await register(name.trim(), email.trim(), password);
       
       if (result.error) {
         showToast(result.error, 'error');
       } else {
         showToast('Account created successfully!', 'success');
-        setTimeout(() => router.push('/dashboard'), 1000);
+        setTimeout(() => router.push('/dashboard'), 800);
       }
-    } catch (error) {
+    } catch {
       showToast('An unexpected error occurred', 'error');
     } finally {
       setLoading(false);
@@ -80,111 +79,114 @@ export default function RegisterPage() {
   return (
     <>
       <GoogleIdentityScript />
-      <div className="flex min-h-screen items-center justify-center px-4 py-24">
+      <div className="min-h-screen flex items-center justify-center px-4 py-24">
         <motion.div
-          className="w-full max-w-md"
-          initial="hidden"
-          animate="visible"
-          variants={fadeIn}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 p-8 shadow-2xl backdrop-blur-xl"
         >
-          <GlassCard className="p-8">
-            <motion.div variants={fadeInUp} className="mb-8 text-center">
-              <h1 className="mb-2 text-4xl font-black text-[#0F172A]">
-                Create Account
-              </h1>
-              <p className="text-[#64748B]">Start your travel adventure today</p>
-            </motion.div>
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/25">
+              <Compass className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Create your account
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Start planning collaborative trips and splitting expenses effortlessly.
+            </p>
+          </div>
 
-            <motion.form variants={fadeInUp} onSubmit={handleSubmit} className="space-y-4">
-              <NeuInput
-                label="Full Name"
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={loading}
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <NeuInput
+              label="Full Name"
+              icon={<User className="h-4 w-4" />}
+              type="text"
+              placeholder="e.g. Alex Rivera"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              disabled={loading}
+              autoFocus
+            />
 
-              <NeuInput
-                label="Email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
+            <NeuInput
+              label="Email Address"
+              icon={<Mail className="h-4 w-4" />}
+              type="email"
+              placeholder="name@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
 
-              <NeuInput
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                disabled={loading}
-              />
+            <NeuInput
+              label="Password"
+              icon={<Lock className="h-4 w-4" />}
+              type="password"
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              disabled={loading}
+            />
 
-              <NeuInput
-                label="Confirm Password"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                disabled={loading}
-              />
+            <NeuInput
+              label="Confirm Password"
+              icon={<Lock className="h-4 w-4" />}
+              type="password"
+              placeholder="Repeat password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
+              disabled={loading}
+            />
 
-              <div className="flex items-start gap-2 text-sm text-[#64748B]">
-                <input
-                  type="checkbox"
-                  required
-                  disabled={loading}
-                  className="mt-1 rounded border-[#CBD5E1]"
-                />
-                <span>
-                  I agree to the{" "}
-                  <a href="#" className="text-brand-blue hover:underline">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-brand-blue hover:underline">
-                    Privacy Policy
-                  </a>
-                </span>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading || !name.trim() || !email.trim() || !password.trim()}
+              className="w-full py-3 text-xs font-bold gap-2 mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Get Started Free</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
               </div>
+              <span className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Or sign up with
+              </span>
+            </div>
 
-              <Button type="submit" variant="primary" className="w-full" onClick={undefined}>
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Button>
+            <div ref={googleButtonRef} className="flex justify-center min-h-[40px]" />
+          </form>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#E2E8F0]" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-brand-bg px-2 text-[#94A3B8]">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <div ref={googleButtonRef} className="flex justify-center" />
-            </motion.form>
-
-            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-[#64748B]">
-              Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-brand-blue hover:underline">
-                Sign in
-              </Link>
-            </motion.p>
-          </GlassCard>
+          <p className="mt-8 text-center text-xs text-slate-500 font-medium">
+            Already have an account?{" "}
+            <Link href="/login" className="font-bold text-blue-600 hover:text-blue-700">
+              Sign in
+            </Link>
+          </p>
         </motion.div>
       </div>
-      
+
       <Toast toasts={toasts} onRemove={removeToast} />
     </>
   );

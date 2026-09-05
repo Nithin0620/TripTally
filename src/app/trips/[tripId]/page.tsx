@@ -7,13 +7,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
-import NeuCard from "@/components/ui/NeuCard";
-import NeuInput from "@/components/ui/NeuInput";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import EditTripModal from "@/components/trips/EditTripModal";
 import AddExpenseModal from "@/components/expenses/AddExpenseModal";
 import ExpenseSearchFilter from "@/components/expenses/ExpenseSearchFilter";
+import ExpenseCard from "@/components/expenses/ExpenseCard";
 import DayByDayItinerary from "@/components/trips/DayByDayItinerary";
 import TripActivityMap from "@/components/trips/TripActivityMap";
 import EditActivityModal from "@/components/trips/EditActivityModal";
@@ -24,10 +23,27 @@ import { tripsApi, activitiesApi, expensesApi, settlementApi } from "@/lib/api";
 import { Trip, Activity, Expense, Settlement } from "@/types";
 import { formatAmount } from "@/utils/currency";
 import { exportExpensesCSV, exportTripSummaryHTML } from "@/utils/export";
-import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 import Link from "next/link";
+import {
+  Calendar,
+  Compass,
+  CreditCard,
+  MapPin,
+  Clock,
+  Plus,
+  ArrowLeft,
+  Share2,
+  FileDown,
+  Edit3,
+  Trash2,
+  CheckCircle2,
+  Layers,
+  Map,
+  Users,
+  DollarSign
+} from "lucide-react";
 
-type ActivityView = "list" | "timeline" | "reorder";
+type ActivityView = "timeline" | "list" | "reorder";
 
 export default function TripDetailsPage() {
   const params = useParams();
@@ -37,9 +53,7 @@ export default function TripDetailsPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    "activities" | "expenses" | "settlement" | "map"
-  >("activities");
+  const [activeTab, setActiveTab] = useState<"activities" | "expenses" | "settlement" | "map">("activities");
   const [activityView, setActivityView] = useState<ActivityView>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -60,6 +74,7 @@ export default function TripDetailsPage() {
       setTrip(response.data.trip);
       setActivities(response.data.activities || []);
       setExpenses(response.data.expenses || []);
+      setFilteredExpenses(response.data.expenses || []);
     }
     setLoading(false);
   };
@@ -124,10 +139,19 @@ export default function TripDetailsPage() {
     setActivities(reordered);
   };
 
-  const currency = trip?.currency || "INR";
+  const currency = trip?.currency || "USD";
 
   if (loading) {
-    return <LoadingSpinner text="Loading trip..." />;
+    return (
+      <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+        <Skeleton className="h-64 w-full rounded-3xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((n) => (
+            <Skeleton key={n} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (!trip) return null;
@@ -138,524 +162,388 @@ export default function TripDetailsPage() {
     : null;
 
   const tabs = [
-    { key: "activities" as const, label: "Activities", icon: "🎯" },
-    { key: "expenses" as const, label: "Expenses", icon: "💰" },
-    { key: "settlement" as const, label: "Settlement", icon: "🤝" },
-    { key: "map" as const, label: "Map", icon: "🗺️" },
-  ];
-
-  const activityViews: { key: ActivityView; label: string; icon: string }[] = [
-    { key: "timeline", label: "Timeline", icon: "📅" },
-    { key: "list", label: "List", icon: "📋" },
-    { key: "reorder", label: "Reorder", icon: "🔢" },
+    { key: "activities" as const, label: "Itinerary Timeline", icon: Calendar },
+    { key: "expenses" as const, label: "Expenses & Splits", icon: CreditCard },
+    { key: "settlement" as const, label: "Debt Settlement", icon: DollarSign },
+    { key: "map" as const, label: "Interactive Map", icon: Map },
   ];
 
   return (
     <>
-      <div className="min-h-screen bg-brand-bg py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+      <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
           >
-            <Link
-              href="/dashboard"
-              className="mb-4 inline-flex items-center text-sm text-[#64748B] hover:text-[#0F172A] transition-colors"
-            >
-              ← Back to Dashboard
-            </Link>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Expeditions</span>
+          </Link>
 
-            <div className="glass-card relative h-64 overflow-hidden rounded-3xl">
-              <img
-                src={
-                  trip.cover_image ||
-                  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80"
-                }
-                alt={trip.title}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/80 via-[#0F172A]/30 to-transparent" />
-              <div className="absolute top-4 right-4">
-                <RealtimePresence
-                  onlineMembers={onlineMembers}
-                  isConnected={isConnected}
-                  currentUserId={user?.id}
-                />
+          <div className="flex items-center gap-2">
+            <RealtimePresence
+              onlineMembers={onlineMembers}
+              isConnected={isConnected}
+              currentUserId={user?.id}
+            />
+          </div>
+        </div>
+
+        {/* Hero Banner Card */}
+        <div className="relative h-64 sm:h-72 w-full rounded-3xl overflow-hidden border border-slate-200/90 shadow-lg mb-8 bg-slate-900">
+          <img
+            src={
+              trip.cover_image ||
+              "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1600&q=80"
+            }
+            alt={trip.title}
+            className="h-full w-full object-cover opacity-85"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
+
+          {/* Banner Details */}
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-300 mb-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>
+                  {new Date(trip.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} →{" "}
+                  {new Date(trip.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </span>
               </div>
-              <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
-                <div>
-                  <h1 className="text-5xl font-black text-white drop-shadow-lg">
-                    {trip.title}
-                  </h1>
-                  <p className="mt-2 text-lg text-white/90">
-                    📅{" "}
-                    {new Date(trip.start_date).toLocaleDateString()} →{" "}
-                    {new Date(trip.end_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowEditTrip(true)}
-                  className="!bg-white/20 !text-white backdrop-blur-md border border-white/30 hover:!bg-white/30"
-                >
-                  ✏️ Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    exportTripSummaryHTML(trip, activities, expenses, settlements)
-                  }
-                  className="!bg-white/20 !text-white backdrop-blur-md border border-white/30 hover:!bg-white/30"
-                >
-                  📄 Export
-                </Button>
-              </div>
+              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight drop-shadow-sm">
+                {trip.title}
+              </h1>
+              {trip.description && (
+                <p className="text-xs sm:text-sm text-slate-300 line-clamp-1 max-w-xl mt-1">
+                  {trip.description}
+                </p>
+              )}
             </div>
 
-            <p className="mt-6 text-lg text-[#64748B]">
-              {trip.description || "No description"}
-            </p>
-          </motion.div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="secondary"
+                onClick={() => exportTripSummaryHTML(trip, activities, expenses, settlements)}
+                className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                <span>Export Report</span>
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowEditTrip(true)}
+                className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                <span>Settings</span>
+              </Button>
+            </div>
+          </div>
+        </div>
 
-          {/* Stats */}
-          <motion.div
-            className="mb-8 grid gap-4 md:grid-cols-4"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={staggerItem}>
-              <NeuCard className="!p-5">
-                <p className="mb-1 text-xs text-[#64748B]">Activities</p>
-                <p className="text-2xl font-bold text-[#0F172A]">
-                  {activities.length}
-                </p>
-              </NeuCard>
-            </motion.div>
-            <motion.div variants={staggerItem}>
-              <NeuCard className="!p-5">
-                <p className="mb-1 text-xs text-[#64748B]">Total Expenses</p>
-                <p className="text-2xl font-bold text-[#0F172A]">
-                  {formatAmount(totalExpenses, currency)}
-                </p>
-              </NeuCard>
-            </motion.div>
-            <motion.div variants={staggerItem}>
-              <NeuCard className="!p-5">
-                <p className="mb-1 text-xs text-[#64748B]">Settlements</p>
-                <p className="text-2xl font-bold text-[#0F172A]">
-                  {settlements.length}
-                </p>
-              </NeuCard>
-            </motion.div>
-            {trip.budget_limit && (
-              <motion.div variants={staggerItem}>
-                <NeuCard className="!p-5">
-                  <p className="mb-1 text-xs text-[#64748B]">Budget</p>
-                  <p className="text-2xl font-bold text-[#0F172A]">
-                    {formatAmount(totalExpenses, currency)} /{" "}
-                    {formatAmount(trip.budget_limit, currency)}
-                  </p>
-                  <div className="mt-2 h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        budgetUsed && parseInt(budgetUsed) > 100
-                          ? "bg-red-500"
-                          : budgetUsed && parseInt(budgetUsed) > 80
-                          ? "bg-amber-500"
-                          : "bg-[#3B82F6]"
-                      }`}
-                      style={{
-                        width: `${Math.min(parseInt(budgetUsed || "0"), 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-[#94A3B8] mt-1">
-                    {budgetUsed}% used
-                  </p>
-                </NeuCard>
-              </motion.div>
-            )}
-          </motion.div>
+        {/* Metrics Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Scheduled Stops</span>
+            <span className="text-2xl font-black text-slate-900 mt-1 block">{activities.length}</span>
+          </div>
 
-          {/* Tabs */}
-          <div className="mb-6 flex gap-1 rounded-2xl bg-white/50 p-1.5 backdrop-blur-md border border-white/40 w-fit">
-            {tabs.map((tab) => (
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total Spent</span>
+            <span className="text-2xl font-black text-slate-900 mt-1 block">
+              {formatAmount(totalExpenses, currency)}
+            </span>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Pending Debts</span>
+            <span className="text-2xl font-black text-slate-900 mt-1 block">{settlements.length}</span>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Budget Usage</span>
+            <div className="mt-1">
+              <span className="text-sm font-black text-slate-900">
+                {trip.budget_limit ? `${budgetUsed}%` : "No limit set"}
+              </span>
+              {trip.budget_limit && (
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      parseInt(budgetUsed || "0") > 100
+                        ? "bg-rose-500"
+                        : parseInt(budgetUsed || "0") > 80
+                        ? "bg-amber-500"
+                        : "bg-blue-600"
+                    }`}
+                    style={{ width: `${Math.min(parseInt(budgetUsed || "0"), 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation Pill Bar */}
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 mb-8 overflow-x-auto w-full sm:w-fit">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
               <button
                 key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key);
                   if (tab.key === "settlement") loadSettlement();
                 }}
-                className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ${
-                  activeTab === tab.key
-                    ? "neu-inset text-[#0F172A]"
-                    : "text-[#64748B] hover:text-[#0F172A] hover:bg-white/60"
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold whitespace-nowrap transition-all ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                 }`}
               >
-                <span>{tab.icon}</span>
-                {tab.label}
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+                <span>{tab.label}</span>
               </button>
-            ))}
-          </div>
-
-          {/* Tab Content */}
-          <AnimatePresence mode="wait">
-            {activeTab === "activities" && (
-              <motion.div
-                key="activities"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-                  <h2 className="text-2xl font-bold text-[#0F172A]">
-                    Activities
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    {/* View switcher */}
-                    {activities.length > 0 && (
-                      <div className="flex gap-1 rounded-xl bg-white/50 p-1 border border-white/40">
-                        {activityViews.map((v) => (
-                          <button
-                            key={v.key}
-                            onClick={() => setActivityView(v.key)}
-                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                              activityView === v.key
-                                ? "neu-inset text-[#0F172A]"
-                                : "text-[#64748B] hover:text-[#0F172A]"
-                            }`}
-                          >
-                            <span>{v.icon}</span>
-                            {v.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <Button onClick={() => setShowAddActivity(true)}>
-                      + Add Activity
-                    </Button>
-                  </div>
-                </div>
-
-                {activities.length === 0 ? (
-                  <EmptyState
-                    icon="🎯"
-                    title="No activities yet"
-                    description="Add your first activity to get started"
-                    actionLabel="Add Activity"
-                    onAction={() => setShowAddActivity(true)}
-                  />
-                ) : activityView === "timeline" ? (
-                  <DayByDayItinerary
-                    activities={activities}
-                    startDate={trip.start_date}
-                    onEdit={(a) => setEditingActivity(a)}
-                    onDelete={handleDeleteActivity}
-                  />
-                ) : activityView === "reorder" ? (
-                  <ActivityReorderList
-                    activities={activities}
-                    onReorder={handleReorderActivities}
-                    onEdit={(a) => setEditingActivity(a)}
-                    onDelete={handleDeleteActivity}
-                    showToast={showToast}
-                  />
-                ) : (
-                  <motion.div
-                    className="space-y-4"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {activities.map((activity) => (
-                      <motion.div key={activity.id} variants={staggerItem}>
-                        <NeuCard className="!p-6 group">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                {activity.order_index != null && (
-                                  <span className="text-xs font-medium text-[#3B82F6] bg-blue-50 rounded-full px-2 py-0.5">
-                                    #{activity.order_index + 1}
-                                  </span>
-                                )}
-                                <h3 className="text-xl font-bold text-[#0F172A]">
-                                  {activity.title}
-                                </h3>
-                              </div>
-                              <p className="mt-1 text-sm text-[#64748B]">
-                                📅{" "}
-                                {new Date(
-                                  activity.activity_date
-                                ).toLocaleDateString()}
-                              </p>
-                              {activity.location && (
-                                <p className="mt-1 text-sm text-[#64748B]">
-                                  📍 {activity.location}
-                                </p>
-                              )}
-                              {activity.notes && (
-                                <p className="mt-2 text-[#475569]">
-                                  {activity.notes}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                onClick={() => setEditingActivity(activity)}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  handleDeleteActivity(activity.id)
-                                }
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </div>
-                        </NeuCard>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === "expenses" && (
-              <motion.div
-                key="expenses"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#0F172A]">
-                    Expenses
-                  </h2>
-                  <div className="flex gap-2">
-                    {expenses.length > 0 && (
-                      <Button
-                        variant="secondary"
-                        onClick={() => exportExpensesCSV(expenses, trip.title, currency)}
-                      >
-                        📊 Export CSV
-                      </Button>
-                    )}
-                    <Button onClick={() => setShowAddExpense(true)}>
-                      + Add Expense
-                    </Button>
-                  </div>
-                </div>
-
-                {expenses.length === 0 ? (
-                  <EmptyState
-                    icon="💰"
-                    title="No expenses yet"
-                    description="Add your first expense to start tracking"
-                    actionLabel="Add Expense"
-                    onAction={() => setShowAddExpense(true)}
-                  />
-                ) : (
-                  <>
-                    <ExpenseSearchFilter
-                      expenses={expenses}
-                      onFilter={setFilteredExpenses}
-                    />
-                    <motion.div
-                      className="space-y-4"
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      {filteredExpenses.map((expense) => (
-                        <motion.div key={expense.id} variants={staggerItem}>
-                          <NeuCard className="!p-6">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="text-xl font-bold text-[#0F172A]">
-                                  {expense.title}
-                                </h3>
-                                <div className="mt-2 flex flex-wrap gap-4 text-sm text-[#64748B]">
-                                  <span className="font-semibold text-brand-blue">
-                                    💵 {formatAmount(expense.amount, currency)}
-                                  </span>
-                                  <span>
-                                    👤 Paid by{" "}
-                                    {expense.paidByUser?.name || "Unknown"}
-                                  </span>
-                                  <span>📊 {expense.split_type}</span>
-                                  {expense.category && (
-                                    <span>🏷️ {expense.category}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <Button
-                                onClick={() =>
-                                  handleDeleteExpense(expense.id)
-                                }
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </NeuCard>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                    {filteredExpenses.length === 0 && expenses.length > 0 && (
-                      <div className="text-center py-8 text-[#64748B]">
-                        <p className="text-3xl mb-2">🔍</p>
-                        <p className="text-sm">No expenses match your filters</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === "settlement" && (
-              <motion.div
-                key="settlement"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
-                  Settlement
-                </h2>
-
-                {/* Balance Summary */}
-                {settlements.length > 0 && (
-                  <NeuCard className="!p-6 mb-6">
-                    <h3 className="mb-4 text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-                      Balance Summary
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-[#0F172A]">
-                          {formatAmount(
-                            settlements.reduce((sum, s) => sum + s.amount, 0),
-                            currency
-                          )}
-                        </p>
-                        <p className="text-xs text-[#64748B]">Total to settle</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-[#0F172A]">
-                          {settlements.length}
-                        </p>
-                        <p className="text-xs text-[#64748B]">Transactions</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-emerald-500">
-                          {new Set(settlements.map((s) => s.to_user_id)).size}
-                        </p>
-                        <p className="text-xs text-[#64748B]">Get paid</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-amber-500">
-                          {new Set(settlements.map((s) => s.from_user_id)).size}
-                        </p>
-                        <p className="text-xs text-[#64748B]">Need to pay</p>
-                      </div>
-                    </div>
-                  </NeuCard>
-                )}
-
-                {settlements.length === 0 ? (
-                  <EmptyState
-                    icon="🎉"
-                    title="All settled up!"
-                    description="No pending settlements for this trip"
-                  />
-                ) : (
-                  <motion.div
-                    className="space-y-4"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {settlements.map((settlement, idx) => (
-                      <motion.div key={idx} variants={staggerItem}>
-                        <NeuCard className="!p-6">
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700">
-                              {(settlement.from_user?.name || "?").charAt(0)}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-lg text-[#0F172A]">
-                                <span className="font-bold">
-                                  {settlement.from_user?.name || "User"}
-                                </span>
-                                {" pays "}
-                                <span className="font-bold">
-                                  {settlement.to_user?.name || "User"}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-[#3B82F6]">
-                                {formatAmount(settlement.amount, currency)}
-                              </p>
-                            </div>
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-700">
-                              {(settlement.to_user?.name || "?").charAt(0)}
-                            </div>
-                          </div>
-                        </NeuCard>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === "map" && (
-              <motion.div
-                key="map"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
-                  Activity Map
-                </h2>
-                <TripActivityMap
-                  activities={activities}
-                  className="h-[500px] w-full"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+            );
+          })}
         </div>
+
+        {/* Tab Content Panels */}
+        <AnimatePresence mode="wait">
+          {/* TAB 1: ACTIVITIES */}
+          {activeTab === "activities" && (
+            <motion.div
+              key="activities"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Timeline & Daily Schedule</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Organize stops, activities, and timings.</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {activities.length > 0 && (
+                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+                      {(["timeline", "list", "reorder"] as ActivityView[]).map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => setActivityView(v)}
+                          className={`px-3 py-1 rounded-lg capitalize transition ${
+                            activityView === v
+                              ? "bg-white text-slate-900 shadow-sm"
+                              : "text-slate-500 hover:text-slate-900"
+                          }`}
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    variant="primary"
+                    onClick={() => setShowAddActivity(true)}
+                    className="text-xs py-2 px-4 gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Activity</span>
+                  </Button>
+                </div>
+              </div>
+
+              {activities.length === 0 ? (
+                <EmptyState
+                  title="No activities planned yet"
+                  description="Add your first sightseeing spot, flight, hotel check-in, or meal to begin building your itinerary."
+                  actionLabel="+ Add First Activity"
+                  onAction={() => setShowAddActivity(true)}
+                />
+              ) : activityView === "reorder" ? (
+                <ActivityReorderList
+                  activities={activities}
+                  onReorder={handleReorderActivities}
+                  onEdit={(act) => setEditingActivity(act)}
+                  onDelete={handleDeleteActivity}
+                  showToast={showToast}
+                />
+              ) : (
+                <DayByDayItinerary
+                  activities={activities}
+                  onEdit={(act) => setEditingActivity(act)}
+                  onDelete={handleDeleteActivity}
+                  startDate={trip.start_date}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 2: EXPENSES */}
+          {activeTab === "expenses" && (
+            <motion.div
+              key="expenses"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Group Expenses & Bills</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Track who paid what and split amounts seamlessly.</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => exportExpensesCSV(expenses, currency, trip.title)}
+                    className="text-xs py-2 px-3 gap-1.5"
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    <span>CSV</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => setShowAddExpense(true)}
+                    className="text-xs py-2 px-4 gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Expense</span>
+                  </Button>
+                </div>
+              </div>
+
+              {expenses.length === 0 ? (
+                <EmptyState
+                  title="No expenses logged yet"
+                  description="Keep group finances clear and fair. Add your first restaurant bill, rental car, or hotel cost."
+                  actionLabel="+ Add First Expense"
+                  onAction={() => setShowAddExpense(true)}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <ExpenseSearchFilter expenses={expenses} onFilter={setFilteredExpenses} />
+                  {filteredExpenses.length > 0 ? (
+                    <div className="space-y-3">
+                      {filteredExpenses.map((expense, index) => (
+                        <ExpenseCard
+                          key={expense.id}
+                          expense={expense}
+                          index={index}
+                          onUpdate={loadTripData}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200 bg-white/50 text-slate-500">
+                      <p className="text-sm font-semibold">No expenses match your search query</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 3: SETTLEMENT */}
+          {activeTab === "settlement" && (
+            <motion.div
+              key="settlement"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Debt Simplification Matrix</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Minimal transaction route computed to settle all shared expenses.
+                  </p>
+                </div>
+                <Button variant="secondary" onClick={loadSettlement} className="text-xs py-2 px-3">
+                  Recompute
+                </Button>
+              </div>
+
+              {settlements.length === 0 ? (
+                <EmptyState
+                  title="All Settled Up!"
+                  description="There are no outstanding debts or split balances for this trip."
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {settlements.map((s, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs">
+                          💸
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-slate-500">
+                            {s.from_user?.name || "Member"} owes {s.to_user?.name || "Member"}
+                          </div>
+                          <div className="text-lg font-black text-slate-900 mt-0.5">
+                            {formatAmount(s.amount, currency)}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full">
+                        Pending
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 4: INTERACTIVE MAP */}
+          {activeTab === "map" && (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Interactive Route Map</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Visualized coordinates and waypoints for all scheduled activities.</p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-lg h-[550px] bg-slate-100">
+                <TripActivityMap activities={activities} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Modals */}
       <AnimatePresence>
-        {showAddActivity && (
-          <AddActivityModal
-            tripId={tripId}
-            onClose={() => setShowAddActivity(false)}
-            onSuccess={(newActivity) => {
-              setActivities([...activities, newActivity]);
-              setShowAddActivity(false);
-              showToast("Activity added!", "success");
+        {showEditTrip && (
+          <EditTripModal
+            trip={trip}
+            onClose={() => setShowEditTrip(false)}
+            onSuccess={(updated) => {
+              setTrip(updated);
+              setShowEditTrip(false);
+              showToast("Trip updated successfully", "success");
             }}
             showToast={showToast}
           />
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {showAddExpense && (
           <AddExpenseModal
             tripId={tripId}
@@ -663,36 +551,19 @@ export default function TripDetailsPage() {
             onExpenseAdded={() => {
               loadTripData();
               setShowAddExpense(false);
-              showToast("Expense added!", "success");
+              showToast("Expense recorded", "success");
             }}
           />
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {showEditTrip && trip && (
-          <EditTripModal
-            trip={trip}
-            onClose={() => setShowEditTrip(false)}
-            onSuccess={(updatedTrip) => {
-              setTrip(updatedTrip);
-              setShowEditTrip(false);
-            }}
-            showToast={showToast}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {editingActivity && (
           <EditActivityModal
             activity={editingActivity}
             onClose={() => setEditingActivity(null)}
             onSuccess={(updated) => {
-              setActivities(
-                activities.map((a) => (a.id === updated.id ? updated : a))
-              );
+              setActivities(activities.map((a) => (a.id === updated.id ? updated : a)));
               setEditingActivity(null);
+              showToast("Activity updated", "success");
             }}
             showToast={showToast}
           />
@@ -701,151 +572,5 @@ export default function TripDetailsPage() {
 
       <Toast toasts={toasts} onRemove={removeToast} />
     </>
-  );
-}
-
-// Add Activity Modal
-function AddActivityModal({
-  tripId,
-  onClose,
-  onSuccess,
-  showToast,
-}: {
-  tripId: string;
-  onClose: () => void;
-  onSuccess: (activity: Activity) => void;
-  showToast: (message: string, type: "success" | "error" | "info") => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [location, setLocation] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const response = await activitiesApi.createActivity({
-      trip_id: tripId,
-      title,
-      activity_date: date,
-      location: location || undefined,
-      latitude: latitude ? parseFloat(latitude) : undefined,
-      longitude: longitude ? parseFloat(longitude) : undefined,
-      notes: notes || undefined,
-    });
-
-    setLoading(false);
-
-    if (response.error) {
-      showToast(response.error, "error");
-    } else if (response.data?.activity) {
-      onSuccess(response.data.activity);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.95 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md"
-      >
-        <div className="glass-card rounded-3xl p-8">
-          <h2 className="mb-6 text-2xl font-bold text-[#0F172A]">
-            Add Activity
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <NeuInput
-              label="Title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="e.g., Visit Eiffel Tower"
-            />
-            <NeuInput
-              label="Date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              disabled={loading}
-            />
-            <NeuInput
-              label="Location"
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              disabled={loading}
-              placeholder="Optional location name"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <NeuInput
-                label="Latitude"
-                type="number"
-                step="any"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-                disabled={loading}
-                placeholder="28.6139"
-              />
-              <NeuInput
-                label="Longitude"
-                type="number"
-                step="any"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-                disabled={loading}
-                placeholder="77.2090"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#475569]">
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                disabled={loading}
-                rows={3}
-                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] placeholder-[#94A3B8] transition-all duration-300 disabled:opacity-50"
-                placeholder="Optional notes"
-              />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                className="flex-1"
-                disabled={loading}
-              >
-                {loading ? "Adding..." : "Add Activity"}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 }

@@ -6,13 +6,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import NeuInput from "@/components/ui/NeuInput";
 import Button from "@/components/ui/Button";
-import NeuCard from "@/components/ui/NeuCard";
 import Toast from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
-import { tripsApi } from "@/lib/api";
-import { fadeInUp } from "@/lib/animations";
-import { Sparkles, MapPin, Calendar, DollarSign, Loader2, ArrowRight, ChevronLeft, Clock, IndianRupee, Lightbulb, CheckCircle } from "lucide-react";
+import { tripsApi, activitiesApi } from "@/lib/api";
+import {
+  Sparkles,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Loader2,
+  ArrowRight,
+  ChevronLeft,
+  Clock,
+  Compass,
+  Lightbulb,
+  CheckCircle2,
+  Share2,
+  Layers,
+  Check
+} from "lucide-react";
 
 type Step = "destination" | "details" | "result";
 
@@ -41,20 +54,29 @@ interface PlanResult {
 }
 
 const vibeOptions = [
-  { value: "relaxation", label: "Relaxation & Wellness", emoji: "🧘" },
-  { value: "adventure", label: "Adventure & Thrill", emoji: "🏔️" },
-  { value: "cultural", label: "Cultural Immersion", emoji: "🏛️" },
-  { value: "luxury", label: "Luxury & Comfort", emoji: "✨" },
-  { value: "budget", label: "Budget-Friendly", emoji: "💰" },
-  { value: "spiritual", label: "Spiritual Journey", emoji: "🙏" },
+  { value: "adventure", label: "Alpine & Trekking", emoji: "🏔️" },
+  { value: "relaxation", label: "Seaside & Wellness", emoji: "🏖️" },
+  { value: "cultural", label: "Heritage & Culture", emoji: "🏛️" },
+  { value: "culinary", label: "Culinary & Wine", emoji: "🍷" },
+  { value: "luxury", label: "Boutique Luxury", emoji: "✨" },
+  { value: "budget", label: "Backpacker Discovery", emoji: "🎒" },
+];
+
+const popularDestinations = [
+  "Swiss Alps, Switzerland",
+  "Kyoto, Japan",
+  "Amalfi Coast, Italy",
+  "Reykjavik, Iceland",
+  "Banff, Canada",
+  "Goa, India"
 ];
 
 export default function AIPlannerPage() {
   const [step, setStep] = useState<Step>("destination");
   const [destination, setDestination] = useState("");
-  const [duration, setDuration] = useState("");
-  const [budget, setBudget] = useState("");
-  const [vibe, setVibe] = useState("");
+  const [duration, setDuration] = useState("5 days");
+  const [budget, setBudget] = useState("Moderate (~$1,500)");
+  const [vibe, setVibe] = useState("adventure");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<PlanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,21 +137,21 @@ export default function AIPlannerPage() {
       const today = new Date();
       const endDate = new Date(today);
       const dayMatch = result.duration.match(/(\d+)/);
-      const numDays = dayMatch ? parseInt(dayMatch[1]) : 5;
+      const numDays = dayMatch ? parseInt(dayMatch[1]) : (result.days?.length || 5);
       endDate.setDate(today.getDate() + numDays);
 
       const budgetMatch = result.estimated_total_budget.match(/(\d[\d,]*)/);
-      const budgetInCents = budgetMatch
-        ? Math.round(parseFloat(budgetMatch[1].replace(/,/g, "")) * 100)
-        : undefined;
+      const budgetAmount = budgetMatch
+        ? parseFloat(budgetMatch[1].replace(/,/g, ""))
+        : 2000;
 
       const response = await tripsApi.createTrip({
         title: `Trip to ${result.destination}`,
         description: result.overview,
         start_date: today.toISOString().split("T")[0],
         end_date: endDate.toISOString().split("T")[0],
-        currency: "INR",
-        budget_limit: budgetInCents,
+        currency: "USD",
+        budget_limit: budgetAmount,
       });
 
       if (response.error) {
@@ -139,8 +161,27 @@ export default function AIPlannerPage() {
 
       const tripId = response.data?.trip?.id;
       if (tripId) {
-        showToast("Trip created! Redirecting...", "success");
-        setTimeout(() => router.push(`/trips/${tripId}`), 1000);
+        // Auto-save generated activities to the newly created trip in DB
+        if (result.days && result.days.length > 0) {
+          for (const day of result.days) {
+            const dayDate = new Date(today);
+            dayDate.setDate(today.getDate() + (day.day - 1));
+            const dateStr = dayDate.toISOString().split("T")[0];
+
+            for (const activity of day.activities) {
+              await activitiesApi.createActivity({
+                trip_id: tripId,
+                title: activity.title,
+                notes: activity.description,
+                activity_date: dateStr,
+                location: activity.location || result.destination,
+              }).catch(() => null);
+            }
+          }
+        }
+
+        showToast("Trip & activities saved! Opening itinerary...", "success");
+        setTimeout(() => router.push(`/trips/${tripId}`), 800);
       }
     } catch {
       showToast("Failed to create trip", "error");
@@ -152,332 +193,397 @@ export default function AIPlannerPage() {
   const handleStartOver = () => {
     setStep("destination");
     setDestination("");
-    setDuration("");
-    setBudget("");
-    setVibe("");
     setResult(null);
     setError(null);
   };
 
   return (
-    <main className="min-h-screen bg-brand-bg py-20">
-      <div className="container mx-auto px-4 md:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUp}
-          className="mb-12 text-center"
-        >
-          <div className="inline-flex items-center gap-2 bg-[#EFEC07]/10 border border-[#EFEC07]/30 rounded-full px-4 py-2 mb-6">
-            <Sparkles size={16} className="text-[#EFEC07]" />
-            <span className="text-[#EFEC07] text-sm font-semibold">AI-POWERED</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-[#0F172A] mb-4">
-            AI Trip Planner
-          </h1>
-          <p className="text-[#64748B] text-lg max-w-2xl mx-auto">
-            Let our AI craft the perfect trip plan tailored to your preferences. Just tell us your vision.
-          </p>
-        </motion.div>
+    <main className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      {/* Header Banner */}
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-xs font-bold text-blue-700 mb-4">
+          <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+          <span>Autonomous AI Itinerary Engine</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+          Bespoke Itinerary Studio
+        </h1>
+        <p className="text-sm sm:text-base text-slate-600 mt-2">
+          Tell us where you want to go. Our AI crafts optimized daily routes, estimated budgets, and local gems in seconds.
+        </p>
+      </div>
 
-        {/* Steps Indicator */}
-        <div className="flex items-center justify-center gap-4 mb-12">
-          {(["destination", "details", "result"] as Step[]).map((s, idx) => (
-            <div key={s} className="flex items-center gap-4">
+      {/* Modern Stepper Indicator */}
+      <div className="flex items-center justify-center gap-3 mb-10">
+        {[
+          { key: "destination", num: 1, label: "Destination" },
+          { key: "details", num: 2, label: "Preferences" },
+          { key: "result", num: 3, label: "Itinerary" },
+        ].map((s, idx) => {
+          const stepOrder = ["destination", "details", "result"];
+          const isCurrent = step === s.key;
+          const isCompleted = stepOrder.indexOf(step) > idx;
+
+          return (
+            <div key={s.key} className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  step === s
-                    ? "bg-[#EFEC07] text-[#0F172A] shadow-lg shadow-[#EFEC07]/30"
-                    : idx < ["destination", "details", "result"].indexOf(step)
-                    ? "bg-[#3B82F6] text-white"
-                    : "neu-inset text-slate-400"
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  isCurrent
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : isCompleted
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-slate-100 text-slate-400"
                 }`}
               >
-                {idx < ["destination", "details", "result"].indexOf(step) ? "✓" : idx + 1}
+                <span className="flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-black">
+                  {isCompleted ? <Check className="h-3 w-3 text-emerald-700" /> : s.num}
+                </span>
+                <span>{s.label}</span>
               </div>
-              {idx < 2 && (
-                <div
-                  className={`w-16 h-0.5 rounded-full transition-all duration-300 ${
-                    idx < ["destination", "details", "result"].indexOf(step)
-                      ? "bg-[#3B82F6]"
-                      : "bg-slate-200"
-                  }`}
-                />
-              )}
+              {idx < 2 && <div className="h-0.5 w-6 bg-slate-200" />}
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Step Content */}
-        <div className="max-w-2xl mx-auto">
-          <AnimatePresence mode="wait">
-            {/* Step 1: Destination */}
-            {step === "destination" && (
-              <motion.div
-                key="destination"
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3 }}
-              >
-                <NeuCard className="!p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <MapPin size={24} className="text-[#3B82F6]" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-[#0F172A]">Where to?</h2>
-                      <p className="text-sm text-[#64748B]">Enter your dream destination</p>
-                    </div>
-                  </div>
+      {/* Step Content Container */}
+      <div className="max-w-3xl mx-auto">
+        <AnimatePresence mode="wait">
+          {/* STEP 1: Destination Selection */}
+          {step === "destination" && (
+            <motion.div
+              key="destination"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-3xl border border-slate-200/90 bg-white/90 p-6 sm:p-8 shadow-xl backdrop-blur-md"
+            >
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Where are you heading?</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Type any city, region, or country in the world.
+                </p>
+              </div>
 
+              <div className="mb-6">
+                <NeuInput
+                  icon={<MapPin className="h-4 w-4" />}
+                  type="text"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="e.g. Dolomite Mountains, Tokyo, Banff National Park..."
+                  onKeyDown={(e) => e.key === "Enter" && handleDestinationNext()}
+                  className="py-3 text-base"
+                  autoFocus
+                />
+              </div>
+
+              {/* Popular Destination Chips */}
+              <div className="mb-8">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                  Trending Destinations
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {popularDestinations.map((dest) => (
+                    <button
+                      key={dest}
+                      type="button"
+                      onClick={() => setDestination(dest)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                        destination === dest
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      {dest}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+                <Button
+                  variant="primary"
+                  onClick={handleDestinationNext}
+                  disabled={destination.trim().length < 2}
+                  className="px-6 gap-2"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: Preferences & Style */}
+          {step === "details" && (
+            <motion.div
+              key="details"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-3xl border border-slate-200/90 bg-white/90 p-6 sm:p-8 shadow-xl backdrop-blur-md"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Customize Expedition</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{destination}</strong></p>
+                </div>
+                <button
+                  onClick={() => setStep("destination")}
+                  className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Change</span>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <NeuInput
+                    label="Trip Duration"
+                    icon={<Calendar className="h-4 w-4" />}
                     type="text"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    placeholder="e.g., Manali, Goa, Rajasthan..."
-                    onKeyDown={(e) => e.key === "Enter" && handleDestinationNext()}
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="e.g. 5 days, 1 week"
                   />
+                  <NeuInput
+                    label="Estimated Budget"
+                    icon={<DollarSign className="h-4 w-4" />}
+                    type="text"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    placeholder="e.g. $1,500 total, moderate"
+                  />
+                </div>
 
-                  <div className="mt-6 flex justify-end">
-                    <Button
-                      variant="primary"
-                      onClick={handleDestinationNext}
-                      disabled={destination.trim().length < 2}
-                    >
-                      Continue <ArrowRight size={16} className="ml-2" />
-                    </Button>
-                  </div>
-                </NeuCard>
-              </motion.div>
-            )}
-
-            {/* Step 2: Details */}
-            {step === "details" && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3 }}
-              >
-                <NeuCard className="!p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <Calendar size={24} className="text-[#3B82F6]" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-[#0F172A]">Trip Details</h2>
-                      <p className="text-sm text-[#64748B]">Customize your {destination} trip</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-                    <NeuInput
-                      label="Duration"
-                      type="text"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      placeholder="e.g., 5 days, 1 week"
-                    />
-
-                    <NeuInput
-                      label="Budget"
-                      type="text"
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      placeholder="e.g., ₹20,000, ₹15,000-₹30,000"
-                    />
-
-                    <div>
-                      <label className="mb-3 block text-sm font-medium text-[#475569]">
-                        Travel Style
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {vibeOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setVibe(vibe === option.value ? "" : option.value)}
-                            className={`p-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                              vibe === option.value
-                                ? "neu-inset text-[#0F172A] border border-[#3B82F6]/30"
-                                : "neu-glass text-[#64748B] hover:text-[#0F172A] border border-transparent"
-                            }`}
-                          >
-                            <span className="text-lg block mb-1">{option.emoji}</span>
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
-                      <p className="text-red-600 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  <div className="mt-6 flex gap-3">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setStep("destination")}
-                      disabled={generating}
-                    >
-                      <ChevronLeft size={16} className="mr-1" /> Back
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="flex-1"
-                    >
-                      {generating ? (
-                        <>
-                          <Loader2 size={16} className="mr-2 animate-spin" />
-                          Generating Plan...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={16} className="mr-2" />
-                          Generate Plan
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </NeuCard>
-              </motion.div>
-            )}
-
-            {/* Step 3: Result */}
-            {step === "result" && result && (
-              <motion.div
-                key="result"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, type: "spring" }}
-              >
-                <NeuCard className="!p-8">
-                  {/* Header */}
-                  <div className="text-center mb-8">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#EFEC07]/20 flex items-center justify-center"
-                    >
-                      <Sparkles size={32} className="text-[#EFEC07]" />
-                    </motion.div>
-                    <h2 className="text-2xl font-bold text-[#0F172A] mb-2">
-                      Your Trip to {result.destination}
-                    </h2>
-                    <p className="text-[#64748B]">{result.overview}</p>
-                  </div>
-
-                  {/* Quick Stats */}
-                  <div className="grid grid-cols-3 gap-3 mb-8">
-                    <div className="neu-inset rounded-xl p-3 text-center">
-                      <Calendar size={18} className="mx-auto mb-1 text-[#3B82F6]" />
-                      <p className="text-xs text-[#64748B]">Duration</p>
-                      <p className="font-semibold text-[#0F172A] text-sm">{result.duration}</p>
-                    </div>
-                    <div className="neu-inset rounded-xl p-3 text-center">
-                      <IndianRupee size={18} className="mx-auto mb-1 text-[#3B82F6]" />
-                      <p className="text-xs text-[#64748B]">Budget</p>
-                      <p className="font-semibold text-[#0F172A] text-sm">{result.budget}</p>
-                    </div>
-                    <div className="neu-inset rounded-xl p-3 text-center">
-                      <MapPin size={18} className="mx-auto mb-1 text-[#3B82F6]" />
-                      <p className="text-xs text-[#64748B]">Days</p>
-                      <p className="font-semibold text-[#0F172A] text-sm">{result.days.length}</p>
-                    </div>
-                  </div>
-
-                  {/* Day-by-Day Itinerary */}
-                  <div className="space-y-6 mb-8">
-                    <h3 className="text-lg font-bold text-[#0F172A]">Day-by-Day Itinerary</h3>
-                    {result.days.map((day) => (
-                      <div key={day.day} className="border border-white/40 rounded-2xl overflow-hidden">
-                        <div className="bg-[#3B82F6]/5 px-4 py-3 border-b border-white/30">
-                          <h4 className="font-bold text-[#0F172A]">
-                            Day {day.day}: {day.title}
-                          </h4>
-                        </div>
-                        <div className="p-4 space-y-3">
-                          {day.activities.map((activity, idx) => (
-                            <div key={idx} className="flex gap-3">
-                              <div className="flex-shrink-0 w-16 text-center">
-                                <div className="inline-flex items-center gap-1 text-xs font-medium text-[#3B82F6] bg-blue-50 rounded-full px-2 py-1">
-                                  <Clock size={10} />
-                                  {activity.time}
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <p className="font-semibold text-[#0F172A] text-sm">{activity.title}</p>
-                                <p className="text-xs text-[#64748B] mt-0.5">{activity.description}</p>
-                                <div className="flex gap-3 mt-1">
-                                  {activity.location && (
-                                    <span className="text-xs text-[#94A3B8]">📍 {activity.location}</span>
-                                  )}
-                                  {activity.estimated_cost && (
-                                    <span className="text-xs text-[#94A3B8]">💰 {activity.estimated_cost}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Travel Vibe & Focus
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {vibeOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setVibe(opt.value)}
+                        className={`p-3 rounded-xl text-left border transition-all ${
+                          vibe === opt.value
+                            ? "border-blue-600 bg-blue-50/70 shadow-sm"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <span className="text-lg block mb-1">{opt.emoji}</span>
+                        <span className="text-xs font-bold text-slate-900 block">{opt.label}</span>
+                      </button>
                     ))}
                   </div>
+                </div>
+              </div>
 
-                  {/* Tips */}
-                  {result.tips && result.tips.length > 0 && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-bold text-[#0F172A] mb-3 flex items-center gap-2">
-                        <Lightbulb size={18} className="text-[#EFEC07]" />
-                        Travel Tips
-                      </h3>
-                      <div className="space-y-2">
-                        {result.tips.map((tip, idx) => (
-                          <div key={idx} className="flex gap-2 text-sm text-[#475569]">
-                            <CheckCircle size={16} className="flex-shrink-0 mt-0.5 text-[#3B82F6]" />
-                            <span>{tip}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+              {error && (
+                <div className="mt-4 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-semibold text-rose-700">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setStep("destination")}
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2"
+                >
+                  Back
+                </button>
+                <Button
+                  variant="primary"
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="px-6 gap-2"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Synthesizing Plan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 text-amber-300" />
+                      <span>Generate Full Itinerary</span>
+                    </>
                   )}
+                </Button>
+              </div>
+            </motion.div>
+          )}
 
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    <Button variant="ghost" onClick={handleStartOver} className="flex-1">
+          {/* STEP 3: Generated Itinerary Result */}
+          {step === "result" && result && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Executive Summary Card */}
+              <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 sm:p-8 shadow-xl backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                  <div>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold mb-1.5">
+                      ✓ AI Plan Generated
+                    </span>
+                    <h2 className="text-2xl font-black text-slate-900">
+                      Expedition to {result.destination}
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" onClick={handleStartOver} className="text-xs py-2 px-3">
                       Start Over
                     </Button>
                     <Button
                       variant="primary"
                       onClick={handleCreateTrip}
                       disabled={creatingTrip}
-                      className="flex-1"
+                      className="text-xs py-2 px-4 gap-1.5"
                     >
                       {creatingTrip ? (
                         <>
-                          <Loader2 size={16} className="mr-2 animate-spin" />
-                          Creating...
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Saving Trip...</span>
                         </>
                       ) : (
-                        "Create This Trip"
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                          <span>Save to Dashboard</span>
+                        </>
                       )}
                     </Button>
                   </div>
-                </NeuCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                </div>
+
+                <p className="text-sm text-slate-600 mt-4 leading-relaxed font-medium">
+                  {result.overview}
+                </p>
+
+                {/* Quick Info Grid */}
+                <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-100 text-center">
+                  <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Duration</span>
+                    <span className="text-sm font-bold text-slate-900 mt-0.5 block">{result.duration}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Est. Budget</span>
+                    <span className="text-sm font-bold text-emerald-700 mt-0.5 block">{result.estimated_total_budget || result.budget}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Activities</span>
+                    <span className="text-sm font-bold text-blue-700 mt-0.5 block">
+                      {result.days.reduce((acc, d) => acc + d.activities.length, 0)} stops
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Day by Day Timeline */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-blue-600" />
+                  <span>Daily Itinerary Schedule</span>
+                </h3>
+
+                {result.days.map((day) => (
+                  <div key={day.day} className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold">
+                          D{day.day}
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base">{day.title}</h4>
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium">
+                        {day.activities.length} activities
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {day.activities.map((activity, aIdx) => (
+                        <div
+                          key={aIdx}
+                          className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-100/70 transition"
+                        >
+                          <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded shrink-0 mt-0.5">
+                            <Clock className="h-3 w-3" />
+                            <span>{activity.time}</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h5 className="text-xs sm:text-sm font-bold text-slate-900">
+                                {activity.title}
+                              </h5>
+                              {activity.estimated_cost && (
+                                <span className="text-[11px] font-bold text-emerald-700 shrink-0">
+                                  {activity.estimated_cost}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                              {activity.description}
+                            </p>
+                            {activity.location && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium mt-1.5">
+                                <MapPin className="h-3 w-3 text-slate-400" />
+                                <span>{activity.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Travel Tips Card */}
+              {result.tips && result.tips.length > 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5 mb-3">
+                    <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <span>Curated Insider Tips</span>
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-amber-950 font-medium">
+                    {result.tips.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Sticky Bottom Action */}
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <Button variant="secondary" onClick={handleStartOver} className="text-xs py-2.5 px-4">
+                  Discard & Replan
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleCreateTrip}
+                  disabled={creatingTrip}
+                  className="text-xs py-2.5 px-6 gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Save Trip & Launch Itinerary</span>
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <Toast toasts={toasts} onRemove={removeToast} />

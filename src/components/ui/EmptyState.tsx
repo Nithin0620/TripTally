@@ -2,50 +2,65 @@
 
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { fadeInUp } from "@/lib/animations";
 import Button from "./Button";
+import { Compass } from "lucide-react";
 
 interface EmptyStateProps {
-  icon?: string;
+  icon?: ReactNode;
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
   actionHref?: string;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  secondaryActionHref?: string;
 }
 
 export default function EmptyState({
-  icon = "✨",
+  icon,
   title,
   description,
   actionLabel,
   onAction,
   actionHref,
+  secondaryActionLabel,
+  onSecondaryAction,
+  secondaryActionHref,
 }: EmptyStateProps) {
   return (
     <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={fadeInUp}
-      className="glass-card rounded-3xl p-12 text-center"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-12 text-center backdrop-blur-sm"
     >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full neu-inset text-4xl"
-      >
-        {icon}
-      </motion.div>
-      <h3 className="mb-2 text-xl font-bold text-[#0F172A]">{title}</h3>
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+        {icon || <Compass className="h-6 w-6 text-slate-500" />}
+      </div>
+      <h3 className="text-base font-bold text-slate-900 mb-1">{title}</h3>
       {description && (
-        <p className="mb-6 text-[#64748B]">{description}</p>
+        <p className="mx-auto max-w-sm text-xs sm:text-sm text-slate-500 mb-6 leading-relaxed">
+          {description}
+        </p>
       )}
-      {actionLabel && (onAction || actionHref) && (
-        <Button variant="primary" onClick={onAction} href={actionHref}>
-          {actionLabel}
-        </Button>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {actionLabel && (onAction || actionHref) && (
+          <Button variant="primary" onClick={onAction} href={actionHref} className="text-xs py-2 px-4">
+            {actionLabel}
+          </Button>
+        )}
+        {secondaryActionLabel && (onSecondaryAction || secondaryActionHref) && (
+          <Button
+            variant="secondary"
+            onClick={onSecondaryAction}
+            href={secondaryActionHref}
+            className="text-xs py-2 px-4"
+          >
+            {secondaryActionLabel}
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 }
