@@ -2,27 +2,45 @@
 // Supabase Client
 // ============================================
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
-}
-
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
-}
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Client-side Supabase instance (browser safe)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder'
+);
 
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY');
-}
+let _supabaseAdmin: SupabaseClient | null = null;
 
-// Server-side Supabase instance with admin privileges (bypasses RLS)
-export const supabaseAdmin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY);
+/**
+ * Lazily initialize server-side Supabase admin client.
+ * This ensures client-side bundles importing this module will not crash
+ * due to missing SUPABASE_SERVICE_ROLE_KEY.
+ */
+export const getSupabaseAdmin = (): SupabaseClient => {
+  if (!_supabaseAdmin) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY (server-only)');
+    }
+    _supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  }
+  return _supabaseAdmin;
+};
+
+// Export proxy for backwards-compatibility with `supabaseAdmin.from(...)`, `supabaseAdmin.rpc(...)`
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const admin = getSupabaseAdmin();
+    const value = (admin as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(admin);
+    }
+    return value;
+  },
+});
 
 export default supabase;

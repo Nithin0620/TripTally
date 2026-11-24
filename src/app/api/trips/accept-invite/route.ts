@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyJWT } from '@/lib/jwt';
+import { authenticateUser } from '@/middleware/auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -9,16 +9,12 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    if (!token) {
+    const auth = await authenticateUser(request);
+    if (!auth.authenticated || !auth.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const payload = await verifyJWT(token);
-    if (!payload) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    const payload = auth.user;
 
     const { inviteId } = await request.json();
     if (!inviteId) {
@@ -43,7 +39,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invite has expired' }, { status: 400 });
     }
 
-    if (payload.email.toLowerCase() !== String(invite.email || '').toLowerCase()) {
+    const isShareableInvite = !invite.email;
+    if (!isShareableInvite && payload.email.toLowerCase() !== String(invite.email).toLowerCase()) {
       return NextResponse.json({ error: 'Invite email does not match authenticated user' }, { status: 403 });
     }
 
@@ -67,14 +64,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error: updateInviteError } = await supabase
-      .from('trip_invites')
-      .update({ status: 'accepted' })
-      .eq('id', invite.id)
-      .eq('status', 'pending');
+    if (!isShareableInvite) {
+      const { error: updateInviteError } = await supabase
+        .from('trip_invites')
+        .update({ status: 'accepted' })
+        .eq('id', invite.id)
+        .eq('status', 'pending');
 
-    if (updateInviteError) {
-      return NextResponse.json({ error: updateInviteError.message }, { status: 500 });
+      if (updateInviteError) {
+        return NextResponse.json({ error: updateInviteError.message }, { status: 500 });
+      }
     }
 
     return NextResponse.json({

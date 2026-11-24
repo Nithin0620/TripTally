@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       if (authError.code === 'PGRST205') {
         await dbClient.from('users').delete().eq('id', user.id);
         return serverErrorResponse(
-          "Database is missing 'auth_passwords' table. Run supabase_complete_schema.sql in Supabase SQL editor and retry."
+          "Database is missing 'auth_passwords' table. Run sql/supabase_complete_schema.sql in Supabase SQL editor and retry."
         );
       }
       if (isUpstreamSslFailure(authError.message)) {

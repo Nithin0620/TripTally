@@ -13,16 +13,28 @@ import EditTripModal from "@/components/trips/EditTripModal";
 import AddExpenseModal from "@/components/expenses/AddExpenseModal";
 import ExpenseSearchFilter from "@/components/expenses/ExpenseSearchFilter";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
+import ExpenseAnalytics from "@/components/expenses/ExpenseAnalytics";
+import RecordPaymentModal from "@/components/expenses/RecordPaymentModal";
 import DayByDayItinerary from "@/components/trips/DayByDayItinerary";
 import TripActivityMap from "@/components/trips/TripActivityMap";
 import EditActivityModal from "@/components/trips/EditActivityModal";
+import AddActivityModal from "@/components/trips/AddActivityModal";
+import TripChatDrawer from "@/components/trips/TripChatDrawer";
+import InviteLinkModal from "@/components/trips/InviteLinkModal";
 import ActivityReorderList from "@/components/trips/ActivityReorderList";
 import RealtimePresence from "@/components/trips/RealtimePresence";
 import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
 import { tripsApi, activitiesApi, expensesApi, settlementApi } from "@/lib/api";
 import { Trip, Activity, Expense, Settlement } from "@/types";
 import { formatAmount } from "@/utils/currency";
-import { exportExpensesCSV, exportTripSummaryHTML } from "@/utils/export";
+import {
+  exportExpensesCSV,
+  exportItineraryCSV,
+  exportItineraryICS,
+  exportTripSummaryHTML,
+  exportTripSummaryPDF,
+} from "@/utils/export";
+import { buildActivityNotes, parseActivityNotes } from "@/utils/activity";
 import Link from "next/link";
 import {
   Calendar,
@@ -40,7 +52,13 @@ import {
   Layers,
   Map,
   Users,
-  DollarSign
+  DollarSign,
+  BarChart3,
+  ListFilter,
+  ChevronDown,
+  FileText,
+  MessageCircle,
+  UserPlus
 } from "lucide-react";
 
 type ActivityView = "timeline" | "list" | "reorder";
@@ -52,10 +70,19 @@ export default function TripDetailsPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [settlementPayments, setSettlementPayments] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [selectedSettlementForPayment, setSelectedSettlementForPayment] = useState<Settlement | null>(null);
+  const [expenseSubTab, setExpenseSubTab] = useState<"list" | "analytics">("list");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"activities" | "expenses" | "settlement" | "map">("activities");
   const [activityView, setActivityView] = useState<ActivityView>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
+  const [defaultActivityDate, setDefaultActivityDate] = useState<string | undefined>(undefined);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showInviteLink, setShowInviteLink] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showEditTrip, setShowEditTrip] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -72,6 +99,7 @@ export default function TripDetailsPage() {
       router.push("/dashboard");
     } else if (response.data) {
       setTrip(response.data.trip);
+      setMembers(response.data.members || []);
       setActivities(response.data.activities || []);
       setExpenses(response.data.expenses || []);
       setFilteredExpenses(response.data.expenses || []);
@@ -108,14 +136,31 @@ export default function TripDetailsPage() {
 
   const loadSettlement = async () => {
     const response = await settlementApi.getSettlement(tripId);
-    if (response.data?.settlements) {
-      setSettlements(response.data.settlements);
+    if (response.data) {
+      setSettlements(response.data.settlements || []);
+      setSettlementPayments(response.data.payments || []);
+    }
+  };
+
+  const handleOpenPaymentModal = (settlement?: Settlement) => {
+    setSelectedSettlementForPayment(settlement || null);
+    setShowRecordPayment(true);
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm("Remove this payment record? Outstanding balances will update.")) return;
+    const res = await settlementApi.deletePayment(tripId, paymentId);
+    if (res.error) {
+      showToast(res.error, "error");
+    } else {
+      showToast("Payment record removed", "success");
+      loadSettlement();
     }
   };
 
   const handleDeleteActivity = async (activityId: string) => {
     if (!confirm("Delete this activity?")) return;
-    const response = await activitiesApi.deleteActivity(activityId);
+    const response = await activitiesApi.deleteActivity(activityId, tripId);
     if (response.error) {
       showToast(response.error, "error");
     } else {
@@ -124,9 +169,38 @@ export default function TripDetailsPage() {
     }
   };
 
+  const handleToggleActivityComplete = async (activity: Activity) => {
+    const parsed = parseActivityNotes(activity.notes);
+    const isCompleted = parsed.completed;
+    const newNotes = buildActivityNotes({
+      timeSlot: parsed.timeSlot,
+      category: parsed.category,
+      notes: parsed.description,
+      completed: !isCompleted,
+    }) || "";
+
+    // Optimistic update
+    setActivities((prev) =>
+      prev.map((a) => (a.id === activity.id ? { ...a, notes: newNotes } : a))
+    );
+
+    const res = await activitiesApi.updateActivity({
+      id: activity.id,
+      trip_id: tripId,
+      notes: newNotes,
+    });
+
+    if (res.error) {
+      showToast("Failed to update activity status", "error");
+      loadTripData();
+    } else {
+      showToast(isCompleted ? "Marked activity as pending" : "Activity completed! 🎉", "success");
+    }
+  };
+
   const handleDeleteExpense = async (expenseId: string) => {
     if (!confirm("Delete this expense?")) return;
-    const response = await expensesApi.deleteExpense(expenseId);
+    const response = await expensesApi.deleteExpense(expenseId, tripId);
     if (response.error) {
       showToast(response.error, "error");
     } else {
@@ -140,6 +214,8 @@ export default function TripDetailsPage() {
   };
 
   const currency = trip?.currency || "USD";
+  const exportMenuItemClass =
+    "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-blue-700";
 
   if (loading) {
     return (
@@ -188,6 +264,22 @@ export default function TripDetailsPage() {
               isConnected={isConnected}
               currentUserId={user?.id}
             />
+            <Button
+              variant="secondary"
+              onClick={() => setShowChat(true)}
+              className="text-xs py-2 px-3 gap-1.5"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span>Chat</span>
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowInviteLink(true)}
+              className="text-xs py-2 px-3 gap-1.5"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Invite</span>
+            </Button>
           </div>
         </div>
 
@@ -224,14 +316,79 @@ export default function TripDetailsPage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="secondary"
-                onClick={() => exportTripSummaryHTML(trip, activities, expenses, settlements)}
-                className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
-              >
-                <FileDown className="h-3.5 w-3.5" />
-                <span>Export Report</span>
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowExportMenu((open) => !open)}
+                  className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  <span>Export</span>
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showExportMenu ? "rotate-180" : ""}`} />
+                </Button>
+
+                {showExportMenu && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Close export menu"
+                      className="fixed inset-0 z-10 cursor-default"
+                      onClick={() => setShowExportMenu(false)}
+                    />
+                    <div className="absolute right-0 top-full z-20 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      <button
+                        type="button"
+                        className={exportMenuItemClass}
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          if (!exportTripSummaryPDF(trip, activities, expenses, settlements)) {
+                            showToast("Popup blocked — downloaded a printable HTML report instead", "info");
+                          }
+                        }}
+                      >
+                        <FileText className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Print / Save as PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={exportMenuItemClass}
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          exportItineraryICS(trip, activities);
+                          showToast("Calendar file downloaded", "success");
+                        }}
+                      >
+                        <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Calendar (.ics)</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={exportMenuItemClass}
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          exportItineraryCSV(trip, activities);
+                          showToast("Itinerary CSV downloaded", "success");
+                        }}
+                      >
+                        <FileDown className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Itinerary CSV</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={exportMenuItemClass}
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          exportTripSummaryHTML(trip, activities, expenses, settlements);
+                          showToast("HTML report downloaded", "success");
+                        }}
+                      >
+                        <FileText className="h-3.5 w-3.5 text-slate-500" />
+                        <span>Full HTML report</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
               <Button
                 variant="secondary"
                 onClick={() => setShowEditTrip(true)}
@@ -350,7 +507,10 @@ export default function TripDetailsPage() {
 
                   <Button
                     variant="primary"
-                    onClick={() => setShowAddActivity(true)}
+                    onClick={() => {
+                      setDefaultActivityDate(undefined);
+                      setShowAddActivity(true);
+                    }}
                     className="text-xs py-2 px-4 gap-1.5"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -364,10 +524,14 @@ export default function TripDetailsPage() {
                   title="No activities planned yet"
                   description="Add your first sightseeing spot, flight, hotel check-in, or meal to begin building your itinerary."
                   actionLabel="+ Add First Activity"
-                  onAction={() => setShowAddActivity(true)}
+                  onAction={() => {
+                    setDefaultActivityDate(undefined);
+                    setShowAddActivity(true);
+                  }}
                 />
               ) : activityView === "reorder" ? (
                 <ActivityReorderList
+                  tripId={tripId}
                   activities={activities}
                   onReorder={handleReorderActivities}
                   onEdit={(act) => setEditingActivity(act)}
@@ -380,6 +544,12 @@ export default function TripDetailsPage() {
                   onEdit={(act) => setEditingActivity(act)}
                   onDelete={handleDeleteActivity}
                   startDate={trip.start_date}
+                  endDate={trip.end_date}
+                  onAddActivity={(date) => {
+                    setDefaultActivityDate(date);
+                    setShowAddActivity(true);
+                  }}
+                  onToggleComplete={handleToggleActivityComplete}
                 />
               )}
             </motion.div>
@@ -403,7 +573,7 @@ export default function TripDetailsPage() {
                 <div className="flex items-center gap-2">
                   <Button
                     variant="secondary"
-                    onClick={() => exportExpensesCSV(expenses, currency, trip.title)}
+                    onClick={() => exportExpensesCSV(expenses, trip.title, currency)}
                     className="text-xs py-2 px-3 gap-1.5"
                   >
                     <FileDown className="h-3.5 w-3.5" />
@@ -420,7 +590,41 @@ export default function TripDetailsPage() {
                 </div>
               </div>
 
-              {expenses.length === 0 ? (
+              {/* Sub-tab view toggle: List vs Visual Analytics */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl w-fit mb-5">
+                <button
+                  type="button"
+                  onClick={() => setExpenseSubTab("list")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    expenseSubTab === "list"
+                      ? "bg-white text-blue-700 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span>Expense List ({expenses.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpenseSubTab("analytics")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    expenseSubTab === "analytics"
+                      ? "bg-white text-blue-700 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  <span>Visual Analytics & Charts</span>
+                </button>
+              </div>
+
+              {expenseSubTab === "analytics" ? (
+                <ExpenseAnalytics
+                  expenses={expenses}
+                  budgetLimit={trip.budget_limit}
+                  currency={currency}
+                />
+              ) : expenses.length === 0 ? (
                 <EmptyState
                   title="No expenses logged yet"
                   description="Keep group finances clear and fair. Add your first restaurant bill, rental car, or hotel cost."
@@ -460,16 +664,26 @@ export default function TripDetailsPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">Debt Simplification Matrix</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Minimal transaction route computed to settle all shared expenses.
                   </p>
                 </div>
-                <Button variant="secondary" onClick={loadSettlement} className="text-xs py-2 px-3">
-                  Recompute
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={() => handleOpenPaymentModal()}
+                    className="text-xs py-2 px-3 gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Record Payment</span>
+                  </Button>
+                  <Button variant="secondary" onClick={loadSettlement} className="text-xs py-2 px-3">
+                    Recompute
+                  </Button>
+                </div>
               </div>
 
               {settlements.length === 0 ? (
@@ -497,11 +711,83 @@ export default function TripDetailsPage() {
                           </div>
                         </div>
                       </div>
-                      <span className="px-3 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full">
-                        Pending
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full">
+                          Pending
+                        </span>
+                        <Button
+                          variant="primary"
+                          onClick={() => handleOpenPaymentModal(s)}
+                          className="text-xs py-1.5 px-3"
+                        >
+                          Settle Up
+                        </Button>
+                      </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Settled Payment History */}
+              {settlementPayments.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Payment History</h3>
+                      <p className="text-xs text-slate-500">
+                        Record of settled debts between group members
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {settlementPayments.length} Settled {settlementPayments.length === 1 ? "Payment" : "Payments"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {settlementPayments.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between p-4 rounded-xl border border-slate-200/80 bg-white shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900">
+                              {p.from_user?.name || "Member"} paid {p.to_user?.name || "Member"}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                              <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                              <span>•</span>
+                              <span className="uppercase font-semibold text-blue-600">
+                                {p.payment_method?.replace("_", " ")}
+                              </span>
+                              {p.notes && (
+                                <>
+                                  <span>•</span>
+                                  <span className="italic">"{p.notes}"</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-base font-extrabold text-emerald-700">
+                            {formatAmount(p.amount, currency)}
+                          </span>
+                          <button
+                            onClick={() => handleDeletePayment(p.id)}
+                            title="Remove payment record"
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -564,6 +850,66 @@ export default function TripDetailsPage() {
               setActivities(activities.map((a) => (a.id === updated.id ? updated : a)));
               setEditingActivity(null);
               showToast("Activity updated", "success");
+            }}
+            showToast={showToast}
+          />
+        )}
+
+        {showAddActivity && (
+          <AddActivityModal
+            tripId={tripId}
+            defaultDate={defaultActivityDate}
+            startDate={trip.start_date}
+            endDate={trip.end_date}
+            onClose={() => {
+              setShowAddActivity(false);
+              setDefaultActivityDate(undefined);
+            }}
+            onSuccess={(newActivity) => {
+              setActivities((prev) => [...prev, newActivity]);
+              setShowAddActivity(false);
+              setDefaultActivityDate(undefined);
+            }}
+            showToast={showToast}
+          />
+        )}
+
+        {showChat && (
+          <TripChatDrawer
+            tripId={tripId}
+            tripTitle={trip.title}
+            currentUserId={user?.id}
+            currentUserName={user?.name || user?.email}
+            onClose={() => setShowChat(false)}
+            showToast={showToast}
+          />
+        )}
+
+        {showInviteLink && (
+          <InviteLinkModal
+            tripId={tripId}
+            tripTitle={trip.title}
+            onClose={() => setShowInviteLink(false)}
+            showToast={showToast}
+          />
+        )}
+
+        {showRecordPayment && (
+          <RecordPaymentModal
+            isOpen={showRecordPayment}
+            onClose={() => {
+              setShowRecordPayment(false);
+              setSelectedSettlementForPayment(null);
+            }}
+            tripId={tripId}
+            currency={currency}
+            defaultFromUserId={selectedSettlementForPayment?.from_user_id}
+            defaultToUserId={selectedSettlementForPayment?.to_user_id}
+            defaultAmount={selectedSettlementForPayment?.amount}
+            members={members}
+            onPaymentRecorded={() => {
+              loadSettlement();
+              loadTripData();
             }}
             showToast={showToast}
           />

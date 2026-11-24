@@ -37,6 +37,10 @@ export const tripsApi = {
     return apiClient.get<TripDetailsResponse>(`/api/trips/${tripId}`);
   },
 
+  async getTrip(tripId: string): Promise<ApiResponse<TripDetailsResponse>> {
+    return apiClient.get<TripDetailsResponse>(`/api/trips/${tripId}`);
+  },
+
   async updateTrip(tripId: string, data: UpdateTripData): Promise<ApiResponse<{ trip: Trip }>> {
     return apiClient.put<{ trip: Trip }>(`/api/trips/${tripId}`, data);
   },

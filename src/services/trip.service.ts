@@ -63,23 +63,63 @@ export async function getTrip(tripId: string) {
       .single();
 
     if (tripError || !trip) {
-      return { trip: null, error: 'Trip not found' };
+      return {
+        trip: null,
+        members: [],
+        activities: [],
+        expenses: [],
+        error: 'Trip not found',
+      };
     }
 
-    // Get trip members with user details
     const { data: members, error: membersError } = await supabaseAdmin
       .from('trip_members')
       .select('id, trip_id, user_id, role, joined_at, users(id, name, email, profile_image)')
       .eq('trip_id', tripId);
 
-    if (membersError) {
-      return { trip, members: [], error: null };
+    const { data: activities, error: activitiesError } = await supabaseAdmin
+      .from('activities')
+      .select('*')
+      .eq('trip_id', tripId)
+      .order('activity_date', { ascending: true })
+      .order('order_index', { ascending: true });
+
+    const { data: expenses, error: expensesError } = await supabaseAdmin
+      .from('expenses')
+      .select(
+        `
+        *,
+        paidByUser:users!paid_by(id, name, email, profile_image),
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
+      `
+      )
+      .eq('trip_id', tripId)
+      .order('created_at', { ascending: false });
+
+    if (membersError || activitiesError || expensesError) {
+      console.error('Error fetching trip relations:', {
+        membersError,
+        activitiesError,
+        expensesError,
+      });
     }
 
-    return { trip, members: members || [], error: null };
+    return {
+      trip,
+      members: members || [],
+      activities: activities || [],
+      expenses: expenses || [],
+      error: null,
+    };
   } catch (error) {
     console.error('Error fetching trip:', error);
-    return { trip: null, members: [], error: 'Failed to fetch trip' };
+    return {
+      trip: null,
+      members: [],
+      activities: [],
+      expenses: [],
+      error: 'Failed to fetch trip',
+    };
   }
 }
 

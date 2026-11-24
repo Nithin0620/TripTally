@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (authError?.code === 'PGRST205') {
       return serverErrorResponse(
-        "Database is missing 'auth_passwords' table. Run supabase_complete_schema.sql in Supabase SQL editor and retry."
+        "Database is missing 'auth_passwords' table. Run sql/supabase_complete_schema.sql in Supabase SQL editor and retry."
       );
     }
 

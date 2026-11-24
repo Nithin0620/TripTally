@@ -66,12 +66,41 @@ export async function calculateTripSettlements(tripId: string) {
 
     const balances = calculateUserBalances(expenseData, memberIds);
 
+    // Fetch recorded settlement payments and adjust balances
+    let payments: any[] = [];
+    try {
+      const { data: paymentsData, error: paymentsError } = await supabaseAdmin
+        .from('settlement_payments')
+        .select('*')
+        .eq('trip_id', tripId)
+        .order('created_at', { ascending: false });
+
+      if (!paymentsError && paymentsData) {
+        payments = paymentsData.map((p: any) => ({
+          ...p,
+          from_user: userMap[p.from_user_id],
+          to_user: userMap[p.to_user_id],
+        }));
+
+        for (const p of paymentsData) {
+          if (balances[p.from_user_id] !== undefined) {
+            balances[p.from_user_id] += p.amount;
+          }
+          if (balances[p.to_user_id] !== undefined) {
+            balances[p.to_user_id] -= p.amount;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not query settlement_payments table:', err);
+    }
+
     // Validate settlement
     if (!validateSettlement(balances)) {
       console.warn('Settlement validation failed - balances do not sum to zero');
     }
 
-    // Optimize settlements
+    // Optimize settlements with adjusted balances
     const settlements = optimizeSettlements(balances);
 
     // Attach user details
@@ -81,10 +110,70 @@ export async function calculateTripSettlements(tripId: string) {
       to_user: userMap[settlement.to_user_id],
     }));
 
-    return { settlements: settlementsWithUsers, error: null, balances };
+    return { settlements: settlementsWithUsers, error: null, balances, payments };
   } catch (error) {
     console.error('Error calculating settlements:', error);
-    return { settlements: [], error: 'Failed to calculate settlements' };
+    return { settlements: [], error: 'Failed to calculate settlements', payments: [] };
+  }
+}
+
+/**
+ * Record a payment settled between two members
+ */
+export async function recordSettlementPayment(data: {
+  trip_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  amount: number;
+  currency?: string;
+  payment_method?: string;
+  notes?: string;
+  created_by: string;
+}) {
+  try {
+    const { data: payment, error } = await supabaseAdmin
+      .from('settlement_payments')
+      .insert({
+        trip_id: data.trip_id,
+        from_user_id: data.from_user_id,
+        to_user_id: data.to_user_id,
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        payment_method: data.payment_method || 'other',
+        notes: data.notes || null,
+        created_by: data.created_by,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { payment: null, error: error.message };
+    }
+    return { payment, error: null };
+  } catch (error) {
+    console.error('Error recording settlement payment:', error);
+    return { payment: null, error: 'Failed to record settlement payment' };
+  }
+}
+
+/**
+ * Delete a recorded settlement payment
+ */
+export async function deleteSettlementPayment(tripId: string, paymentId: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('settlement_payments')
+      .delete()
+      .eq('id', paymentId)
+      .eq('trip_id', tripId);
+
+    if (error) {
+      return { error: error.message };
+    }
+    return { error: null };
+  } catch (error) {
+    console.error('Error deleting settlement payment:', error);
+    return { error: 'Failed to delete payment' };
   }
 }
 

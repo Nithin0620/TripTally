@@ -29,12 +29,47 @@ export const templatesApi = {
   },
 };
 
+export interface SettlementResponse {
+  settlements: Settlement[];
+  balances: Record<string, number>;
+  payments: any[];
+  summary: {
+    totalSettlements: number;
+    totalAmount: number;
+    totalPaid: number;
+  };
+}
+
 export const settlementApi = {
   /**
    * Get settlement for a trip
    */
-  async getSettlement(tripId: string): Promise<ApiResponse<{ settlements: Settlement[] }>> {
-    return apiClient.get<{ settlements: Settlement[] }>(`/api/settlement/${tripId}`);
+  async getSettlement(tripId: string): Promise<ApiResponse<SettlementResponse>> {
+    return apiClient.get<SettlementResponse>(`/api/settlement/${tripId}`);
+  },
+
+  /**
+   * Record a settlement payment
+   */
+  async recordPayment(
+    tripId: string,
+    data: {
+      from_user_id: string;
+      to_user_id: string;
+      amount: number;
+      currency?: string;
+      payment_method?: string;
+      notes?: string;
+    }
+  ): Promise<ApiResponse<{ payment: any; success: boolean }>> {
+    return apiClient.post<{ payment: any; success: boolean }>(`/api/settlement/${tripId}`, data);
+  },
+
+  /**
+   * Delete a recorded payment
+   */
+  async deletePayment(tripId: string, paymentId: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>(`/api/settlement/${tripId}?paymentId=${paymentId}`);
   },
 };
 

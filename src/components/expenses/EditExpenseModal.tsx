@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { expensesApi } from "@/lib/api/expenses";
-import { supabase } from "@/lib/supabase";
+import { tripsApi } from "@/lib/api/trips";
 import { modalBackdrop, modalContent } from "@/lib/animations";
 import Button from "@/components/ui/Button";
 import NeuInput from "@/components/ui/NeuInput";
@@ -52,17 +52,15 @@ export default function EditExpenseModal({
 
   const loadTripMembers = async () => {
     try {
-      const { data: members, error } = await supabase
-        .from("trip_members")
-        .select("user_id, users(id, name, email)")
-        .eq("trip_id", tripId);
+      const response = await tripsApi.getTrip(tripId);
 
-      if (error || !members) return;
+      if (response.error || !response.data) return;
 
+      const members = response.data.members || [];
       const users = members
-        .map((m: any) => (Array.isArray(m.users) ? m.users[0] : m.users))
+        .map((m: any) => (Array.isArray(m.user) ? m.user[0] : m.user))
         .filter(Boolean)
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""));
 
       setTripMembers(users);
 

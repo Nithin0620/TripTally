@@ -66,6 +66,15 @@ export interface Activity {
   created_at: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user?: Pick<User, "id" | "name" | "profile_image">;
+}
+
 export interface Expense {
   id: string;
   trip_id: string;

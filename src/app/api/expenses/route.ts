@@ -269,7 +269,7 @@ export async function DELETE(request: NextRequest) {
       return forbiddenResponse(roleError ?? undefined);
     }
 
-    const { error } = await deleteExpense(id);
+    const { error } = await deleteExpense(id, trip_id);
 
     if (error) {
       return serverErrorResponse(error);

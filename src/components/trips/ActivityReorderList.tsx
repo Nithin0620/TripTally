@@ -6,6 +6,7 @@ import { Activity } from "@/types";
 import NeuCard from "@/components/ui/NeuCard";
 
 interface ActivityReorderListProps {
+  tripId: string;
   activities: Activity[];
   onReorder: (activities: Activity[]) => void;
   onEdit: (activity: Activity) => void;
@@ -14,6 +15,7 @@ interface ActivityReorderListProps {
 }
 
 export default function ActivityReorderList({
+  tripId,
   activities,
   onReorder,
   onEdit,
@@ -39,7 +41,7 @@ export default function ActivityReorderList({
 
     onReorder(newSorted);
 
-    const { error } = await activitiesApi.reorderActivities?.(reordered) ?? { error: null };
+    const { error } = await activitiesApi.reorderActivities(tripId, reordered);
     if (error) {
       showToast("Failed to reorder", "error");
     }
@@ -58,7 +60,7 @@ export default function ActivityReorderList({
 
     onReorder(newSorted);
 
-    const { error } = await activitiesApi.reorderActivities?.(reordered) ?? { error: null };
+    const { error } = await activitiesApi.reorderActivities(tripId, reordered);
     if (error) {
       showToast("Failed to reorder", "error");
     }

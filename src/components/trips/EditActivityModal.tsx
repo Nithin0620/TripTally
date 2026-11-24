@@ -39,6 +39,7 @@ export default function EditActivityModal({
 
     const response = await activitiesApi.updateActivity({
       id: activity.id,
+      trip_id: activity.trip_id,
       title,
       activity_date: date,
       location: location || undefined,

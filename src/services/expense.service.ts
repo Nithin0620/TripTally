@@ -446,10 +446,11 @@ export async function updateExpense(
 /**
  * Delete expense
  */
-export async function deleteExpense(expenseId: string) {
+export async function deleteExpense(expenseId: string, tripId: string) {
   try {
     const { error } = await supabaseAdmin.rpc('delete_expense_with_shares', {
       p_expense_id: expenseId,
+      p_trip_id: tripId,
     });
 
     if (error) {

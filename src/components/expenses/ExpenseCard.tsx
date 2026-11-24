@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { deleteExpense } from "@/services/expense.service";
+import { expensesApi } from "@/lib/api/expenses";
 import { useToast } from "@/hooks/useToast";
 import NeuCard from "@/components/ui/NeuCard";
 
@@ -23,7 +23,7 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
 
     try {
       setIsDeleting(true);
-      const { error } = await deleteExpense(expense.id);
+      const { error } = await expensesApi.deleteExpense(expense.id, expense.trip_id);
       if (error) {
         showToast(error, "error");
       } else {

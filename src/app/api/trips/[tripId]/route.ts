@@ -43,13 +43,16 @@ export async function GET(
       return forbiddenResponse(roleError ?? undefined);
     }
 
-    const { trip, members, error } = await getTrip(tripId);
+    const { trip, members, activities, expenses, error } = await getTrip(tripId);
 
     if (error) {
       return serverErrorResponse(error);
     }
 
-    return NextResponse.json({ trip, members }, { status: 200 });
+    return NextResponse.json(
+      { trip, members, activities, expenses },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching trip:', error);
     return serverErrorResponse('Failed to fetch trip');

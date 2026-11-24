@@ -109,14 +109,29 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS delete_expense_with_shares(UUID);
+
 CREATE OR REPLACE FUNCTION delete_expense_with_shares(
-  p_expense_id UUID
+  p_expense_id UUID,
+  p_trip_id UUID
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  v_exists BOOLEAN;
 BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM expenses
+    WHERE id = p_expense_id AND trip_id = p_trip_id
+  ) INTO v_exists;
+
+  IF NOT v_exists THEN
+    RAISE EXCEPTION 'Expense not found for trip';
+  END IF;
+
   DELETE FROM expense_shares WHERE expense_id = p_expense_id;
-  DELETE FROM expenses WHERE id = p_expense_id;
+  DELETE FROM expenses WHERE id = p_expense_id AND trip_id = p_trip_id;
 END;
 $$;

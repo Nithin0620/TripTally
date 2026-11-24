@@ -18,6 +18,7 @@ export interface CreateActivityData {
 
 export interface UpdateActivityData {
   id: string;
+  trip_id: string;
   title?: string;
   activity_date?: string;
   location?: string;
@@ -45,20 +46,30 @@ export const activitiesApi = {
   /**
    * Delete activity
    */
-  async deleteActivity(activityId: string): Promise<ApiResponse<{ message: string }>> {
-    return apiClient.delete<{ message: string }>(`/api/activities?id=${activityId}`);
+  async deleteActivity(
+    activityId: string,
+    tripId: string
+  ): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>(`/api/activities?id=${activityId}`, {
+      id: activityId,
+      trip_id: tripId,
+    });
   },
 
   /**
    * Reorder activities
    */
   async reorderActivities(
+    tripId: string,
     activities: Array<{ id: string; order_index: number }>
   ): Promise<ApiResponse<{ message: string }>> {
-    // Reorder via individual updates (batch)
     const results = await Promise.all(
       activities.map(({ id, order_index }) =>
-        apiClient.put<{ activity: Activity }>('/api/activities', { id, order_index })
+        apiClient.put<{ activity: Activity }>('/api/activities', {
+          id,
+          trip_id: tripId,
+          order_index,
+        })
       )
     );
     const error = results.find((r) => r.error);

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { expensesApi } from "@/lib/api/expenses";
+import { tripsApi } from "@/lib/api/trips";
 import { useToast } from "@/hooks/useToast";
-import { supabase } from "@/lib/supabase";
 import { modalBackdrop, modalContent } from "@/lib/animations";
 import Button from "@/components/ui/Button";
 import NeuInput from "@/components/ui/NeuInput";
@@ -53,30 +53,28 @@ export default function AddExpenseModal({
 
   const loadTripMembers = async () => {
     try {
-      const { data: members, error } = await supabase
-        .from("trip_members")
-        .select("user_id, users(id, name, email)")
-        .eq("trip_id", tripId);
+      const response = await tripsApi.getTrip(tripId);
 
-      if (error || !members) {
+      if (response.error || !response.data) {
         showToast("Failed to load trip members", "error");
         return;
       }
 
-      const users = members
-        .map((m: any) => (Array.isArray(m.users) ? m.users[0] : m.users))
+      const members = response.data.members || [];
+      const users: CurrentUser[] = members
+        .map((m: any) => (Array.isArray(m.user) ? m.user[0] : m.user))
         .filter(Boolean)
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""));
 
       setTripMembers(users);
 
       if (users.length > 0) {
         setPaidById(users[0].id);
-        setSelectedMembers(users.map((u) => u.id));
+        setSelectedMembers(users.map((u: CurrentUser) => u.id));
 
         const emptyPercentages: Record<string, string> = {};
         const emptyCustom: Record<string, string> = {};
-        users.forEach((u) => {
+        users.forEach((u: CurrentUser) => {
           emptyPercentages[u.id] = "";
           emptyCustom[u.id] = "";
         });

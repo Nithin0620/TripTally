@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getTripExpenses, calculateTripSettlement } from "@/services/expense.service";
+import { expensesApi } from "@/lib/api/expenses";
+import { settlementApi } from "@/lib/api/misc";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
@@ -47,19 +48,20 @@ export default function ExpensesPage() {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const { expenses: expenseData, error: expensesError } = await getTripExpenses(tripId);
+      const res = await expensesApi.getExpenses(tripId);
 
-      if (expensesError) {
-        showToast(expensesError, "error");
+      if (res.error) {
+        showToast(res.error, "error");
         return;
       }
 
-      setExpenses(expenseData || []);
-      setFilteredExpenses(expenseData || []);
+      const expenseData = res.data?.expenses || [];
+      setExpenses(expenseData);
+      setFilteredExpenses(expenseData);
 
-      const { data: settlementData, error: settlementError } = await calculateTripSettlement(tripId);
-      if (!settlementError && settlementData) {
-        setSettlement(settlementData);
+      const settlementRes = await settlementApi.getSettlement(tripId);
+      if (!settlementRes.error && settlementRes.data?.settlements) {
+        setSettlement(settlementRes.data.settlements);
       }
     } catch (error) {
       console.error("Error loading expenses:", error);

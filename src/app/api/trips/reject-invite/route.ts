@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyJWT } from '@/lib/jwt';
+import { authenticateUser } from '@/middleware/auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -9,16 +9,12 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    if (!token) {
+    const auth = await authenticateUser(request);
+    if (!auth.authenticated || !auth.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const payload = await verifyJWT(token);
-    if (!payload) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    const payload = auth.user;
 
     const { inviteId } = await request.json();
     if (!inviteId) {
@@ -39,8 +35,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Invite already ${invite.status}` }, { status: 400 });
     }
 
-    if (payload.email.toLowerCase() !== String(invite.email || '').toLowerCase()) {
+    if (invite.email && payload.email.toLowerCase() !== String(invite.email).toLowerCase()) {
       return NextResponse.json({ error: 'Invite email does not match authenticated user' }, { status: 403 });
+    }
+
+    if (!invite.email) {
+      return NextResponse.json({
+        success: true,
+        message: 'Invitation declined',
+        trip_id: invite.trip_id,
+      });
     }
 
     const { error: updateInviteError } = await supabase

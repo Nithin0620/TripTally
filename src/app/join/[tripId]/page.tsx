@@ -14,7 +14,7 @@ import { Compass, Calendar, Users, CheckCircle2, XCircle, Clock, ArrowRight, Loa
 interface InviteDetails {
   invite: {
     id: string;
-    email: string;
+    email: string | null;
     status: string;
     expires_at: string;
     created_at: string;

@@ -46,7 +46,13 @@ export const expensesApi = {
     return apiClient.put<{ expense: Expense }>('/api/expenses', data);
   },
 
-  async deleteExpense(expenseId: string): Promise<ApiResponse<{ message: string }>> {
-    return apiClient.delete<{ message: string }>(`/api/expenses?id=${expenseId}`);
+  async deleteExpense(
+    expenseId: string,
+    tripId: string
+  ): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>(`/api/expenses?id=${expenseId}`, {
+      id: expenseId,
+      trip_id: tripId,
+    });
   },
 };

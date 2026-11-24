@@ -63,8 +63,8 @@ Below is the verified status of each feature category in the codebase:
 | **📈 Analytics** | Charts, category breakdown, daily spend | ❌ **NOT STARTED** (No recharts/charts implementation in UI) | *No files implemented yet* |
 | **📚 Templates** | Browse, create templates | 🔄 **PARTIALLY DONE** (List and create works; Clone, Customize, and AI-modify are missing) | `src/app/templates/page.tsx`, `src/components/templates/` |
 | **🌍 Public Explore** | Search -> DB -> AI fallback -> Cache | ✅ **DONE** | `src/app/api/explore/search/route.ts`, `src/lib/places-db.ts` |
-| **📬 Waitlist** | Waitlist email submissions | ❌ **NOT STARTED** (Database table exists, but no API route or landing form is implemented) | `supabase_complete_schema.sql` (Waitlist Table) |
-| **📊 Visitor Analytics** | Track unique visitors (UUID + LocalStorage) | ❌ **NOT STARTED** (Database table exists, but no logging logic or admin dashboard exists) | `supabase_complete_schema.sql` (Visitors Table) |
+| **📬 Waitlist** | Waitlist email submissions | ❌ **NOT STARTED** (Database table exists, but no API route or landing form is implemented) | `sql/supabase_complete_schema.sql` (Waitlist Table) |
+| **📊 Visitor Analytics** | Track unique visitors (UUID + LocalStorage) | ❌ **NOT STARTED** (Database table exists, but no logging logic or admin dashboard exists) | `sql/supabase_complete_schema.sql` (Visitors Table) |
 | **📧 Email Service** | Nodemailer config, trip invites | ✅ **DONE** | `src/config/nodemailer.ts`, `src/app/api/trips/invite/route.ts` |
 | **☁️ Cloudinary** | Image upload for receipts, cover images | ✅ **DONE** (Profile image upload not yet implemented) | `src/config/cloudinary.ts`, `src/app/api/trips/[tripId]/cover/route.ts` |
 | **🔍 Search** | Search trips, places, templates | 🔄 **PARTIALLY DONE** (Search places/categories works; Search trips and templates is missing) | `src/app/api/explore/search/route.ts` |
@@ -150,7 +150,7 @@ Below is the verified status of each feature category in the codebase:
 ## 💰 Expense & Settlement Engine
 * **Status**: **80% Completed**
 * **Implemented**:
-  * Database-level atomic transactions for adding and removing split expenses (`supabase_expense_transaction_functions.sql`).
+  * Database-level atomic transactions for adding and removing split expenses (`sql/supabase_expense_transaction_functions.sql`).
   * High-precision financial math storing all balances in integer cents in DB, calculated on-the-fly (`src/utils/splitCalculator.ts`).
   * Multi-currency support across 15 global currencies (`src/utils/currency.ts`) with custom formatters.
   * Split types: **Equal** (auto-distributed), **Percentage** (custom percentages summing to 100%), and **Custom** (fixed amount splits).
@@ -196,14 +196,14 @@ Below is the verified status of each feature category in the codebase:
 
 ## ⚡ Performance, Security & Tech Stack
 * **Database Migrations**:
-  * ✅ `supabase_complete_schema.sql` (Tables: users, trips, trip_members, trip_invites, activities, expenses, expense_shares, receipts, templates, notifications, visitors, waitlist)
-  * ✅ `supabase_expense_invites_migration.sql`
-  * ✅ `supabase_expense_transaction_functions.sql` (adds DB functions `create_expense_with_split`, `delete_expense_atomic`)
-  * ✅ `supabase_updated_at_triggers.sql`
-  * ✅ `supabase_places_migration.sql`
-  * ✅ `supabase_explore_search_migration.sql` (Full-text search configuration)
-  * ✅ `supabase_currency_migration.sql`
-  * ✅ `supabase_notifications_migration.sql`
+  * ✅ `sql/supabase_complete_schema.sql` (Tables: users, trips, trip_members, trip_invites, activities, expenses, expense_shares, receipts, templates, notifications, visitors, waitlist)
+  * ✅ `sql/supabase_expense_invites_migration.sql`
+  * ✅ `sql/supabase_expense_transaction_functions.sql` (adds DB functions `create_expense_with_split`, `delete_expense_atomic`)
+  * ✅ `sql/supabase_updated_at_triggers.sql`
+  * ✅ `sql/supabase_places_migration.sql`
+  * ✅ `sql/supabase_explore_search_migration.sql` (Full-text search configuration)
+  * ✅ `sql/supabase_currency_migration.sql`
+  * ✅ `sql/supabase_notifications_migration.sql`
 * **Security & Performance**:
   * Role verification middleware to block unauthorized edits.
   * Rate-limiting middleware (`src/middleware/rate-limit.ts`) enforcing threshold quotas on search and auth routes.
