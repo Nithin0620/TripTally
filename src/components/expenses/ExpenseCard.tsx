@@ -5,18 +5,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import { expensesApi } from "@/lib/api/expenses";
 import { useToast } from "@/hooks/useToast";
 import NeuCard from "@/components/ui/NeuCard";
+import ReceiptUpload from "@/components/expenses/ReceiptUpload";
+import { convertAmount, DEFAULT_CURRENCY, formatAmount } from "@/utils/currency";
 
 interface ExpenseCardProps {
   expense: any;
   index: number;
   onUpdate?: () => void;
   onEdit?: (expense: any) => void;
+  baseCurrency?: string;
 }
 
-export default function ExpenseCard({ expense, index, onUpdate, onEdit }: ExpenseCardProps) {
+export default function ExpenseCard({
+  expense,
+  index,
+  onUpdate,
+  onEdit,
+  baseCurrency,
+}: ExpenseCardProps) {
   const { showToast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const currencyCode = expense.currency || baseCurrency || DEFAULT_CURRENCY;
+  const convertedAmount =
+    baseCurrency && baseCurrency !== currencyCode
+      ? convertAmount(expense.amount, currencyCode, expense.exchange_rate, baseCurrency)
+      : null;
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -35,7 +50,8 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
     }
   };
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => formatAmount(amount, currencyCode);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -52,7 +68,6 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       <NeuCard className="!p-0 overflow-hidden">
-        {/* Main Content */}
         <div
           className="p-6 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -63,22 +78,32 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
                 {expense.title}
               </h3>
               <p className="text-[#64748B] text-sm flex items-center gap-2">
-                <span>Paid by {expense.users?.name || "Unknown"}</span>
+                <span>
+                  Paid by{" "}
+                  {expense.paidByUser?.name ||
+                    expense.users?.name ||
+                    expense.user?.name ||
+                    "Unknown"}
+                </span>
                 <span className="text-[#CBD5E1]">•</span>
-                <span>{formatDate(expense.created_at)}</span>
+                <span>{formatDate(expense.expense_date || expense.created_at)}</span>
               </p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-brand-blue">
                 {formatCurrency(expense.amount)}
               </p>
+              {convertedAmount !== null && (
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                  ≈ {formatAmount(convertedAmount, baseCurrency!)}
+                </p>
+              )}
               <p className="text-[#64748B] text-xs mt-1 capitalize">
                 {expense.split_type} split
               </p>
             </div>
           </div>
 
-          {/* Quick Summary */}
           <div className="mt-4 pt-4 border-t border-white/30 grid grid-cols-2 gap-4">
             <div>
               <p className="text-[#64748B] text-xs mb-1">Amount Paid</p>
@@ -89,12 +114,11 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
             <div>
               <p className="text-[#64748B] text-xs mb-1">Split Among</p>
               <p className="text-[#0F172A] font-semibold">
-                {expense.expense_shares?.length || 0} people
+                {expense.expense_shares?.length || expense.shares?.length || 0} people
               </p>
             </div>
           </div>
 
-          {/* Expand Indicator */}
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             className="mt-4"
@@ -105,7 +129,6 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
           </motion.div>
         </div>
 
-        {/* Expanded Details */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -116,7 +139,28 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
               className="border-t border-white/30 bg-white/20"
             >
               <div className="p-6 space-y-4">
-                {/* Notes */}
+                {expense.description && (
+                  <div>
+                    <p className="text-[#64748B] text-sm mb-2">Description</p>
+                    <div className="neu-inset rounded-xl p-3">
+                      <p className="text-[#0F172A]">{expense.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {Array.isArray(expense.tags) && expense.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {expense.tags.map((tag: string) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {expense.notes && (
                   <div>
                     <p className="text-[#64748B] text-sm mb-2">Notes</p>
@@ -126,42 +170,60 @@ export default function ExpenseCard({ expense, index, onUpdate, onEdit }: Expens
                   </div>
                 )}
 
-                {/* Share Breakdown */}
                 <div>
                   <p className="text-[#64748B] text-sm mb-3 font-semibold">
                     Share Breakdown
                   </p>
                   <div className="space-y-2">
-                    {expense.expense_shares?.map((share: any, idx: number) => (
-                      <motion.div
-                        key={share.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="rounded-xl bg-white/50 border border-white/40 p-3 flex justify-between items-center"
-                      >
-                        <div className="flex-1">
-                          <p className="text-[#0F172A] font-medium">
-                            {share.users?.name || "Unknown User"}
-                          </p>
-                          <p className="text-[#64748B] text-xs">
-                            {share.users?.email || "N/A"}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-brand-blue font-bold">
-                            {formatCurrency(share.share_amount)}
-                          </p>
-                          <p className="text-[#64748B] text-xs">
-                            {((share.share_amount / expense.amount) * 100).toFixed(0)}%
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
+                    {(expense.expense_shares || expense.shares || []).map(
+                      (share: any, idx: number) => (
+                        <motion.div
+                          key={share.id || `${share.user_id}-${idx}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="rounded-xl bg-white/50 border border-white/40 p-3 flex justify-between items-center"
+                        >
+                          <div className="flex-1">
+                            <p className="text-[#0F172A] font-medium">
+                              {share.users?.name || share.user?.name || "Unknown User"}
+                            </p>
+                            <p className="text-[#64748B] text-xs">
+                              {share.users?.email || share.user?.email || "N/A"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-brand-blue font-bold">
+                              {formatCurrency(share.share_amount ?? share.amount)}
+                            </p>
+                            <p className="text-[#64748B] text-xs">
+                              {expense.amount
+                                ? (
+                                    ((share.share_amount ?? share.amount) / expense.amount) *
+                                    100
+                                  ).toFixed(0)
+                                : "0"}
+                              %
+                            </p>
+                          </div>
+                        </motion.div>
+                      )
+                    )}
                   </div>
                 </div>
 
-                {/* Actions */}
+                <div>
+                  <p className="text-[#64748B] text-sm mb-3 font-semibold">Receipts</p>
+                  <ReceiptUpload
+                    expenseId={expense.id}
+                    tripId={expense.trip_id}
+                    receipts={expense.receipts || []}
+                    showToast={showToast}
+                    onUploaded={() => onUpdate?.()}
+                    onDeleted={() => onUpdate?.()}
+                  />
+                </div>
+
                 <div className="flex gap-2 pt-4 border-t border-white/30">
                   <button
                     onClick={(e) => {

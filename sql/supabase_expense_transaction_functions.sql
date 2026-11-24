@@ -4,6 +4,8 @@
 -- Run this migration in Supabase SQL editor.
 -- Each function executes in a single DB transaction.
 
+DROP FUNCTION IF EXISTS create_expense_with_shares(UUID, TEXT, NUMERIC, UUID, TEXT, TEXT, TEXT, UUID, JSONB);
+
 CREATE OR REPLACE FUNCTION create_expense_with_shares(
   p_trip_id UUID,
   p_title TEXT,
@@ -13,7 +15,12 @@ CREATE OR REPLACE FUNCTION create_expense_with_shares(
   p_notes TEXT,
   p_category TEXT,
   p_created_by UUID,
-  p_shares JSONB
+  p_shares JSONB,
+  p_expense_date DATE,
+  p_description TEXT,
+  p_tags TEXT[],
+  p_currency TEXT,
+  p_exchange_rate NUMERIC
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -29,7 +36,12 @@ BEGIN
     split_type,
     notes,
     category,
-    created_by
+    created_by,
+    expense_date,
+    description,
+    tags,
+    currency,
+    exchange_rate
   )
   VALUES (
     p_trip_id,
@@ -39,7 +51,12 @@ BEGIN
     p_split_type,
     p_notes,
     COALESCE(p_category, 'general'),
-    p_created_by
+    p_created_by,
+    COALESCE(p_expense_date, CURRENT_DATE),
+    p_description,
+    p_tags,
+    COALESCE(p_currency, 'INR'),
+    COALESCE(p_exchange_rate, 1)
   )
   RETURNING * INTO v_expense;
 
@@ -59,6 +76,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS update_expense_with_shares(UUID, TEXT, NUMERIC, UUID, TEXT, TEXT, TEXT, JSONB);
+
 CREATE OR REPLACE FUNCTION update_expense_with_shares(
   p_expense_id UUID,
   p_title TEXT,
@@ -67,7 +86,12 @@ CREATE OR REPLACE FUNCTION update_expense_with_shares(
   p_split_type TEXT,
   p_category TEXT,
   p_notes TEXT,
-  p_shares JSONB
+  p_shares JSONB,
+  p_expense_date DATE,
+  p_description TEXT,
+  p_tags TEXT[],
+  p_currency TEXT,
+  p_exchange_rate NUMERIC
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -83,6 +107,11 @@ BEGIN
     split_type = p_split_type,
     category = p_category,
     notes = p_notes,
+    expense_date = COALESCE(p_expense_date, expense_date),
+    description = p_description,
+    tags = p_tags,
+    currency = COALESCE(p_currency, currency),
+    exchange_rate = COALESCE(p_exchange_rate, exchange_rate),
     updated_at = now()
   WHERE id = p_expense_id
   RETURNING * INTO v_expense;

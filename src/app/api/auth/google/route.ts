@@ -7,7 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
-import { badRequestResponse, serverErrorResponse, unauthorizedResponse } from '@/middleware/auth';
+import {
+  badRequestResponse,
+  errorResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+} from '@/middleware/auth';
 
 const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
@@ -44,7 +49,15 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse('Invalid Google token payload');
     }
 
-    const email = ticketPayload.email;
+    if (ticketPayload.email_verified === false) {
+      return errorResponse(
+        403,
+        'Your Google account email is not verified. Verify it with Google and try again.',
+        'EMAIL_NOT_VERIFIED'
+      );
+    }
+
+    const email = ticketPayload.email.toLowerCase();
     const name = ticketPayload.name || email.split('@')[0];
     const picture = ticketPayload.picture;
     if (!ticketPayload.sub) {
@@ -60,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Check if user exists
     let { data: user, error: userError } = await dbClient
       .from('users')
-      .select('id, name, email, profile_image')
+      .select('id, name, email, profile_image, email_verified')
       .eq('email', email)
       .single();
 
@@ -72,6 +85,7 @@ export async function POST(request: NextRequest) {
           email,
           name: name || email.split('@')[0],
           profile_image: picture,
+          email_verified: true,
         })
         .select()
         .single();
@@ -108,12 +122,27 @@ export async function POST(request: NextRequest) {
       return serverErrorResponse('User not found');
     }
 
+    // Google only returns verified emails for accepted accounts; reconcile legacy
+    // rows created before the verification column existed.
+    if (user.email_verified === false) {
+      const { error: verifyError } = await dbClient
+        .from('users')
+        .update({ email_verified: true })
+        .eq('id', user.id);
+      if (verifyError) {
+        console.error('Google email verification update error:', verifyError);
+      } else {
+        user.email_verified = true;
+      }
+    }
+
     // Update profile image if provided
     if (picture && (!user.profile_image || user.profile_image !== picture)) {
       await dbClient
         .from('users')
         .update({ profile_image: picture })
         .eq('id', user.id);
+      user.profile_image = picture;
     }
 
     // Generate JWT
@@ -133,6 +162,7 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
           profile_image: user.profile_image,
+          email_verified: true,
         },
         token,
       },

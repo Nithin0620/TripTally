@@ -17,12 +17,13 @@ export const CURRENCIES: Currency[] = [
   { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
   { code: "IDR", symbol: "Rp", name: "Indonesian Rupiah" },
   { code: "MYR", symbol: "RM", name: "Malaysian Ringgit" },
-  { code: "EUR", symbol: "€", name: "Euro" },
   { code: "CHF", symbol: "Fr", name: "Swiss Franc" },
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
 ];
 
 export const DEFAULT_CURRENCY = "INR";
+
+const ZERO_DECIMAL_CURRENCIES = new Set(["JPY", "KRW", "VND", "CLP", "ISK"]);
 
 export function getCurrencyByCode(code: string): Currency {
   return CURRENCIES.find((c) => c.code === code) || CURRENCIES[0];
@@ -30,8 +31,25 @@ export function getCurrencyByCode(code: string): Currency {
 
 export function formatAmount(amount: number, currencyCode: string = DEFAULT_CURRENCY): string {
   const currency = getCurrencyByCode(currencyCode);
-  return `${currency.symbol}${amount.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const fractionDigits = ZERO_DECIMAL_CURRENCIES.has(currencyCode) ? 0 : 2;
+  return `${currency.symbol}${Number(amount || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   })}`;
+}
+
+export function convertAmount(
+  amount: number,
+  sourceCurrency: string | null | undefined,
+  exchangeRate: number | null | undefined,
+  targetCurrency: string
+): number {
+  const value = Number.isFinite(amount) ? amount : 0;
+  const rate =
+    typeof exchangeRate === "number" && Number.isFinite(exchangeRate) && exchangeRate > 0
+      ? exchangeRate
+      : 1;
+
+  const converted = sourceCurrency && sourceCurrency === targetCurrency ? value : value * rate;
+  return Math.round(converted * 100) / 100;
 }

@@ -54,6 +54,17 @@ curl -b cookies.txt -X DELETE -H 'Content-Type: application/json' \
   'http://localhost:3000/api/expenses?id=EXPENSE_ID'
 ```
 
+## Auth & account (Phase 4)
+
+- Apply `sql/supabase_phase4_auth_migration.sql` before testing; verify `SMTP_*` is configured.
+- [ ] `POST /api/auth/register` returns `201` with `requiresVerification: true` and sends one verification email; no auth cookie is set.
+- [ ] Using the emailed token at `/verify-email?token=...` verifies the account, sets the cookie, and redirects to `/dashboard`.
+- [ ] Reusing the same verification token returns `400`; `POST /api/auth/verify/resend` sends a fresh token.
+- [ ] `POST /api/auth/login` returns `403` with `code: EMAIL_NOT_VERIFIED` before verification and `200` afterwards.
+- [ ] `POST /api/auth/google` with a payload containing `email_verified: false` returns `403`.
+- [ ] `POST /api/auth/password-reset/request` and `/confirm` replace the password; the reset token cannot be reused.
+- [ ] `GET`/`PUT /api/auth/profile`, avatar upload, password change, data export, and account deletion all work from `/profile`.
+
 ## Done when
 
 - Every checked request returns the expected status.

@@ -9,6 +9,17 @@ import {
   deleteExpense,
 } from '@/services/expense.service';
 
+function parseShareCounts(value: unknown): Record<string, number> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const parsed: Record<string, number> = {};
+  for (const [userId, count] of Object.entries(value)) {
+    if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) return null;
+    parsed[userId] = count;
+  }
+  return parsed;
+}
+
 /**
  * POST /api/expenses - Create expense with validated split calculation
  */
@@ -30,8 +41,14 @@ export async function POST(request: NextRequest) {
       involved_members,
       percentages,
       custom_shares,
+      share_counts,
       notes,
       category,
+      expense_date,
+      description,
+      tags,
+      currency,
+      exchange_rate,
     } = body;
 
     // Validation
@@ -53,9 +70,39 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate split_type
-    if (!['equal', 'percentage', 'custom'].includes(split_type)) {
-      return badRequestResponse('split_type must be "equal", "percentage", or "custom"');
+    if (!['equal', 'percentage', 'custom', 'shares'].includes(split_type)) {
+      return badRequestResponse('split_type must be "equal", "percentage", "custom", or "shares"');
     }
+
+    const parsedShareCounts = parseShareCounts(share_counts);
+    if (share_counts !== undefined && !parsedShareCounts) {
+      return badRequestResponse('share_counts must map member IDs to non-negative numbers');
+    }
+
+    if (expense_date && Number.isNaN(new Date(expense_date).getTime())) {
+      return badRequestResponse('expense_date must be a valid date');
+    }
+
+    if (description !== undefined && typeof description !== 'string') {
+      return badRequestResponse('description must be a string');
+    }
+
+    if (currency !== undefined && typeof currency !== 'string') {
+      return badRequestResponse('currency must be a string');
+    }
+
+    if (tags !== undefined && !Array.isArray(tags)) {
+      return badRequestResponse('tags must be an array of strings');
+    }
+
+    const parsedExchangeRate = exchange_rate === undefined ? undefined : Number(exchange_rate);
+    if (parsedExchangeRate !== undefined && (Number.isNaN(parsedExchangeRate) || parsedExchangeRate <= 0)) {
+      return badRequestResponse('exchange_rate must be a positive number');
+    }
+
+    const parsedTags = Array.isArray(tags)
+      ? tags.filter((tag: unknown) => typeof tag === 'string' && tag.trim().length > 0).map((tag: string) => tag.trim())
+      : undefined;
 
     // Check edit access
     const { hasAccess, error: roleError } = await checkTripEditAccess(
@@ -73,12 +120,18 @@ export async function POST(request: NextRequest) {
       title,
       parsedAmount,
       paid_by,
-      split_type as 'equal' | 'percentage' | 'custom',
+      split_type as 'equal' | 'percentage' | 'custom' | 'shares',
       involved_members,
       percentages || undefined,
       custom_shares || undefined,
+      parsedShareCounts || undefined,
       notes || undefined,
-      category || 'general'
+      category || 'general',
+      expense_date || undefined,
+      description || undefined,
+      parsedTags,
+      currency || undefined,
+      parsedExchangeRate
     );
 
     if (error) {
@@ -174,9 +227,15 @@ export async function PUT(request: NextRequest) {
       split_type,
       category,
       notes,
+      expense_date,
+      description,
+      tags,
+      currency,
+      exchange_rate,
       involved_members,
       percentages,
       custom_shares,
+      share_counts,
       shares,
     } = body;
 
@@ -201,6 +260,31 @@ export async function PUT(request: NextRequest) {
       return badRequestResponse('amount must be a valid number greater than 0');
     }
 
+    if (expense_date && Number.isNaN(new Date(expense_date).getTime())) {
+      return badRequestResponse('expense_date must be a valid date');
+    }
+
+    if (description !== undefined && typeof description !== 'string') {
+      return badRequestResponse('description must be a string');
+    }
+
+    if (currency !== undefined && typeof currency !== 'string') {
+      return badRequestResponse('currency must be a string');
+    }
+
+    if (tags !== undefined && !Array.isArray(tags)) {
+      return badRequestResponse('tags must be an array of strings');
+    }
+
+    const parsedExchangeRate = exchange_rate === undefined ? undefined : Number(exchange_rate);
+    if (parsedExchangeRate !== undefined && (Number.isNaN(parsedExchangeRate) || parsedExchangeRate <= 0)) {
+      return badRequestResponse('exchange_rate must be a positive number');
+    }
+
+    const parsedTags = Array.isArray(tags)
+      ? tags.filter((tag: unknown) => typeof tag === 'string' && tag.trim().length > 0).map((tag: string) => tag.trim())
+      : undefined;
+
     if (involved_members !== undefined) {
       if (!Array.isArray(involved_members) || involved_members.length === 0) {
         return badRequestResponse('involved_members must not be empty');
@@ -210,8 +294,13 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    if (split_type && !['equal', 'percentage', 'custom'].includes(split_type)) {
-      return badRequestResponse('split_type must be "equal", "percentage", or "custom"');
+    if (split_type && !['equal', 'percentage', 'custom', 'shares'].includes(split_type)) {
+      return badRequestResponse('split_type must be "equal", "percentage", "custom", or "shares"');
+    }
+
+    const parsedUpdateShareCounts = parseShareCounts(share_counts);
+    if (share_counts !== undefined && !parsedUpdateShareCounts) {
+      return badRequestResponse('share_counts must map member IDs to non-negative numbers');
     }
 
     const updateData = {
@@ -222,9 +311,15 @@ export async function PUT(request: NextRequest) {
       ...(split_type && { split_type }),
       ...(category !== undefined && { category }),
       ...(notes !== undefined && { notes }),
+      ...(expense_date !== undefined && { expense_date }),
+      ...(description !== undefined && { description }),
+      ...(parsedTags !== undefined && { tags: parsedTags }),
+      ...(currency !== undefined && { currency }),
+      ...(parsedExchangeRate !== undefined && { exchange_rate: parsedExchangeRate }),
       ...(involved_members !== undefined && { involved_members }),
       ...(percentages !== undefined && { percentages }),
       ...(custom_shares !== undefined && { custom_shares }),
+      ...(parsedUpdateShareCounts && { share_counts: parsedUpdateShareCounts }),
       ...(shares && { shares }),
     };
 

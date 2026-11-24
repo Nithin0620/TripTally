@@ -36,9 +36,30 @@ export default function TripChatDrawer({
     );
   }, []);
 
-  const { isConnected, broadcastMessage } = useTripChat({
+  const loadMessages = useCallback(async () => {
+    const response = await chatApi.getMessages(tripId);
+    if (response.error) {
+      showToast(response.error, "error");
+      return;
+    }
+
+    setMessages((previous) => {
+      const byId = new Map(previous.map((message) => [message.id, message]));
+      (response.data?.messages || []).forEach((message) => byId.set(message.id, message));
+      return Array.from(byId.values()).sort((a, b) =>
+        a.created_at.localeCompare(b.created_at)
+      );
+    });
+  }, [tripId, showToast]);
+
+  const { isConnected, typingUsers, broadcastMessage, broadcastTyping } = useTripChat({
     tripId,
+    currentUserId,
+    currentUserName,
     onMessage: handleRealtimeMessage,
+    onMessagesChanged: () => {
+      void loadMessages();
+    },
   });
 
   useEffect(() => {
@@ -217,10 +238,23 @@ export default function TripChatDrawer({
         </div>
 
         <div className="border-t border-slate-200 p-4">
+          {typingUsers.length > 0 && (
+            <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+              <span className="inline-flex gap-0.5">
+                <span className="h-1 w-1 animate-bounce rounded-full bg-blue-500" />
+                <span className="h-1 w-1 animate-bounce rounded-full bg-blue-500 [animation-delay:120ms]" />
+                <span className="h-1 w-1 animate-bounce rounded-full bg-blue-500 [animation-delay:240ms]" />
+              </span>
+              {typingUsers.map((user) => user.name).join(", ")} typing...
+            </p>
+          )}
           <div className="flex items-end gap-2">
             <textarea
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                if (event.target.value.trim()) broadcastTyping();
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();

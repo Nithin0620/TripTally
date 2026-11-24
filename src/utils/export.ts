@@ -22,7 +22,7 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function csvEscape(value: string | number | undefined | null): string {
@@ -85,16 +85,24 @@ export function exportExpensesCSV(
     "Split Type",
     "Category",
     "Date",
+    "Description",
+    "Tags",
+    "Currency",
+    "Exchange Rate",
     "Notes",
   ];
 
   const rows = expenses.map((expense) => [
     expense.title,
-    formatAmount(expense.amount, currency),
+    formatAmount(expense.amount, expense.currency || currency),
     expense.paidByUser?.name || "Unknown",
     expense.split_type,
     expense.category || "",
-    getDateKey(expense.created_at),
+    getDateKey(expense.expense_date || expense.created_at),
+    expense.description || "",
+    (expense.tags || []).join("; "),
+    expense.currency || currency,
+    expense.exchange_rate ?? "",
     (expense as any).notes || "",
   ]);
 
@@ -110,6 +118,8 @@ export function exportItineraryCSV(trip: Trip, activities: Activity[]) {
     "Activity",
     "Category",
     "Location",
+    "Latitude",
+    "Longitude",
     "Notes",
     "Status",
   ];
@@ -123,6 +133,8 @@ export function exportItineraryCSV(trip: Trip, activities: Activity[]) {
       activity.title,
       parsed.category || "",
       activity.location || "",
+      activity.latitude ?? "",
+      activity.longitude ?? "",
       parsed.description.replace(/\n/g, " "),
       parsed.completed ? "Completed" : "Pending",
     ];
@@ -195,6 +207,15 @@ export function exportItineraryICS(trip: Trip, activities: Activity[]) {
     );
 
     if (activity.location) lines.push(`LOCATION:${icsEscape(activity.location)}`);
+    if (parsed.category) lines.push(`CATEGORIES:${icsEscape(parsed.category)}`);
+    if (
+      typeof activity.latitude === "number" &&
+      typeof activity.longitude === "number" &&
+      Number.isFinite(activity.latitude) &&
+      Number.isFinite(activity.longitude)
+    ) {
+      lines.push(`GEO:${activity.latitude};${activity.longitude}`);
+    }
     lines.push("END:VEVENT");
   });
 
@@ -257,6 +278,7 @@ function buildTripSummaryHTML(
   <h1>${escapeHtml(trip.title)}</h1>
   <p class="subtitle">
     ${escapeHtml(getDateKey(trip.start_date))} → ${escapeHtml(getDateKey(trip.end_date))}
+    ${trip.destination ? ` · ${escapeHtml(trip.destination)}` : ""}
     ${trip.description ? ` · ${escapeHtml(trip.description)}` : ""}
   </p>
 
@@ -330,7 +352,7 @@ function buildTripSummaryHTML(
     <div class="section-title">Expenses</div>
     <table>
       <thead>
-        <tr><th>Title</th><th>Amount</th><th>Paid By</th><th>Split</th><th>Category</th></tr>
+        <tr><th>Title</th><th>Date</th><th>Amount</th><th>Paid By</th><th>Split</th><th>Category</th><th>Description</th><th>Tags</th></tr>
       </thead>
       <tbody>
         ${expenses
@@ -338,10 +360,13 @@ function buildTripSummaryHTML(
             (expense) => `
           <tr>
             <td>${escapeHtml(expense.title)}</td>
-            <td><strong>${escapeHtml(formatAmount(expense.amount, currency))}</strong></td>
+            <td>${escapeHtml(getDateKey(expense.expense_date || expense.created_at) || "—")}</td>
+            <td><strong>${escapeHtml(formatAmount(expense.amount, expense.currency || currency))}</strong></td>
             <td>${escapeHtml(expense.paidByUser?.name || "Unknown")}</td>
             <td>${escapeHtml(expense.split_type)}</td>
             <td>${escapeHtml(expense.category || "—")}</td>
+            <td>${escapeHtml(expense.description || "—")}</td>
+            <td>${escapeHtml((expense.tags || []).join(", ") || "—")}</td>
           </tr>
         `
           )
@@ -350,8 +375,9 @@ function buildTripSummaryHTML(
       <tfoot>
         <tr>
           <td><strong>Total</strong></td>
+          <td></td>
           <td><strong>${escapeHtml(formatAmount(totalExpenses, currency))}</strong></td>
-          <td colspan="3"></td>
+          <td colspan="5"></td>
         </tr>
       </tfoot>
     </table>

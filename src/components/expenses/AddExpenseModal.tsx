@@ -6,6 +6,7 @@ import { expensesApi } from "@/lib/api/expenses";
 import { tripsApi } from "@/lib/api/trips";
 import { useToast } from "@/hooks/useToast";
 import { modalBackdrop, modalContent } from "@/lib/animations";
+import { CURRENCIES, DEFAULT_CURRENCY, formatAmount } from "@/utils/currency";
 import Button from "@/components/ui/Button";
 import NeuInput from "@/components/ui/NeuInput";
 
@@ -15,7 +16,7 @@ interface AddExpenseModalProps {
   onExpenseAdded: () => void;
 }
 
-type SplitType = "equal" | "percentage" | "custom";
+type SplitType = "equal" | "percentage" | "custom" | "shares";
 
 interface CurrentUser {
   id: string;
@@ -36,12 +37,19 @@ export default function AddExpenseModal({
   const [splitType, setSplitType] = useState<SplitType>("equal");
   const [notes, setNotes] = useState("");
   const [category, setCategory] = useState("general");
+  const [expenseDate, setExpenseDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
 
   const [tripMembers, setTripMembers] = useState<CurrentUser[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const [percentages, setPercentages] = useState<Record<string, string>>({});
   const [customShares, setCustomShares] = useState<Record<string, string>>({});
+  const [shareCounts, setShareCounts] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -60,6 +68,8 @@ export default function AddExpenseModal({
         return;
       }
 
+      setCurrency(response.data.trip?.currency || DEFAULT_CURRENCY);
+
       const members = response.data.members || [];
       const users: CurrentUser[] = members
         .map((m: any) => (Array.isArray(m.user) ? m.user[0] : m.user))
@@ -74,12 +84,15 @@ export default function AddExpenseModal({
 
         const emptyPercentages: Record<string, string> = {};
         const emptyCustom: Record<string, string> = {};
+        const emptyCounts: Record<string, string> = {};
         users.forEach((u: CurrentUser) => {
           emptyPercentages[u.id] = "";
           emptyCustom[u.id] = "";
+          emptyCounts[u.id] = "1";
         });
         setPercentages(emptyPercentages);
         setCustomShares(emptyCustom);
+        setShareCounts(emptyCounts);
       }
     } catch (error) {
       console.error("Error loading trip members:", error);
@@ -93,6 +106,7 @@ export default function AddExpenseModal({
     const newErrors: Record<string, string> = {};
 
     if (!title.trim()) newErrors.title = "Title is required";
+    if (!expenseDate) newErrors.expenseDate = "Expense date is required";
     if (!amount || parseFloat(amount) <= 0)
       newErrors.amount = "Amount must be greater than 0";
     if (!paidById) newErrors.paidById = "Payer must be selected";
@@ -113,9 +127,19 @@ export default function AddExpenseModal({
         return sum + (parseFloat(customShares[id] || "0") || 0);
       }, 0);
       if (Math.abs(total - parseFloat(amount)) > 0.01) {
-        newErrors.customShares = `Amounts must sum to $${parseFloat(amount).toFixed(
-          2
-        )} (current: $${total.toFixed(2)})`;
+        newErrors.customShares = `Amounts must sum to ${formatAmount(
+          parseFloat(amount),
+          currency
+        )} (current: ${formatAmount(total, currency)})`;
+      }
+    }
+
+    if (splitType === "shares") {
+      const total = selectedMembers.reduce((sum, id) => {
+        return sum + (parseFloat(shareCounts[id] || "0") || 0);
+      }, 0);
+      if (total <= 0) {
+        newErrors.shareCounts = "At least one member must have a share count above 0";
       }
     }
 
@@ -154,6 +178,16 @@ export default function AddExpenseModal({
             )
           : undefined;
 
+      const shareCountsObj =
+        splitType === "shares"
+          ? Object.fromEntries(
+              selectedMembers.map((id) => [
+                id,
+                parseFloat(shareCounts[id] || "0"),
+              ])
+            )
+          : undefined;
+
       const response = await expensesApi.createExpense({
         trip_id: tripId,
         title,
@@ -163,8 +197,16 @@ export default function AddExpenseModal({
         involved_members: selectedMembers,
         percentages: percentagesObj,
         custom_shares: customSharesObj,
+        share_counts: shareCountsObj,
         notes: notes || undefined,
         category,
+        expense_date: expenseDate,
+        description: description.trim() || undefined,
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        currency,
       });
 
       if (response.error) {
@@ -289,6 +331,63 @@ export default function AddExpenseModal({
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <NeuInput
+                  label="Expense Date *"
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                />
+                {errors.expenseDate && (
+                  <p className="text-red-400 text-xs mt-1">{errors.expenseDate}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
+                  Currency
+                </label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+                >
+                  {CURRENCIES.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
+                Description
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Short details about this expense"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#475569]">
+                Tags (comma separated)
+              </label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="e.g. dinner, tips, shared"
+                className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+              />
+            </div>
+
             <div>
               <label className="mb-2 block text-sm font-medium text-[#475569]">
                 Notes
@@ -330,8 +429,8 @@ export default function AddExpenseModal({
             <label className="mb-3 block text-sm font-semibold text-[#475569]">
               Split Type
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["equal", "percentage", "custom"] as const).map((type) => (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(["equal", "percentage", "custom", "shares"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -344,7 +443,8 @@ export default function AddExpenseModal({
                 >
                   {type === "equal" && "= Equal"}
                   {type === "percentage" && "% Percentage"}
-                  {type === "custom" && "$ Custom"}
+                  {type === "custom" && "Amounts"}
+                  {type === "shares" && "# Shares"}
                 </button>
               ))}
             </div>
@@ -437,7 +537,9 @@ export default function AddExpenseModal({
                       {getMemberName(memberId)}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[#64748B]">$</span>
+                      <span className="text-[#64748B]">
+                        {CURRENCIES.find((option) => option.code === currency)?.symbol || currency}
+                      </span>
                       <input
                         type="number"
                         step="0.01"
@@ -457,6 +559,43 @@ export default function AddExpenseModal({
                 ))}
                 {errors.customShares && (
                   <p className="text-red-400 text-xs">{errors.customShares}</p>
+                )}
+              </motion.div>
+            )}
+
+            {splitType === "shares" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3"
+              >
+                <p className="text-sm text-[#475569] font-semibold">
+                  Assign a number of shares for each member:
+                </p>
+                {selectedMembers.map((memberId) => (
+                  <div key={memberId} className="flex items-center gap-3">
+                    <span className="text-[#0F172A] flex-1">
+                      {getMemberName(memberId)}
+                    </span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={shareCounts[memberId]}
+                      onChange={(e) =>
+                        setShareCounts({
+                          ...shareCounts,
+                          [memberId]: e.target.value,
+                        })
+                      }
+                      placeholder="1"
+                      className="neu-input w-24 rounded-lg px-2 py-2 text-[#0F172A] text-right"
+                    />
+                  </div>
+                ))}
+                {errors.shareCounts && (
+                  <p className="text-red-400 text-xs">{errors.shareCounts}</p>
                 )}
               </motion.div>
             )}

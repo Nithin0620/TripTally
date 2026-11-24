@@ -22,11 +22,13 @@ import AddActivityModal from "@/components/trips/AddActivityModal";
 import TripChatDrawer from "@/components/trips/TripChatDrawer";
 import InviteLinkModal from "@/components/trips/InviteLinkModal";
 import ActivityReorderList from "@/components/trips/ActivityReorderList";
+import MembersPanel from "@/components/trips/MembersPanel";
+import TripActivityFeed from "@/components/trips/TripActivityFeed";
 import RealtimePresence from "@/components/trips/RealtimePresence";
 import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
 import { tripsApi, activitiesApi, expensesApi, settlementApi } from "@/lib/api";
-import { Trip, Activity, Expense, Settlement } from "@/types";
-import { formatAmount } from "@/utils/currency";
+import { Trip, Activity, Expense, Settlement, TripRole } from "@/types";
+import { convertAmount, DEFAULT_CURRENCY, formatAmount } from "@/utils/currency";
 import {
   exportExpensesCSV,
   exportItineraryCSV,
@@ -76,7 +78,7 @@ export default function TripDetailsPage() {
   const [selectedSettlementForPayment, setSelectedSettlementForPayment] = useState<Settlement | null>(null);
   const [expenseSubTab, setExpenseSubTab] = useState<"list" | "analytics">("list");
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"activities" | "expenses" | "settlement" | "map">("activities");
+  const [activeTab, setActiveTab] = useState<"activities" | "expenses" | "settlement" | "map" | "people">("activities");
   const [activityView, setActivityView] = useState<ActivityView>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [defaultActivityDate, setDefaultActivityDate] = useState<string | undefined>(undefined);
@@ -158,6 +160,20 @@ export default function TripDetailsPage() {
     }
   };
 
+  const handleSendReminders = async () => {
+    const res = await settlementApi.sendReminders(tripId);
+    if (res.error) {
+      showToast(res.error, "error");
+    } else {
+      showToast(
+        res.data?.count
+          ? `Reminders sent to ${res.data.count} member${res.data.count === 1 ? "" : "s"}`
+          : "No outstanding balances to remind",
+        res.data?.count ? "success" : "info"
+      );
+    }
+  };
+
   const handleDeleteActivity = async (activityId: string) => {
     if (!confirm("Delete this activity?")) return;
     const response = await activitiesApi.deleteActivity(activityId, tripId);
@@ -213,7 +229,7 @@ export default function TripDetailsPage() {
     setActivities(reordered);
   };
 
-  const currency = trip?.currency || "USD";
+  const currency = trip?.currency || DEFAULT_CURRENCY;
   const exportMenuItemClass =
     "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-blue-700";
 
@@ -232,16 +248,25 @@ export default function TripDetailsPage() {
 
   if (!trip) return null;
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = expenses.reduce(
+    (sum, e) => sum + convertAmount(e.amount, e.currency, e.exchange_rate, currency),
+    0
+  );
   const budgetUsed = trip.budget_limit
     ? ((totalExpenses / trip.budget_limit) * 100).toFixed(0)
     : null;
+
+  const currentUserRole = (members.find((member) => member.user_id === user?.id)?.role ||
+    (trip?.created_by === user?.id ? "owner" : null)) as TripRole | null;
+  const canManageTrip = currentUserRole === "owner";
+  const canEditTrip = currentUserRole === "owner" || currentUserRole === "editor";
 
   const tabs = [
     { key: "activities" as const, label: "Itinerary Timeline", icon: Calendar },
     { key: "expenses" as const, label: "Expenses & Splits", icon: CreditCard },
     { key: "settlement" as const, label: "Debt Settlement", icon: DollarSign },
     { key: "map" as const, label: "Interactive Map", icon: Map },
+    { key: "people" as const, label: "People & Activity", icon: Users },
   ];
 
   return (
@@ -272,14 +297,16 @@ export default function TripDetailsPage() {
               <MessageCircle className="h-3.5 w-3.5" />
               <span>Chat</span>
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setShowInviteLink(true)}
-              className="text-xs py-2 px-3 gap-1.5"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              <span>Invite</span>
-            </Button>
+            {canManageTrip && (
+              <Button
+                variant="secondary"
+                onClick={() => setShowInviteLink(true)}
+                className="text-xs py-2 px-3 gap-1.5"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span>Invite</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -389,14 +416,16 @@ export default function TripDetailsPage() {
                   </>
                 )}
               </div>
-              <Button
-                variant="secondary"
-                onClick={() => setShowEditTrip(true)}
-                className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-                <span>Settings</span>
-              </Button>
+              {canManageTrip && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowEditTrip(true)}
+                  className="text-xs py-2 px-3 bg-white/90 backdrop-blur-md gap-1.5"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>Settings</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -489,7 +518,10 @@ export default function TripDetailsPage() {
                 <div className="flex items-center gap-2">
                   {activities.length > 0 && (
                     <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
-                      {(["timeline", "list", "reorder"] as ActivityView[]).map((v) => (
+                      {(canEditTrip
+                        ? (["timeline", "list", "reorder"] as ActivityView[])
+                        : (["timeline", "list"] as ActivityView[])
+                      ).map((v) => (
                         <button
                           key={v}
                           onClick={() => setActivityView(v)}
@@ -505,17 +537,19 @@ export default function TripDetailsPage() {
                     </div>
                   )}
 
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      setDefaultActivityDate(undefined);
-                      setShowAddActivity(true);
-                    }}
-                    className="text-xs py-2 px-4 gap-1.5"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Add Activity</span>
-                  </Button>
+                  {canEditTrip && (
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        setDefaultActivityDate(undefined);
+                        setShowAddActivity(true);
+                      }}
+                      className="text-xs py-2 px-4 gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Activity</span>
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -523,13 +557,17 @@ export default function TripDetailsPage() {
                 <EmptyState
                   title="No activities planned yet"
                   description="Add your first sightseeing spot, flight, hotel check-in, or meal to begin building your itinerary."
-                  actionLabel="+ Add First Activity"
-                  onAction={() => {
-                    setDefaultActivityDate(undefined);
-                    setShowAddActivity(true);
-                  }}
+                  actionLabel={canEditTrip ? "+ Add First Activity" : undefined}
+                  onAction={
+                    canEditTrip
+                      ? () => {
+                          setDefaultActivityDate(undefined);
+                          setShowAddActivity(true);
+                        }
+                      : undefined
+                  }
                 />
-              ) : activityView === "reorder" ? (
+              ) : activityView === "reorder" && canEditTrip ? (
                 <ActivityReorderList
                   tripId={tripId}
                   activities={activities}
@@ -541,15 +579,21 @@ export default function TripDetailsPage() {
               ) : (
                 <DayByDayItinerary
                   activities={activities}
-                  onEdit={(act) => setEditingActivity(act)}
-                  onDelete={handleDeleteActivity}
+                  onEdit={
+                    canEditTrip ? (act) => setEditingActivity(act) : undefined
+                  }
+                  onDelete={canEditTrip ? handleDeleteActivity : undefined}
                   startDate={trip.start_date}
                   endDate={trip.end_date}
-                  onAddActivity={(date) => {
-                    setDefaultActivityDate(date);
-                    setShowAddActivity(true);
-                  }}
-                  onToggleComplete={handleToggleActivityComplete}
+                  onAddActivity={
+                    canEditTrip
+                      ? (date) => {
+                          setDefaultActivityDate(date);
+                          setShowAddActivity(true);
+                        }
+                      : undefined
+                  }
+                  onToggleComplete={canEditTrip ? handleToggleActivityComplete : undefined}
                 />
               )}
             </motion.div>
@@ -579,14 +623,16 @@ export default function TripDetailsPage() {
                     <FileDown className="h-3.5 w-3.5" />
                     <span>CSV</span>
                   </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => setShowAddExpense(true)}
-                    className="text-xs py-2 px-4 gap-1.5"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Add Expense</span>
-                  </Button>
+                  {canEditTrip && (
+                    <Button
+                      variant="primary"
+                      onClick={() => setShowAddExpense(true)}
+                      className="text-xs py-2 px-4 gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Expense</span>
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -628,8 +674,8 @@ export default function TripDetailsPage() {
                 <EmptyState
                   title="No expenses logged yet"
                   description="Keep group finances clear and fair. Add your first restaurant bill, rental car, or hotel cost."
-                  actionLabel="+ Add First Expense"
-                  onAction={() => setShowAddExpense(true)}
+                  actionLabel={canEditTrip ? "+ Add First Expense" : undefined}
+                  onAction={canEditTrip ? () => setShowAddExpense(true) : undefined}
                 />
               ) : (
                 <div className="space-y-4">
@@ -641,6 +687,7 @@ export default function TripDetailsPage() {
                           key={expense.id}
                           expense={expense}
                           index={index}
+                          baseCurrency={currency}
                           onUpdate={loadTripData}
                         />
                       ))}
@@ -680,6 +727,13 @@ export default function TripDetailsPage() {
                     <Plus className="h-3.5 w-3.5" />
                     <span>Record Payment</span>
                   </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleSendReminders}
+                    className="text-xs py-2 px-3"
+                  >
+                    Remind
+                  </Button>
                   <Button variant="secondary" onClick={loadSettlement} className="text-xs py-2 px-3">
                     Recompute
                   </Button>
@@ -712,8 +766,14 @@ export default function TripDetailsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full">
-                          Pending
+                        <span
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${
+                            s.status === "settled"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {s.status === "settled" ? "Settled" : "Pending"}
                         </span>
                         <Button
                           variant="primary"
@@ -766,7 +826,7 @@ export default function TripDetailsPage() {
                               {p.notes && (
                                 <>
                                   <span>•</span>
-                                  <span className="italic">"{p.notes}"</span>
+                                  <span className="italic">&quot;{p.notes}&quot;</span>
                                 </>
                               )}
                             </div>
@@ -775,7 +835,18 @@ export default function TripDetailsPage() {
 
                         <div className="flex items-center gap-3">
                           <span className="text-base font-extrabold text-emerald-700">
-                            {formatAmount(p.amount, currency)}
+                            {formatAmount(p.amount, p.currency || currency)}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                              p.status === "completed"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : p.status === "cancelled"
+                                ? "bg-red-50 text-red-700"
+                                : "bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {p.status || "completed"}
                           </span>
                           <button
                             onClick={() => handleDeletePayment(p.id)}
@@ -809,6 +880,37 @@ export default function TripDetailsPage() {
 
               <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-lg h-[550px] bg-slate-100">
                 <TripActivityMap activities={activities} />
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 5: PEOPLE & ACTIVITY */}
+          {activeTab === "people" && (
+            <motion.div
+              key="people"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-slate-900">People & Trip Activity</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Manage who can access this trip and follow shared updates.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
+                <MembersPanel
+                  tripId={tripId}
+                  members={members}
+                  currentUserId={user?.id}
+                  creatorId={trip.created_by}
+                  currentUserRole={currentUserRole}
+                  onMembersChanged={loadTripData}
+                  showToast={showToast}
+                />
+                <TripActivityFeed tripId={tripId} />
               </div>
             </motion.div>
           )}
@@ -861,6 +963,7 @@ export default function TripDetailsPage() {
             defaultDate={defaultActivityDate}
             startDate={trip.start_date}
             endDate={trip.end_date}
+            destination={trip.destination}
             onClose={() => {
               setShowAddActivity(false);
               setDefaultActivityDate(undefined);

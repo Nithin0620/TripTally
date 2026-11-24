@@ -115,3 +115,39 @@ export function sortActivities(activities: Activity[]): Activity[] {
     return (a.order_index ?? 0) - (b.order_index ?? 0);
   });
 }
+
+export function getConflictingActivityIds(activities: Activity[]): Set<string> {
+  const conflicts = new Set<string>();
+  const byDate = activities.reduce<Record<string, Activity[]>>((acc, activity) => {
+    const date = getDateKey(activity.activity_date);
+    if (!date) return acc;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(activity);
+    return acc;
+  }, {});
+
+  Object.values(byDate).forEach((dayActivities) => {
+    const ranges = dayActivities
+      .map((activity) => {
+        const range = parseTimeRange(parseActivityNotes(activity.notes).timeSlot);
+        if (!range) return null;
+
+        const start = range.startMinutes;
+        const rawEnd = range.endMinutes ?? start + 60;
+        const end = rawEnd > start ? rawEnd : rawEnd + 24 * 60;
+        return { id: activity.id, start, end };
+      })
+      .filter((range): range is { id: string; start: number; end: number } => range !== null);
+
+    ranges.forEach((a, index) => {
+      ranges.slice(index + 1).forEach((b) => {
+        if (a.start < b.end && b.start < a.end) {
+          conflicts.add(a.id);
+          conflicts.add(b.id);
+        }
+      });
+    });
+  });
+
+  return conflicts;
+}

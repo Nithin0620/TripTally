@@ -6,7 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { signToken, setAuthCookie } from '@/lib/jwt';
-import { badRequestResponse, serverErrorResponse, unauthorizedResponse } from '@/middleware/auth';
+import {
+  badRequestResponse,
+  errorResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+} from '@/middleware/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +23,8 @@ export async function POST(request: NextRequest) {
     };
 
     const body = await request.json();
-    const { email, password } = body;
+    const { email: rawEmail, password } = body;
+    const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
 
     // Validation
     if (!email || !password) {
@@ -28,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Get user
     const { data: user, error: userError } = await dbClient
       .from('users')
-      .select('id, name, email, profile_image')
+      .select('id, name, email, profile_image, email_verified')
       .eq('email', email)
       .single();
 
@@ -72,6 +78,15 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPassword) {
       return unauthorizedResponse('Invalid email or password');
+    }
+
+    if (user.email_verified === false) {
+      return errorResponse(
+        403,
+        'Please verify your email address before signing in.',
+        'EMAIL_NOT_VERIFIED',
+        email
+      );
     }
 
     // Generate JWT

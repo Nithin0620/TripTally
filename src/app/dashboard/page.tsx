@@ -26,6 +26,7 @@ import {
   Sparkles,
   ArrowRight,
   Clock,
+  MapPin,
   X,
   Plane,
   FolderOpen
@@ -284,6 +285,17 @@ export default function DashboardPage() {
                         </p>
 
                         <div className="space-y-2 border-t border-slate-100 pt-3 text-xs font-medium text-slate-600">
+                          {trip.destination && (
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="flex items-center gap-1.5 text-slate-400">
+                                <MapPin className="h-3.5 w-3.5" />
+                                <span>Destination</span>
+                              </span>
+                              <span className="font-semibold text-slate-800 truncate">
+                                {trip.destination}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-between">
                             <span className="flex items-center gap-1.5 text-slate-400">
                               <Calendar className="h-3.5 w-3.5" />
@@ -353,6 +365,7 @@ function CreateTripModal({
   showToast: (message: string, type: "success" | "error" | "info") => void;
 }) {
   const [title, setTitle] = useState("");
+  const [destination, setDestination] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -362,8 +375,16 @@ function CreateTripModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!destination.trim()) {
+      showToast("Please enter a destination", "error");
+      return;
+    }
     if (!startDate || !endDate) {
       showToast("Please choose start and end dates", "error");
+      return;
+    }
+    if (new Date(startDate).getTime() > new Date(endDate).getTime()) {
+      showToast("End date must be on or after the start date", "error");
       return;
     }
 
@@ -371,6 +392,7 @@ function CreateTripModal({
 
     const response = await tripsApi.createTrip({
       title: title.trim(),
+      destination: destination.trim(),
       description: description.trim(),
       start_date: startDate,
       end_date: endDate,
@@ -417,17 +439,27 @@ function CreateTripModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <NeuInput
-            label="Trip Title / Destination"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            disabled={loading}
-            placeholder="e.g., Swiss Alps Adventure 2026"
-          />
+            <NeuInput
+              label="Trip Title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="e.g., Swiss Alps Adventure 2026"
+            />
 
-          <div>
+            <NeuInput
+              label="Destination"
+              type="text"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="e.g., Zermatt, Switzerland"
+            />
+
+            <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
               Trip Description & Notes
             </label>
@@ -454,6 +486,7 @@ function CreateTripModal({
               label="End Date"
               type="date"
               value={endDate}
+              min={startDate}
               onChange={(e) => setEndDate(e.target.value)}
               required
               disabled={loading}
@@ -501,7 +534,7 @@ function CreateTripModal({
             <Button
               type="submit"
               variant="primary"
-              disabled={loading || !title.trim()}
+              disabled={loading || !title.trim() || !destination.trim()}
               className="px-6 text-xs font-bold"
             >
               {loading ? "Creating..." : "Create Trip"}

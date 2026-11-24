@@ -9,12 +9,18 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { User } from '@/types';
 import { authApi } from '@/lib/api';
 
+export interface AuthResult {
+  error?: string;
+  code?: string;
+  hint?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ error?: string }>;
-  loginWithGoogle: (token: string) => Promise<{ error?: string }>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (name: string, email: string, password: string) => Promise<AuthResult>;
+  loginWithGoogle: (token: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   refreshSession: () => Promise<void>;
@@ -75,45 +81,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     const response = await authApi.login({ email, password });
-    
+
     if (response.error) {
-      return { error: response.error };
+      return { error: response.error, code: response.code, hint: response.hint };
     }
 
-    // Token is now stored in HTTP-only cookie by the server
-    // Refresh session to get user data
     await refreshSession();
-
     return {};
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string
+  ): Promise<AuthResult> => {
     const response = await authApi.register({ name, email, password });
-    
+
     if (response.error) {
-      return { error: response.error };
+      return { error: response.error, code: response.code, hint: response.hint };
     }
 
-    // Token is now stored in HTTP-only cookie by the server
-    // Refresh session to get user data
-    await refreshSession();
+    // Email/password signups must verify before a session is created.
+    if (!response.data?.requiresVerification) {
+      await refreshSession();
+    }
 
     return {};
   };
 
-  const loginWithGoogle = async (googleToken: string) => {
+  const loginWithGoogle = async (googleToken: string): Promise<AuthResult> => {
     const response = await authApi.googleLogin(googleToken);
-    
+
     if (response.error) {
-      return { error: response.error };
+      return { error: response.error, code: response.code, hint: response.hint };
     }
 
-    // Token is now stored in HTTP-only cookie by the server
-    // Refresh session to get user data
     await refreshSession();
-
     return {};
   };
 

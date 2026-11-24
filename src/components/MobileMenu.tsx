@@ -78,6 +78,16 @@ export default function MobileMenu({
               </div>
             )}
 
+            {user && (
+              <Link
+                href="/profile"
+                onClick={onClose}
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
+              >
+                Profile &amp; settings
+              </Link>
+            )}
+
             {!user && (
               <Link
                 href="/login"

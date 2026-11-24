@@ -11,6 +11,8 @@ import {
   calculateTripSettlements,
   recordSettlementPayment,
   deleteSettlementPayment,
+  notifySettlementPayment,
+  sendPaymentReminders,
 } from '@/services/settlement.service';
 
 /**
@@ -39,21 +41,27 @@ export async function GET(
       return forbiddenResponse(roleError ?? undefined);
     }
 
-    const { settlements, error, balances, payments } = await calculateTripSettlements(tripId);
+    const { settlements, error, balances, payments, totalExpensed, currency, users } =
+      await calculateTripSettlements(tripId);
 
     if (error) {
       return serverErrorResponse(error);
     }
+
+    const completedPayments = (payments || []).filter(payment => payment.status === 'completed');
 
     return NextResponse.json(
       {
         settlements,
         balances,
         payments: payments || [],
+        currency,
+        users,
         summary: {
           totalSettlements: settlements.length,
           totalAmount: settlements.reduce((sum, s) => sum + s.amount, 0),
-          totalPaid: (payments || []).reduce((sum: number, p: any) => sum + p.amount, 0),
+          totalPaid: completedPayments.reduce((sum, payment) => sum + Number(payment.amount), 0),
+          totalExpensed,
         },
       },
       { status: 200 }
@@ -93,7 +101,7 @@ export async function POST(
     const { from_user_id, to_user_id, amount, currency, payment_method, notes } = body;
 
     const parsedAmount = Number(amount);
-    if (!from_user_id || !to_user_id || !parsedAmount || parsedAmount <= 0) {
+    if (!from_user_id || !to_user_id || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return badRequestResponse('from_user_id, to_user_id, and positive amount are required');
     }
 
@@ -101,19 +109,51 @@ export async function POST(
       return badRequestResponse('Payer and receiver cannot be the same user');
     }
 
+    const { balances, currency: tripCurrency, error: calculationError } =
+      await calculateTripSettlements(tripId);
+
+    if (calculationError) {
+      return serverErrorResponse(calculationError);
+    }
+
+    if (balances[from_user_id] === undefined || balances[to_user_id] === undefined) {
+      return badRequestResponse('Both users must be members of this trip');
+    }
+
+    const debtorBalance = balances[from_user_id];
+    const creditorBalance = balances[to_user_id];
+    if (debtorBalance >= -0.01 || creditorBalance <= 0.01) {
+      return badRequestResponse('No outstanding debt exists between these members');
+    }
+
+    const outstanding = Math.min(Math.abs(debtorBalance), creditorBalance);
+    if (parsedAmount > outstanding + 0.01) {
+      return badRequestResponse(`Amount exceeds the outstanding balance of ${outstanding.toFixed(2)}`);
+    }
+
     const { payment, error } = await recordSettlementPayment({
       trip_id: tripId,
       from_user_id,
       to_user_id,
       amount: Number(parsedAmount.toFixed(2)),
-      currency: currency || 'INR',
+      currency: currency || tripCurrency,
       payment_method: payment_method || 'other',
       notes: notes || '',
+      status: 'completed',
       created_by: auth.user!.userId,
     });
 
-    if (error) {
-      return serverErrorResponse(error);
+    if (error || !payment) {
+      return serverErrorResponse(error || 'Failed to record payment');
+    }
+
+    const notificationResults = await Promise.all([
+      notifySettlementPayment(tripId, payment),
+      sendPaymentReminders(tripId, { excludeUserIds: [from_user_id] }),
+    ]);
+    const notificationError = notificationResults.find(result => result.error)?.error;
+    if (notificationError) {
+      console.warn('Payment recorded but notification failed:', notificationError);
     }
 
     return NextResponse.json({ payment, success: true }, { status: 201 });

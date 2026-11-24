@@ -18,6 +18,7 @@ export async function createTrip(
       .from('trips')
       .insert({
         title: data.title,
+        destination: data.destination,
         description: data.description,
         start_date: data.start_date,
         end_date: data.end_date,
@@ -90,7 +91,8 @@ export async function getTrip(tripId: string) {
         `
         *,
         paidByUser:users!paid_by(id, name, email, profile_image),
-        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
       `
       )
       .eq('trip_id', tripId)

@@ -10,7 +10,7 @@ import { Notification } from '@/types';
  */
 export async function createNotification(
   userId: string,
-  notification: Omit<Notification, 'id' | 'created_at' | 'read'>
+  notification: Omit<Notification, 'id' | 'created_at' | 'read' | 'user_id'>
 ): Promise<{ notification: Notification | null; error: string | null }> {
   try {
     const { data, error } = await supabaseAdmin
@@ -74,7 +74,7 @@ export async function createNotificationsForUsers(
  */
 export async function getUserNotifications(
   userId: string,
-  options?: { limit?: number; unreadOnly?: boolean }
+  options?: { limit?: number; unreadOnly?: boolean; tripId?: string }
 ): Promise<{ notifications: Notification[]; unreadCount: number; error: string | null }> {
   try {
     let query = supabaseAdmin
@@ -82,6 +82,10 @@ export async function getUserNotifications(
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (options?.tripId) {
+      query = query.eq('trip_id', options.tripId);
+    }
 
     if (options?.unreadOnly) {
       query = query.eq('read', false);
@@ -97,12 +101,17 @@ export async function getUserNotifications(
       return { notifications: [], unreadCount: 0, error: error.message };
     }
 
-    // Get unread count separately
-    const { count: unreadCount } = await supabaseAdmin
+    let unreadQuery = supabaseAdmin
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('read', false);
+
+    if (options?.tripId) {
+      unreadQuery = unreadQuery.eq('trip_id', options.tripId);
+    }
+
+    const { count: unreadCount } = await unreadQuery;
 
     return {
       notifications: notifications || [],

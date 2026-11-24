@@ -4,10 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { expensesApi } from "@/lib/api/expenses";
-import { settlementApi } from "@/lib/api/misc";
+import { settlementApi, SettlementResponse } from "@/lib/api/misc";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeTrip } from "@/hooks/useRealtimeTrip";
+import { DEFAULT_CURRENCY, formatAmount } from "@/utils/currency";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
@@ -40,7 +41,7 @@ export default function ExpensesPage() {
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [filteredExpenses, setFilteredExpenses] = useState<any[]>([]);
-  const [settlement, setSettlement] = useState<any>(null);
+  const [settlement, setSettlement] = useState<SettlementResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
@@ -61,7 +62,7 @@ export default function ExpensesPage() {
 
       const settlementRes = await settlementApi.getSettlement(tripId);
       if (!settlementRes.error && settlementRes.data?.settlements) {
-        setSettlement(settlementRes.data.settlements);
+        setSettlement(settlementRes.data);
       }
     } catch (error) {
       console.error("Error loading expenses:", error);
@@ -93,7 +94,10 @@ export default function ExpensesPage() {
     loadExpenses();
   }, [tripId]);
 
-  const totalSpent = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const currency = settlement?.currency || expenses[0]?.currency || DEFAULT_CURRENCY;
+  const totalSpent =
+    settlement?.summary?.totalExpensed ??
+    expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -147,7 +151,7 @@ export default function ExpensesPage() {
         <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 backdrop-blur-sm shadow-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total Group Spend</span>
           <span className="text-2xl font-black text-slate-900 mt-1 block">
-            ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatAmount(totalSpent, currency)}
           </span>
         </div>
 
@@ -197,6 +201,7 @@ export default function ExpensesPage() {
                       key={expense.id}
                       expense={expense}
                       index={index}
+                      baseCurrency={currency}
                       onUpdate={loadExpenses}
                       onEdit={(exp) => setEditingExpense(exp)}
                     />
@@ -213,7 +218,13 @@ export default function ExpensesPage() {
 
         {/* Right 1 Col: Balance & Invite Sidebar */}
         <div className="space-y-6">
-          {settlement && <BalanceSummary settlement={settlement} />}
+          {settlement && (
+            <BalanceSummary
+              settlement={settlement}
+              currency={currency}
+              currentUserId={user?.id}
+            />
+          )}
           <InviteSection tripId={tripId} onInviteSent={() => {}} />
         </div>
       </div>
@@ -250,13 +261,19 @@ export default function ExpensesPage() {
                       <strong className="text-slate-800">{s.to_user?.name || s.to}</strong>
                     </div>
                     <div className="text-lg font-black text-slate-900 mt-0.5">
-                      ${s.amount.toFixed(2)}
+                      {formatAmount(s.amount, currency)}
                     </div>
                   </div>
                 </div>
 
-                <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
-                  Pending Transfer
+                <span
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                    s.status === "settled"
+                      ? "text-emerald-700 bg-emerald-100"
+                      : "text-amber-700 bg-amber-100"
+                  }`}
+                >
+                  {s.status === "settled" ? "Settled" : "Pending Transfer"}
                 </span>
               </div>
             ))}

@@ -68,15 +68,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, start_date, end_date, cover_image, currency, budget_limit } = body;
+    const { title, destination, description, start_date, end_date, cover_image, currency, budget_limit } = body;
 
     // Validation
     if (!title || !start_date || !end_date) {
       return badRequestResponse('Missing required fields: title, start_date, end_date');
     }
 
+    if (destination !== undefined && typeof destination !== 'string') {
+      return badRequestResponse('destination must be a string');
+    }
+
+    const startTime = new Date(start_date).getTime();
+    const endTime = new Date(end_date).getTime();
+    if (Number.isNaN(startTime) || Number.isNaN(endTime) || startTime > endTime) {
+      return badRequestResponse('start_date and end_date must be valid dates with start_date on or before end_date');
+    }
+
     const tripData: CreateTripRequest = {
       title,
+      destination,
       description,
       start_date,
       end_date,

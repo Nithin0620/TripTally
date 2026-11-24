@@ -95,9 +95,23 @@ export default function Navbar() {
             )}
 
             {user && (
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700">
-                {getInitials(user.name || user.email)}
-              </div>
+              <Link
+                href="/profile"
+                aria-label="Account settings"
+                title="Account settings"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700 transition-all hover:border-blue-400 hover:shadow-sm"
+              >
+                {user.profile_image ? (
+                  <img
+                    src={user.profile_image}
+                    alt={user.name || user.email}
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  getInitials(user.name || user.email)
+                )}
+              </Link>
             )}
 
             {user && <NotificationCenter />}

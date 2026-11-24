@@ -24,6 +24,7 @@ export default function EditTripModal({
   showToast,
 }: EditTripModalProps) {
   const [title, setTitle] = useState(trip.title);
+  const [destination, setDestination] = useState(trip.destination || "");
   const [description, setDescription] = useState(trip.description || "");
   const [startDate, setStartDate] = useState(trip.start_date);
   const [endDate, setEndDate] = useState(trip.end_date);
@@ -95,10 +96,20 @@ export default function EditTripModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!destination.trim()) {
+      showToast("Please enter a destination", "error");
+      return;
+    }
+    if (new Date(startDate).getTime() > new Date(endDate).getTime()) {
+      showToast("End date must be on or after the start date", "error");
+      return;
+    }
+
     setLoading(true);
 
     const data: UpdateTripData = {
       title,
+      destination: destination.trim(),
       description,
       start_date: startDate,
       end_date: endDate,
@@ -150,6 +161,16 @@ export default function EditTripModal({
                 placeholder="e.g., Summer Europe Trip"
               />
 
+              <NeuInput
+                label="Destination"
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="e.g., Paris, France"
+              />
+
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#475569]">
                   Description
@@ -177,6 +198,7 @@ export default function EditTripModal({
                   label="End Date"
                   type="date"
                   value={endDate}
+                  min={startDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   required
                   disabled={loading}

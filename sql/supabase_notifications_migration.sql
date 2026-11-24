@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('trip_invite', 'expense_added', 'activity_added', 'settlement_updated', 'member_joined', 'system')),
+  type TEXT NOT NULL CHECK (type IN ('trip_invite', 'expense_added', 'activity_added', 'settlement_updated', 'payment_reminder', 'member_joined', 'system')),
   title TEXT NOT NULL,
   message TEXT NOT NULL,
   trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,

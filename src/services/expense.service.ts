@@ -4,7 +4,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase';
 import { CreateExpenseRequest, Expense } from '@/types';
-import { calculateSplit, sumUpMemberBalances, SplitCalculatorInput } from '@/utils/splitCalculator';
+import { calculateSplit, sumUpMemberBalances, SplitCalculatorInput, SplitType } from '@/utils/splitCalculator';
 import { optimizeSettlements } from '@/utils/settlementOptimizer';
 
 interface ExpenseShareInput {
@@ -33,12 +33,18 @@ export async function createExpenseWithSplit(
   title: string,
   amount: number,
   paidByUserId: string,
-  splitType: 'equal' | 'percentage' | 'custom',
+  splitType: SplitType,
   involvedMembers: string[],
   percentages?: Record<string, number>,
   customShares?: Record<string, number>,
+  shareCounts?: Record<string, number>,
   notes?: string,
-  category?: string
+  category?: string,
+  expenseDate?: string,
+  description?: string,
+  tags?: string[],
+  currency?: string,
+  exchangeRate?: number
 ): Promise<{ data: any; error: string | null }> {
   try {
     if (!tripId || !title || !paidByUserId || !Number.isFinite(amount) || amount <= 0) {
@@ -70,6 +76,7 @@ export async function createExpenseWithSplit(
       involvedMembers,
       percentages,
       customShares,
+      shareCounts,
     };
 
     const splitResult = calculateSplit(splitInput);
@@ -106,6 +113,11 @@ export async function createExpenseWithSplit(
       p_category: category || 'general',
       p_created_by: paidByUserId,
       p_shares: shares,
+      p_expense_date: expenseDate || null,
+      p_description: description || null,
+      p_tags: tags || null,
+      p_currency: currency || null,
+      p_exchange_rate: exchangeRate ?? null,
     });
 
     if (expenseError || !expense) {
@@ -193,7 +205,8 @@ export async function getExpense(expenseId: string) {
         `
         *,
         users!paid_by(id, name, email, profile_image),
-        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
       `
       )
       .eq('id', expenseId)
@@ -226,7 +239,8 @@ export async function getTripExpenses(tripId: string, limit?: number, offset?: n
         `
         *,
         users!paid_by(id, name, email, profile_image),
-        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
       `,
         { count: 'exact' }
       )
@@ -353,12 +367,13 @@ export async function updateExpense(
     involved_members?: string[];
     percentages?: Record<string, number>;
     custom_shares?: Record<string, number>;
+    share_counts?: Record<string, number>;
   }
 ) {
   try {
     const { data: existingExpense, error: fetchError } = await supabaseAdmin
       .from('expenses')
-      .select('id, trip_id, title, amount, paid_by, split_type, category, notes')
+      .select('id, trip_id, title, amount, paid_by, split_type, category, notes, expense_date, description, tags, currency, exchange_rate')
       .eq('id', expenseId)
       .single();
 
@@ -383,6 +398,12 @@ export async function updateExpense(
         ? data.involved_members
         : (existingShares || []).map(share => share.user_id);
 
+    const mergedExpenseDate = data.expense_date ?? existingExpense.expense_date ?? null;
+    const mergedDescription = data.description ?? existingExpense.description ?? null;
+    const mergedTags = data.tags ?? existingExpense.tags ?? null;
+    const mergedCurrency = data.currency ?? existingExpense.currency ?? null;
+    const mergedExchangeRate = data.exchange_rate ?? existingExpense.exchange_rate ?? null;
+
     const derivedCustomShares =
       data.custom_shares ??
       (data.shares
@@ -404,6 +425,11 @@ export async function updateExpense(
       involvedMembers: mergedInvolvedMembers,
       percentages: data.percentages,
       customShares: mergedSplitType === 'custom' ? derivedCustomShares : data.custom_shares,
+      shareCounts:
+        data.share_counts ??
+        (mergedSplitType === 'shares'
+          ? Object.fromEntries((existingShares || []).map(share => [share.user_id, share.share_amount]))
+          : undefined),
     };
 
     const splitResult = calculateSplit(splitInput);
@@ -430,6 +456,11 @@ export async function updateExpense(
       p_category: data.category ?? existingExpense.category ?? 'general',
       p_notes: data.notes ?? existingExpense.notes ?? null,
       p_shares: shares,
+      p_expense_date: mergedExpenseDate,
+      p_description: mergedDescription,
+      p_tags: mergedTags,
+      p_currency: mergedCurrency,
+      p_exchange_rate: mergedExchangeRate,
     });
 
     if (updateError || !expense) {

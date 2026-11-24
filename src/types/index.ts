@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   profile_image?: string;
+  email_verified?: boolean;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ export interface SearchApiResponse {
 export interface Trip {
   id: string;
   title: string;
+  destination?: string;
   description?: string;
   start_date: string;
   end_date: string;
@@ -44,13 +46,16 @@ export interface Trip {
   created_at: string;
 }
 
+export type TripRole = 'owner' | 'editor' | 'viewer';
+
 export interface TripMember {
   id: string;
   trip_id: string;
   user_id: string;
-  role: 'owner' | 'editor' | 'viewer';
+  role: TripRole;
   joined_at: string;
   user?: User; // Joined user details
+  users?: User | null;
 }
 
 export interface Activity {
@@ -75,17 +80,27 @@ export interface ChatMessage {
   user?: Pick<User, "id" | "name" | "profile_image">;
 }
 
+export type SplitType = 'equal' | 'percentage' | 'custom' | 'shares';
+
 export interface Expense {
   id: string;
   trip_id: string;
   title: string;
   amount: number;
   paid_by: string;
-  split_type: 'equal' | 'percentage' | 'custom';
+  split_type: SplitType;
   category?: string;
+  expense_date?: string;
+  description?: string;
+  tags?: string[];
+  currency?: string;
+  exchange_rate?: number;
   created_at: string;
   paidByUser?: User;
+  users?: User;
   shares?: ExpenseShare[];
+  expense_shares?: ExpenseShare[];
+  receipts?: Receipt[];
 }
 
 export interface ExpenseShare {
@@ -119,6 +134,23 @@ export interface Settlement {
   from_user_id: string;
   to_user_id: string;
   amount: number;
+  status?: 'pending' | 'settled';
+  from_user?: Omit<User, 'created_at'>;
+  to_user?: Omit<User, 'created_at'>;
+}
+
+export interface SettlementPayment {
+  id: string;
+  trip_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  notes?: string | null;
+  status: 'pending' | 'completed' | 'cancelled';
+  created_at: string;
+  created_by: string;
   from_user?: Omit<User, 'created_at'>;
   to_user?: Omit<User, 'created_at'>;
 }
@@ -149,11 +181,14 @@ export interface AuthRequest {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  token?: string;
+  requiresVerification?: boolean;
+  emailSent?: boolean;
 }
 
 export interface CreateTripRequest {
   title: string;
+  destination?: string;
   description?: string;
   start_date: string;
   end_date: string;
@@ -178,8 +213,14 @@ export interface CreateExpenseRequest {
   title: string;
   amount: number;
   paid_by: string;
-  split_type: 'equal' | 'percentage' | 'custom';
+  split_type: SplitType;
   category?: string;
+  expense_date?: string;
+  description?: string;
+  tags?: string[];
+  currency?: string;
+  exchange_rate?: number;
+  share_counts?: Record<string, number>;
   shares: {
     user_id: string;
     amount: number;
@@ -271,7 +312,7 @@ export interface ExploreCategory {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'trip_invite' | 'expense_added' | 'activity_added' | 'settlement_updated' | 'member_joined' | 'system';
+  type: 'trip_invite' | 'expense_added' | 'activity_added' | 'settlement_updated' | 'payment_reminder' | 'member_joined' | 'system';
   title: string;
   message: string;
   trip_id?: string;

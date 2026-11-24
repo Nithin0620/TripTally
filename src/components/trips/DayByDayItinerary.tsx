@@ -13,11 +13,13 @@ import {
   CheckCircle2,
   Circle,
   Edit3,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import {
   dateKeyFrom,
+  getConflictingActivityIds,
   getDateKey,
   getDayNumber,
   parseActivityNotes,
@@ -95,6 +97,11 @@ export default function DayByDayItinerary({
       };
     });
   }, [activities, startDate, endDate]);
+
+  const conflictingActivityIds = useMemo(
+    () => getConflictingActivityIds(activities),
+    [activities]
+  );
 
   if (dayGroups.length === 0) {
     return (
@@ -232,6 +239,16 @@ export default function DayByDayItinerary({
                                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 rounded-md px-1.5 py-0.5 border border-amber-200/60">
                                       <Clock className="h-3 w-3" />
                                       <span>{timeString}</span>
+                                    </span>
+                                  )}
+
+                                  {conflictingActivityIds.has(activity.id) && (
+                                    <span
+                                      title="This activity overlaps with another activity on the same day"
+                                      className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 rounded-md px-1.5 py-0.5 border border-red-200/70"
+                                    >
+                                      <AlertTriangle className="h-3 w-3" />
+                                      <span>Time overlap</span>
                                     </span>
                                   )}
 

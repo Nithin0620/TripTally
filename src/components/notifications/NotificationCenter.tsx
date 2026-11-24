@@ -90,6 +90,8 @@ export default function NotificationCenter({ className = "" }: NotificationCente
         return "🎯";
       case "settlement_updated":
         return "🤝";
+      case "payment_reminder":
+        return "⏰";
       case "member_joined":
         return "👋";
       default:

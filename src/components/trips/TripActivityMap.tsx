@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { INDIA_CENTER, MAPBOX_STYLE } from "@/lib/mapbox";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity } from "@/types";
+import { INDIA_CENTER, MAPBOX_STYLE } from "@/lib/mapbox";
+import { parseActivityNotes } from "@/utils/activity";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface TripActivityMapProps {
@@ -10,172 +11,190 @@ interface TripActivityMapProps {
   className?: string;
 }
 
-interface Marker {
-  id: string;
-  title: string;
-  location?: string;
-  coordinates: [number, number];
-}
-
 export default function TripActivityMap({
   activities,
-  className = "",
+  className = "h-[400px] w-full",
 }: TripActivityMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
+  const mapboxglRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const [mapError, setMapError] = useState<string>("");
+  const [mapError, setMapError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const validActivities = activities.filter(
-    (a) => a.latitude != null && a.longitude != null
+  const validActivities = useMemo(
+    () =>
+      activities.filter(
+        (activity) =>
+          typeof activity.latitude === "number" &&
+          typeof activity.longitude === "number" &&
+          Number.isFinite(activity.latitude) &&
+          Number.isFinite(activity.longitude)
+      ),
+    [activities]
   );
 
+  const hasActivities = validActivities.length > 0;
+
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!hasActivities || !mapContainerRef.current) return;
+
+    let disposed = false;
 
     const initMap = async () => {
       const mapboxModule: any = await import("mapbox-gl");
       const mapboxgl = mapboxModule.default || mapboxModule;
+      if (disposed) return;
 
       const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      if (!token || !token.startsWith("pk.")) {
-        setMapError("Mapbox token not configured");
+      if (!token) {
+        setMapError("Missing NEXT_PUBLIC_MAPBOX_TOKEN in environment variables.");
+        setLoading(false);
+        return;
+      }
+      if (!token.startsWith("pk.")) {
+        setMapError(
+          "Invalid Mapbox token: use a public token (pk.*) in NEXT_PUBLIC_MAPBOX_TOKEN."
+        );
         setLoading(false);
         return;
       }
 
       mapboxgl.accessToken = token;
-
-      const center =
-        validActivities.length > 0
-          ? [validActivities[0].longitude!, validActivities[0].latitude!]
-          : INDIA_CENTER;
-
-      const zoom = validActivities.length > 1 ? 10 : 13;
+      mapboxglRef.current = mapboxgl;
 
       let map: any;
       try {
         map = new mapboxgl.Map({
           container: mapContainerRef.current,
           style: MAPBOX_STYLE,
-          center,
-          zoom,
+          center: INDIA_CENTER,
+          zoom: 4,
           attributionControl: false,
         });
       } catch {
-        setMapError("Failed to initialize map");
+        setMapError("Failed to initialize Mapbox. Verify your public token and try again.");
         setLoading(false);
         return;
       }
 
       mapRef.current = map;
-      map.addControl(
-        new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
-        "top-right"
-      );
-
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "top-right");
+      map.addControl(new mapboxgl.FullscreenControl(), "top-right");
       map.on("load", () => {
-        setLoading(false);
-        addActivityMarkers(map, mapboxgl);
+        if (!disposed) setLoading(false);
       });
-
-      return () => {
-        markersRef.current.forEach((m) => m.remove());
-        markersRef.current = [];
-        map.remove();
-        mapRef.current = null;
-      };
     };
 
     void initMap();
-  }, []);
+
+    return () => {
+      disposed = true;
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
+      mapRef.current?.remove();
+      mapRef.current = null;
+      mapboxglRef.current = null;
+    };
+  }, [hasActivities]);
 
   useEffect(() => {
-    if (mapRef.current && !loading) {
-      const mapboxgl = (window as any).__mapboxgl;
-      if (mapboxgl) {
-        markersRef.current.forEach((m) => m.remove());
-        markersRef.current = [];
-        addActivityMarkers(mapRef.current, mapboxgl);
+    const map = mapRef.current;
+    const mapboxgl = mapboxglRef.current;
+    if (!map || !mapboxgl || loading || mapError) return;
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = validActivities.map((activity) => {
+      const markerElement = document.createElement("div");
+      markerElement.className = "triptally-map-marker cursor-pointer";
+      markerElement.style.width = "28px";
+      markerElement.style.height = "28px";
+      markerElement.style.borderRadius = "9999px";
+      markerElement.style.background = "#2563eb";
+      markerElement.style.border = "3px solid #ffffff";
+      markerElement.style.boxShadow = "0 4px 12px rgba(37, 99, 235, 0.45)";
+
+      const popupContent = document.createElement("div");
+      popupContent.className = "triptally-map-popup";
+      popupContent.style.padding = "8px 10px";
+      popupContent.style.maxWidth = "240px";
+
+      const title = document.createElement("h3");
+      title.className = "triptally-map-popup-title";
+      title.style.margin = "0 0 4px";
+      title.style.fontSize = "13px";
+      title.style.fontWeight = "700";
+      title.style.color = "#0f172a";
+      title.textContent = activity.title;
+      popupContent.appendChild(title);
+
+      const parsed = parseActivityNotes(activity.notes);
+      const metaText = [parsed.timeSlot, activity.location].filter(Boolean).join(" · ");
+      if (metaText) {
+        const meta = document.createElement("p");
+        meta.className = "triptally-map-popup-description";
+        meta.style.margin = "0";
+        meta.style.fontSize = "11px";
+        meta.style.color = "#64748b";
+        meta.textContent = metaText;
+        popupContent.appendChild(meta);
       }
-    }
-  }, [validActivities]);
 
-  const addActivityMarkers = (map: any, mapboxgl: any) => {
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
-
-    validActivities.forEach((activity, idx) => {
-      const el = document.createElement("div");
-      el.className = "trip-activity-marker";
-      el.innerHTML = `
-        <div style="
-          width: 32px; height: 32px;
-          background: #3B82F6;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 13px;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.4);
-          border: 2px solid white;
-          cursor: pointer;
-        ">${idx + 1}</div>
-      `;
+      if (parsed.description) {
+        const description = document.createElement("p");
+        description.className = "triptally-map-popup-description";
+        description.style.margin = "6px 0 0";
+        description.style.fontSize = "11px";
+        description.style.color = "#475569";
+        description.style.whiteSpace = "pre-line";
+        description.textContent = parsed.description;
+        popupContent.appendChild(description);
+      }
 
       const popup = new mapboxgl.Popup({
-        closeButton: true,
+        offset: 24,
+        closeButton: false,
         closeOnClick: false,
-        offset: 20,
-      }).setHTML(`
-        <div style="padding: 8px 12px; font-family: system-ui, sans-serif; max-width: 220px;">
-          <p style="font-weight: 600; font-size: 14px; margin: 0 0 4px 0; color: #0F172A;">
-            ${activity.title}
-          </p>
-          ${activity.location ? `<p style="font-size: 12px; color: #64748B; margin: 0;">📍 ${activity.location}</p>` : ""}
-          ${activity.notes ? `<p style="font-size: 11px; color: #94A3B8; margin: 4px 0 0 0; line-height: 1.4;">${activity.notes.slice(0, 100)}${activity.notes.length > 100 ? "..." : ""}</p>` : ""}
-        </div>
-      `);
+      }).setDOMContent(popupContent);
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+      return new mapboxgl.Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([activity.longitude!, activity.latitude!])
         .setPopup(popup)
         .addTo(map);
-
-      markersRef.current.push(marker);
     });
 
     if (validActivities.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      validActivities.forEach((a) => {
-        bounds.extend([a.longitude!, a.latitude!]);
+      validActivities.forEach((activity) => {
+        bounds.extend([activity.longitude!, activity.latitude!]);
       });
       map.fitBounds(bounds, { padding: 60, maxZoom: 14 });
+    } else if (validActivities.length === 1) {
+      map.flyTo({
+        center: [validActivities[0].longitude!, validActivities[0].latitude!],
+        zoom: 12,
+      });
     }
-  };
+  }, [validActivities, loading, mapError]);
 
   if (mapError) {
     return (
-      <div className={`flex items-center justify-center rounded-2xl border border-white/40 bg-white/30 p-6 text-center text-sm text-[#64748B] ${className}`}>
+      <div
+        className={`flex items-center justify-center rounded-2xl border border-white/40 bg-white/30 p-6 text-center text-sm text-[#64748B] ${className}`}
+      >
         <div>
           <p className="text-3xl mb-2">🗺️</p>
           <p>{mapError}</p>
-          {validActivities.length === 0 && (
-            <p className="text-xs text-[#94A3B8] mt-1">
-              Add activities with coordinates to see them on the map
-            </p>
-          )}
         </div>
       </div>
     );
   }
 
-  if (validActivities.length === 0) {
+  if (!hasActivities) {
     return (
-      <div className={`flex items-center justify-center rounded-2xl border border-white/40 bg-white/30 p-6 text-center text-sm text-[#64748B] ${className}`}>
+      <div
+        className={`flex items-center justify-center rounded-2xl border border-white/40 bg-white/30 p-6 text-center text-sm text-[#64748B] ${className}`}
+      >
         <div>
           <p className="text-3xl mb-2">📍</p>
           <p>No activities with coordinates</p>

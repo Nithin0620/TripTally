@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { expensesApi } from "@/lib/api/expenses";
 import { tripsApi } from "@/lib/api/trips";
 import { modalBackdrop, modalContent } from "@/lib/animations";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/utils/currency";
 import Button from "@/components/ui/Button";
 import NeuInput from "@/components/ui/NeuInput";
 
@@ -16,7 +17,7 @@ interface EditExpenseModalProps {
   showToast: (message: string, type: "success" | "error" | "info") => void;
 }
 
-type SplitType = "equal" | "percentage" | "custom";
+type SplitType = "equal" | "percentage" | "custom" | "shares";
 
 export default function EditExpenseModal({
   expense,
@@ -29,12 +30,23 @@ export default function EditExpenseModal({
   const [amount, setAmount] = useState(String(expense.amount));
   const [category, setCategory] = useState(expense.category || "general");
   const [notes, setNotes] = useState(expense.notes || "");
+  const [expenseDate, setExpenseDate] = useState(
+    expense.expense_date
+      ? String(expense.expense_date).split("T")[0]
+      : String(expense.created_at || new Date().toISOString()).split("T")[0]
+  );
+  const [description, setDescription] = useState(expense.description || "");
+  const [tags, setTags] = useState<string>(
+    Array.isArray(expense.tags) ? expense.tags.join(", ") : ""
+  );
+  const [currency, setCurrency] = useState(expense.currency || DEFAULT_CURRENCY);
   const [paidById, setPaidById] = useState(expense.paid_by || "");
   const [splitType, setSplitType] = useState<SplitType>(expense.split_type || "equal");
   const [tripMembers, setTripMembers] = useState<any[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [percentages, setPercentages] = useState<Record<string, string>>({});
   const [customShares, setCustomShares] = useState<Record<string, string>>({});
+  const [shareCounts, setShareCounts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,6 +68,10 @@ export default function EditExpenseModal({
 
       if (response.error || !response.data) return;
 
+      if (!expense.currency && response.data.trip?.currency) {
+        setCurrency(response.data.trip.currency);
+      }
+
       const members = response.data.members || [];
       const users = members
         .map((m: any) => (Array.isArray(m.user) ? m.user[0] : m.user))
@@ -74,13 +90,16 @@ export default function EditExpenseModal({
 
       const pctMap: Record<string, string> = {};
       const customMap: Record<string, string> = {};
+      const countsMap: Record<string, string> = {};
       users.forEach((u: any) => {
         const share = existingShares.find((s: any) => s.user_id === u.id);
         pctMap[u.id] = share ? String(((share.share_amount / expense.amount) * 100).toFixed(1)) : "";
         customMap[u.id] = share ? String(share.share_amount) : "";
+        countsMap[u.id] = share ? String(share.share_amount || 1) : "1";
       });
       setPercentages(pctMap);
       setCustomShares(customMap);
+      setShareCounts(countsMap);
     } catch (err) {
       console.error("Error loading members:", err);
     } finally {
@@ -106,6 +125,13 @@ export default function EditExpenseModal({
           )
         : undefined;
 
+    const shareCountsObj =
+      splitType === "shares"
+        ? Object.fromEntries(
+            selectedMembers.map((id) => [id, parseFloat(shareCounts[id] || "0")])
+          )
+        : undefined;
+
     const { error } = await expensesApi.updateExpense({
       id: expense.id,
       trip_id: tripId,
@@ -115,9 +141,17 @@ export default function EditExpenseModal({
       split_type: splitType,
       category,
       notes: notes || undefined,
+      expense_date: expenseDate,
+      description: description.trim() || undefined,
+      tags: tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      currency,
       involved_members: selectedMembers,
       percentages: percentagesObj,
       custom_shares: customSharesObj,
+      share_counts: shareCountsObj,
     });
 
     setSubmitting(false);
@@ -214,6 +248,54 @@ export default function EditExpenseModal({
                   </select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <NeuInput
+                  label="Expense Date"
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                />
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[#475569]">
+                    Currency
+                  </label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+                  >
+                    {CURRENCIES.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.code}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Short details about this expense"
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#475569]">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="e.g. dinner, tips, shared"
+                  className="neu-input w-full rounded-xl px-4 py-3 text-[#0F172A] transition-all duration-300"
+                />
+              </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#475569]">
                   Notes
@@ -251,8 +333,8 @@ export default function EditExpenseModal({
               <label className="mb-3 block text-sm font-semibold text-[#475569]">
                 Split Type
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(["equal", "percentage", "custom"] as const).map((type) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(["equal", "percentage", "custom", "shares"] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
@@ -265,7 +347,8 @@ export default function EditExpenseModal({
                   >
                     {type === "equal" && "= Equal"}
                     {type === "percentage" && "% Percentage"}
-                    {type === "custom" && "$ Custom"}
+                    {type === "custom" && "Amounts"}
+                    {type === "shares" && "# Shares"}
                   </button>
                 ))}
               </div>
@@ -368,6 +451,39 @@ export default function EditExpenseModal({
                             className="neu-input w-24 rounded-lg px-2 py-2 text-[#0F172A] text-right"
                           />
                         </div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              )}
+
+              {splitType === "shares" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-3"
+                >
+                  <p className="text-sm text-[#475569] font-semibold">
+                    Assign a number of shares for each member:
+                  </p>
+                  {selectedMembers.map((memberId) => {
+                    const member = tripMembers.find((m: any) => m.id === memberId);
+                    return (
+                      <div key={memberId} className="flex items-center gap-3">
+                        <span className="text-[#0F172A] flex-1">
+                          {member?.name || "Unknown"}
+                        </span>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          value={shareCounts[memberId] || ""}
+                          onChange={(e) =>
+                            setShareCounts({ ...shareCounts, [memberId]: e.target.value })
+                          }
+                          className="neu-input w-24 rounded-lg px-2 py-2 text-[#0F172A] text-right"
+                        />
                       </div>
                     );
                   })}

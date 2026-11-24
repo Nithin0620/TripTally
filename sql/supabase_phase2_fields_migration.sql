@@ -1,0 +1,10 @@
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS destination TEXT;
+
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS expense_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS tags TEXT[];
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'INR';
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS exchange_rate NUMERIC(12, 6) DEFAULT 1;
+
+CREATE INDEX IF NOT EXISTS idx_trips_destination ON trips(destination);
+CREATE INDEX IF NOT EXISTS idx_expenses_expense_date ON expenses(expense_date DESC);

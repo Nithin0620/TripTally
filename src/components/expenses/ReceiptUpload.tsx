@@ -2,11 +2,20 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { receiptsApi } from "@/lib/api/misc";
+
+interface ReceiptRecord {
+  id: string;
+  image_url: string;
+  extracted_text?: string | null;
+  created_at?: string;
+}
 
 interface ReceiptUploadProps {
   expenseId: string;
   tripId: string;
-  onUploaded?: (receipt: any) => void;
+  receipts?: ReceiptRecord[];
+  onUploaded?: (receipt: ReceiptRecord) => void;
   onDeleted?: (receiptId: string) => void;
   showToast: (message: string, type: "success" | "error" | "info") => void;
 }
@@ -14,12 +23,15 @@ interface ReceiptUploadProps {
 export default function ReceiptUpload({
   expenseId,
   tripId,
+  receipts = [],
   onUploaded,
   onDeleted,
   showToast,
 }: ReceiptUploadProps) {
+  const [items, setItems] = useState<ReceiptRecord[]>(receipts);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,36 +41,52 @@ export default function ReceiptUpload({
       return;
     }
 
-    setPreview(URL.createObjectURL(file));
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Receipt image must be 5 MB or smaller", "error");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("expenseId", expenseId);
-      formData.append("tripId", tripId);
+      const res = await receiptsApi.uploadReceipt(expenseId, tripId, file);
 
-      const res = await fetch("/api/receipts", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast(data.error || "Upload failed", "error");
-        setPreview(null);
+      if (res.error || !res.data?.receipt) {
+        showToast(res.error || "Upload failed", "error");
       } else {
-        showToast("Receipt uploaded!", "success");
-        onUploaded?.(data.receipt);
+        const receipt = res.data.receipt;
+        setItems(prev => [receipt, ...prev]);
+        showToast(
+          receipt.extracted_text
+            ? "Receipt uploaded and scanned"
+            : "Receipt uploaded",
+          "success"
+        );
+        onUploaded?.(receipt);
       }
     } catch {
       showToast("Upload failed", "error");
-      setPreview(null);
     } finally {
+      URL.revokeObjectURL(objectUrl);
+      setPreview(null);
       setUploading(false);
     }
+  };
+
+  const handleDelete = async (receiptId: string) => {
+    setDeletingId(receiptId);
+    const res = await receiptsApi.deleteReceipt(tripId, receiptId);
+
+    if (res.error) {
+      showToast(res.error, "error");
+    } else {
+      setItems(prev => prev.filter(receipt => receipt.id !== receiptId));
+      showToast("Receipt removed", "success");
+      onDeleted?.(receiptId);
+    }
+    setDeletingId(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -69,7 +97,53 @@ export default function ReceiptUpload({
   };
 
   return (
-    <div>
+    <div className="space-y-3">
+      {items.length > 0 && (
+        <div className="space-y-2">
+          {items.map(receipt => (
+            <div
+              key={receipt.id}
+              className="rounded-xl border border-white/40 bg-white/50 p-2 flex items-center gap-3"
+            >
+              <a href={receipt.image_url} target="_blank" rel="noreferrer">
+                <img
+                  src={receipt.image_url}
+                  alt="Receipt"
+                  className="h-16 w-16 rounded-lg object-cover"
+                />
+              </a>
+              <div className="flex-1 min-w-0">
+                {receipt.extracted_text ? (
+                  <details className="text-xs text-[#475569]">
+                    <summary className="cursor-pointer font-semibold">
+                      Scan details
+                    </summary>
+                    <pre className="mt-1 whitespace-pre-wrap break-words font-sans text-[11px] text-[#64748B]">
+                      {receipt.extracted_text}
+                    </pre>
+                  </details>
+                ) : (
+                  <p className="text-xs text-[#94A3B8]">No scan text available</p>
+                )}
+                <p className="text-[11px] text-[#94A3B8] mt-1">
+                  {receipt.created_at
+                    ? new Date(receipt.created_at).toLocaleDateString()
+                    : "Uploaded"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(receipt.id)}
+                disabled={deletingId === receipt.id}
+                className="rounded-lg px-2 py-1 text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-50"
+              >
+                {deletingId === receipt.id ? "Removing" : "Remove"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <input
         ref={inputRef}
         type="file"
@@ -78,6 +152,7 @@ export default function ReceiptUpload({
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleFile(file);
+          e.target.value = "";
         }}
       />
 
@@ -90,26 +165,11 @@ export default function ReceiptUpload({
             exit={{ opacity: 0, scale: 0.95 }}
             className="relative rounded-2xl overflow-hidden border border-white/40"
           >
-            <img
-              src={preview}
-              alt="Receipt preview"
-              className="w-full h-48 object-cover"
-            />
+            <img src={preview} alt="Receipt preview" className="w-full h-48 object-cover" />
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
                 <div className="h-8 w-8 rounded-full border-[3px] border-[#E2E8F0] border-t-brand-blue animate-spin" />
               </div>
-            )}
-            {!uploading && (
-              <button
-                onClick={() => {
-                  setPreview(null);
-                  onDeleted?.(expenseId);
-                }}
-                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-slate-900/50 text-white flex items-center justify-center text-sm hover:bg-slate-900/70 transition-colors"
-              >
-                ✕
-              </button>
             )}
           </motion.div>
         ) : (

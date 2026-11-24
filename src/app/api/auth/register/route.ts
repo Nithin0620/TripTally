@@ -5,8 +5,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { signToken, setAuthCookie } from '@/lib/jwt';
 import { badRequestResponse, serverErrorResponse } from '@/middleware/auth';
+import { issueAuthToken } from '@/lib/auth-tokens';
+import { getAppOrigin, sendVerificationEmail } from '@/lib/auth-email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,9 @@ export async function POST(request: NextRequest) {
     };
 
     const body = await request.json();
-    const { email, password, name } = body;
+    const { email: rawEmail, password, name: rawName } = body;
+    const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+    const name = typeof rawName === 'string' ? rawName.trim() : '';
 
     // Validation
     if (!email || !password || !name) {
@@ -61,8 +64,7 @@ export async function POST(request: NextRequest) {
       .insert({
         email,
         name,
-        // Store hashed password in a separate auth-specific table in production
-        // For now, this is stored as part of the user record via a trigger
+        email_verified: false,
       })
       .select()
       .single();
@@ -106,30 +108,37 @@ export async function POST(request: NextRequest) {
       return serverErrorResponse(authError.message || 'Failed to set password');
     }
 
-    // Generate JWT
-    const token = await signToken({
-      userId: user.id,
-      email: user.email,
-    });
+    let verificationEmailSent = false;
+    try {
+      const verificationToken = await issueAuthToken(user.id, 'email_verification');
+      verificationEmailSent = await sendVerificationEmail(
+        email,
+        name,
+        verificationToken,
+        getAppOrigin(request)
+      );
+    } catch (tokenError) {
+      console.error('Register verification setup error:', tokenError);
+      await dbClient.from('users').delete().eq('id', user.id);
+      return serverErrorResponse(
+        "Database is missing 'auth_tokens' table. Run sql/supabase_phase4_auth_migration.sql and retry."
+      );
+    }
 
-    // Create response
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
           profile_image: user.profile_image,
+          email_verified: false,
         },
-        token,
+        requiresVerification: true,
+        emailSent: verificationEmailSent,
       },
       { status: 201 }
     );
-
-    // Set auth cookie
-    response.headers.set('Set-Cookie', setAuthCookie(token));
-
-    return response;
   } catch (error) {
     console.error('Registration error:', error);
     return serverErrorResponse('Registration failed');

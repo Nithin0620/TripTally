@@ -66,8 +66,11 @@ export default function RegisterPage() {
       if (result.error) {
         showToast(result.error, 'error');
       } else {
-        showToast('Account created successfully!', 'success');
-        setTimeout(() => router.push('/dashboard'), 800);
+        showToast('Account created! Verify your email to continue.', 'success');
+        setTimeout(
+          () => router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`),
+          800
+        );
       }
     } catch {
       showToast('An unexpected error occurred', 'error');

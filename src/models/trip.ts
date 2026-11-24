@@ -4,6 +4,7 @@
 export interface Trip {
   id: string;           // UUID primary key
   title: string;        // Trip name
+  destination: string | null;  // Trip destination
   description: string | null;  // Trip description
   start_date: string;   // Start date (YYYY-MM-DD format)
   end_date: string;     // End date (YYYY-MM-DD format)
@@ -24,6 +25,7 @@ export interface TripWithMembers extends Trip {
  */
 export interface CreateTripInput {
   title: string;
+  destination?: string;
   description?: string;
   start_date: string;
   end_date: string;
@@ -36,6 +38,7 @@ export interface CreateTripInput {
  */
 export interface UpdateTripInput {
   title?: string;
+  destination?: string;
   description?: string;
   start_date?: string;
   end_date?: string;

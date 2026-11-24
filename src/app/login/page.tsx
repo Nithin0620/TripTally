@@ -27,6 +27,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toasts, showToast, removeToast } = useToast();
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   useGoogleSignIn({
     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
@@ -56,6 +57,9 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result.error) {
+        if (result.code === 'EMAIL_NOT_VERIFIED') {
+          setVerificationEmail(result.hint || email);
+        }
         showToast(result.error, 'error');
       } else {
         showToast('Login successful!', 'success');
@@ -91,6 +95,19 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {verificationEmail && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-900">
+              Your email isn&apos;t verified yet.{" "}
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(verificationEmail)}`}
+                className="font-bold underline"
+              >
+                Open verification page
+              </Link>{" "}
+              to resend the link.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <NeuInput
               label="Email Address"
@@ -120,9 +137,9 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                 <span>Remember me</span>
               </label>
-              <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">
+              <Link href="/forgot-password" className="font-semibold text-blue-600 hover:text-blue-700">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <Button

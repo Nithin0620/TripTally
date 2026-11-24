@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { activitiesApi } from "@/lib/api/activities";
-import { Activity } from "@/types";
+import { Activity, Place } from "@/types";
 import { modalBackdrop, modalContent } from "@/lib/animations";
 import { buildActivityNotes } from "@/utils/activity";
 import Button from "@/components/ui/Button";
@@ -19,7 +19,10 @@ import {
   Utensils,
   Camera,
   Palmtree,
-  Car
+  Car,
+  Search,
+  Crosshair,
+  Loader2
 } from "lucide-react";
 
 interface AddActivityModalProps {
@@ -27,6 +30,7 @@ interface AddActivityModalProps {
   defaultDate?: string;
   startDate?: string;
   endDate?: string;
+  destination?: string;
   onClose: () => void;
   onSuccess: (newActivity: Activity) => void;
   showToast: (message: string, type: "success" | "error" | "info") => void;
@@ -40,11 +44,14 @@ const CATEGORIES = [
   { id: "Transport", icon: Car, color: "text-slate-600 bg-slate-50" },
 ];
 
+const PLACE_CATEGORIES = ["Beaches", "Mountains", "Cities", "Spiritual", "Luxury"] as const;
+
 export default function AddActivityModal({
   tripId,
   defaultDate,
   startDate,
   endDate,
+  destination,
   onClose,
   onSuccess,
   showToast,
@@ -53,9 +60,152 @@ export default function AddActivityModal({
   const [date, setDate] = useState(defaultDate || startDate || new Date().toISOString().split("T")[0]);
   const [timeSlot, setTimeSlot] = useState("");
   const [location, setLocation] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [category, setCategory] = useState("Sightseeing");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [suggestions, setSuggestions] = useState<Place[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const getMapboxToken = () => {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token || !token.startsWith("pk.")) {
+      showToast("Set a public Mapbox token (pk.*) to use location search", "error");
+      return null;
+    }
+    return token;
+  };
+
+  const geocodeAddress = async (query: string) => {
+    if (!query.trim()) {
+      showToast("Enter a location to find its coordinates", "info");
+      return false;
+    }
+
+    const token = getMapboxToken();
+    if (!token) return false;
+
+    setGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?limit=1&access_token=${token}`
+      );
+      if (!response.ok) throw new Error("Geocoding failed");
+
+      const data = (await response.json()) as {
+        features?: Array<{ center?: [number, number]; place_name?: string }>;
+      };
+      const feature = data.features?.[0];
+      if (!feature?.center) {
+        showToast("No coordinates found for that location", "info");
+        return false;
+      }
+
+      setLatitude(feature.center[1].toFixed(6));
+      setLongitude(feature.center[0].toFixed(6));
+      if (feature.place_name && !location.trim()) setLocation(feature.place_name);
+      return true;
+    } catch {
+      showToast("Failed to find coordinates for that location", "error");
+      return false;
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const handleGeocode = async () => {
+    const found = await geocodeAddress(location);
+    if (found) showToast("Coordinates added from location", "success");
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      showToast("Geolocation is not available in this browser", "error");
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        setLatitude(coords.latitude.toFixed(6));
+        setLongitude(coords.longitude.toFixed(6));
+
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (token?.startsWith("pk.") && !location.trim()) {
+          try {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?limit=1&access_token=${token}`
+            );
+            if (response.ok) {
+              const data = (await response.json()) as {
+                features?: Array<{ place_name?: string }>;
+              };
+              if (data.features?.[0]?.place_name) setLocation(data.features[0].place_name);
+            }
+          } catch {
+            setLocation("");
+          }
+        }
+
+        setLocating(false);
+        showToast("Coordinates added from your current location", "success");
+      },
+      () => {
+        setLocating(false);
+        showToast("Location permission denied or unavailable", "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleFindNearby = async () => {
+    const query = location.trim() || destination?.trim() || "";
+    setSuggestionsLoading(true);
+    setShowSuggestions(true);
+
+    try {
+      const results = await Promise.all(
+        PLACE_CATEGORIES.map(async (category) => {
+          const response = await fetch(
+            `/api/explore/places?category=${encodeURIComponent(category)}&limit=12`
+          );
+          if (!response.ok) return [] as Place[];
+          const data = (await response.json()) as { success?: boolean; data?: Place[] };
+          return data.success ? data.data || [] : [];
+        })
+      );
+
+      const allPlaces = results.flat();
+      const normalized = query.toLowerCase();
+      const matches = normalized
+        ? allPlaces.filter((place) =>
+            `${place.name} ${place.state} ${place.description}`.toLowerCase().includes(normalized)
+          )
+        : allPlaces;
+
+      const nextSuggestions = matches.slice(0, 6);
+      setSuggestions(nextSuggestions);
+      if (!nextSuggestions.length) showToast("No nearby places found", "info");
+    } catch {
+      showToast("Failed to load place suggestions", "error");
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  const handleSelectPlace = async (place: Place) => {
+    const label = [place.name, place.state].filter(Boolean).join(", ");
+    setTitle(place.name);
+    setLocation(label);
+    setShowSuggestions(false);
+
+    const found = await geocodeAddress(label);
+    if (found) showToast("Place added with map coordinates", "success");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +218,18 @@ export default function AddActivityModal({
       showToast("Activity date is required", "error");
       return;
     }
+    if (Boolean(latitude.trim()) !== Boolean(longitude.trim())) {
+      showToast("Enter both latitude and longitude, or leave both blank", "error");
+      return;
+    }
+    if (latitude.trim() && Number.isNaN(Number(latitude))) {
+      showToast("Latitude must be a number", "error");
+      return;
+    }
+    if (longitude.trim() && Number.isNaN(Number(longitude))) {
+      showToast("Longitude must be a number", "error");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -77,6 +239,8 @@ export default function AddActivityModal({
         title: title.trim(),
         activity_date: date,
         location: location.trim() || undefined,
+        latitude: latitude.trim() ? parseFloat(latitude) : undefined,
+        longitude: longitude.trim() ? parseFloat(longitude) : undefined,
         notes: buildActivityNotes({ timeSlot, category, notes }),
       });
 
@@ -192,6 +356,102 @@ export default function AddActivityModal({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleGeocode}
+                disabled={geocoding || !location.trim()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-700 transition-colors hover:bg-blue-100 disabled:opacity-50"
+              >
+                {geocoding ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Search className="h-3 w-3" />
+                )}
+                <span>{geocoding ? "Finding..." : "Find coordinates"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleUseMyLocation}
+                disabled={locating}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+              >
+                {locating ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Crosshair className="h-3 w-3" />
+                )}
+                <span>{locating ? "Locating..." : "Use my location"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleFindNearby}
+                disabled={suggestionsLoading}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-50"
+              >
+                {suggestionsLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Compass className="h-3 w-3" />
+                )}
+                <span>{suggestionsLoading ? "Searching..." : "Nearby places"}</span>
+              </button>
+            </div>
+            {showSuggestions && (
+              <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {suggestionsLoading ? (
+                  <p className="px-3 py-2 text-[11px] text-slate-500">Searching places...</p>
+                ) : suggestions.length ? (
+                  suggestions.map((place) => (
+                    <button
+                      key={place.id}
+                      type="button"
+                      onClick={() => handleSelectPlace(place)}
+                      className="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-blue-50/60"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-semibold text-slate-800">
+                          {place.name}
+                        </span>
+                        <span className="block truncate text-[10px] text-slate-500">
+                          {place.state} · {place.category}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[10px] font-bold text-blue-600">Use</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-3 py-2 text-[11px] text-slate-500">No matching places found.</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Latitude (Optional)
+              </label>
+              <NeuInput
+                type="number"
+                step="any"
+                placeholder="e.g. 15.2993"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Longitude (Optional)
+              </label>
+              <NeuInput
+                type="number"
+                step="any"
+                placeholder="e.g. 74.1240"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Category Chips */}

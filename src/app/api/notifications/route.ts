@@ -12,10 +12,12 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 20;
     const unreadOnly = url.searchParams.get('unreadOnly') === 'true';
+    const tripId = url.searchParams.get('tripId') || undefined;
 
     const { notifications, unreadCount, error } = await getUserNotifications(auth.user.userId, {
       limit,
       unreadOnly,
+      tripId,
     });
 
     if (error) {

@@ -3,7 +3,7 @@
 // ============================================
 
 import { apiClient, ApiResponse } from './client';
-import { Template, Settlement } from '@/types';
+import { Template, Settlement, SettlementPayment, Receipt, User } from '@/types';
 
 export interface CreateTemplateData {
   title: string;
@@ -32,11 +32,14 @@ export const templatesApi = {
 export interface SettlementResponse {
   settlements: Settlement[];
   balances: Record<string, number>;
-  payments: any[];
+  payments: SettlementPayment[];
+  currency: string;
+  users: User[];
   summary: {
     totalSettlements: number;
     totalAmount: number;
     totalPaid: number;
+    totalExpensed: number;
   };
 }
 
@@ -61,8 +64,8 @@ export const settlementApi = {
       payment_method?: string;
       notes?: string;
     }
-  ): Promise<ApiResponse<{ payment: any; success: boolean }>> {
-    return apiClient.post<{ payment: any; success: boolean }>(`/api/settlement/${tripId}`, data);
+  ): Promise<ApiResponse<{ payment: SettlementPayment; success: boolean }>> {
+    return apiClient.post<{ payment: SettlementPayment; success: boolean }>(`/api/settlement/${tripId}`, data);
   },
 
   /**
@@ -71,15 +74,27 @@ export const settlementApi = {
   async deletePayment(tripId: string, paymentId: string): Promise<ApiResponse<{ message: string }>> {
     return apiClient.delete<{ message: string }>(`/api/settlement/${tripId}?paymentId=${paymentId}`);
   },
+
+  /**
+   * Remind members with outstanding balances to settle up
+   */
+  async sendReminders(tripId: string): Promise<ApiResponse<{ count: number; success: boolean }>> {
+    return apiClient.post<{ count: number; success: boolean }>(`/api/settlement/${tripId}/remind`);
+  },
 };
 
 export const receiptsApi = {
   /**
    * Upload receipt
    */
-  async uploadReceipt(expenseId: string, file: File): Promise<ApiResponse<{ receipt: any }>> {
+  async uploadReceipt(
+    expenseId: string,
+    tripId: string,
+    file: File
+  ): Promise<ApiResponse<{ receipt: Receipt }>> {
     const formData = new FormData();
-    formData.append('expense_id', expenseId);
+    formData.append('expenseId', expenseId);
+    formData.append('tripId', tripId);
     formData.append('file', file);
 
     try {
@@ -100,5 +115,22 @@ export const receiptsApi = {
       console.error('Receipt upload error:', error);
       return { error: error instanceof Error ? error.message : 'Network error' };
     }
+  },
+
+  /**
+   * List receipts for an expense
+   */
+  async getReceipts(expenseId: string): Promise<ApiResponse<{ receipts: Receipt[] }>> {
+    return apiClient.get<{ receipts: Receipt[] }>(`/api/receipts?expenseId=${expenseId}`);
+  },
+
+  /**
+   * Delete a receipt
+   */
+  async deleteReceipt(tripId: string, receiptId: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>('/api/receipts', {
+      tripId,
+      receiptId,
+    });
   },
 };
