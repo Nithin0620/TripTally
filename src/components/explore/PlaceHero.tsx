@@ -31,7 +31,7 @@ export default function PlaceHero({
         viewport={{ once: true }}
       >
         {loading ? (
-          <div className="w-full h-full bg-gray-800 animate-pulse" />
+          <div className="w-full h-full bg-slate-800 animate-pulse" />
         ) : (
           <img
             src={image?.url || heroImage}
@@ -42,10 +42,10 @@ export default function PlaceHero({
       </motion.div>
 
       {/* Gradient Overlay - Enhanced for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#163427]/70 via-[#163427]/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/70 via-[#0F172A]/40 to-transparent" />
 
       {/* Additional diagonal accent gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#163427]/65 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/65 via-transparent to-transparent" />
 
       {/* Content - Positioned at bottom */}
       <div className="absolute inset-0 flex flex-col justify-end">

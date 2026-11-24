@@ -7,6 +7,8 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  code?: string;
+  hint?: string;
 }
 
 class ApiClient {
@@ -66,11 +68,18 @@ class ApiClient {
       const fallbackText = isJson ? '' : await response.text();
 
       if (!response.ok) {
+        const errorData =
+          data && typeof data === 'object' && 'error' in data
+            ? (data as { error?: string; code?: string; hint?: string })
+            : null;
+
         return {
           error:
-            (data && typeof data === 'object' && 'error' in data ? String((data as { error?: string }).error) : '') ||
+            errorData?.error ||
             fallbackText ||
             `Request failed with status ${response.status}`,
+          code: errorData?.code,
+          hint: errorData?.hint,
         };
       }
 
@@ -101,8 +110,18 @@ class ApiClient {
     });
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+  async patch<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async delete<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+      body: body ? JSON.stringify(body) : undefined,
+    });
   }
 }
 

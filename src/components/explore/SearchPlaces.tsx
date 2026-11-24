@@ -85,7 +85,7 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
   };
 
   return (
-    <section className="py-1 md:py-2 bg-gradient-to-br from-white via-[#f5fbf7] to-[#f0f8f3]">
+    <section className="py-1 md:py-2 bg-gradient-to-br from-white via-blue-50/30 to-slate-50">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Search Header */}
         <motion.div
@@ -94,10 +94,10 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-[#163427] mb-2">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A] mb-2">
             🔍 Discover Your Next Adventure
           </h2>
-          <p className="text-[#5f7a6c]">
+          <p className="text-[#475569]">
             Search for any place in India. If not found, we'll generate detailed information for you.
           </p>
         </motion.div>
@@ -112,7 +112,7 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
         >
           <div className="relative">
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-              <Search size={20} className="text-[#7a9186]" />
+              <Search size={20} className="text-slate-400" />
             </div>
             <input
               type="text"
@@ -120,12 +120,12 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search attractions, cities, places..."
               disabled={isSearching}
-              className="w-full pl-12 pr-4 py-3 md:py-4 bg-white border-2 border-[#cfe0d7] rounded-full focus:outline-none focus:border-[#EFEC07] transition-colors duration-300 text-[#163427] placeholder-[#a8b5ad] disabled:opacity-50"
+              className="w-full pl-12 pr-4 py-3 md:py-4 neu-input rounded-full focus:outline-none focus:border-[#3B82F6] transition-colors duration-300 text-[#0F172A] placeholder-slate-400 disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#163427] to-[#1f4a37] hover:from-[#0f2519] hover:to-[#1a3f31] text-white px-6 py-2 rounded-full font-semibold transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#0F172A] hover:bg-[#1E293B] text-white px-6 py-2 rounded-full font-semibold transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
             >
               {isSearching ? (
                 <>
@@ -161,9 +161,9 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+              className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
             >
-              <p className="text-green-700 font-medium flex items-center gap-2">
+              <p className="text-blue-700 font-medium flex items-center gap-2">
                 {source === 'ai' ? '🤖' : '💾'} {message}
               </p>
             </motion.div>
@@ -181,12 +181,12 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
               className="mb-8"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-[#163427]">
+                <h3 className="text-2xl font-bold text-[#0F172A]">
                   {results.length} Result{results.length !== 1 ? 's' : ''} Found
                 </h3>
                 <button
                   onClick={handleClear}
-                  className="text-sm text-[#7a9186] hover:text-[#163427] font-medium transition-colors"
+                  className="text-sm text-slate-400 hover:text-[#0F172A] font-medium transition-colors"
                 >
                   Clear Search ✕
                 </button>
@@ -240,13 +240,13 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
               className="text-center py-12"
             >
               <div className="text-5xl mb-4">🌍</div>
-              <h3 className="text-2xl font-bold text-[#163427] mb-2">No Places Found</h3>
-              <p className="text-[#5f7a6c] mb-6">
+              <h3 className="text-2xl font-bold text-[#0F172A] mb-2">No Places Found</h3>
+              <p className="text-[#475569] mb-6">
                 No places are available for your search. Try a different query.
               </p>
               <button
                 onClick={handleClear}
-                className="px-6 py-3 bg-[#163427] hover:bg-[#0f2519] text-white rounded-full font-semibold transition-colors"
+                className="px-6 py-3 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-full font-semibold transition-colors"
               >
                 Start Over
               </button>
@@ -260,7 +260,7 @@ export default function SearchPlaces({ onSearchResults }: SearchPlacesProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center py-12 text-[#7a9186]"
+            className="text-center py-12 text-slate-400"
           >
             <div className="text-4xl mb-3">📍</div>
             <p>Enter a location name to search for travel destinations</p>

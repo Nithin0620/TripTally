@@ -43,13 +43,16 @@ export async function GET(
       return forbiddenResponse(roleError ?? undefined);
     }
 
-    const { trip, members, error } = await getTrip(tripId);
+    const { trip, members, activities, expenses, error } = await getTrip(tripId);
 
     if (error) {
       return serverErrorResponse(error);
     }
 
-    return NextResponse.json({ trip, members }, { status: 200 });
+    return NextResponse.json(
+      { trip, members, activities, expenses },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching trip:', error);
     return serverErrorResponse('Failed to fetch trip');
@@ -83,14 +86,30 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, start_date, end_date, cover_image } = body;
+    const { title, destination, description, start_date, end_date, cover_image, currency, budget_limit } = body;
+
+    if (destination !== undefined && typeof destination !== 'string') {
+      return badRequestResponse('destination must be a string');
+    }
+
+    const { trip: existingTrip } = await getTrip(tripId);
+    const effectiveStart = start_date || existingTrip?.start_date;
+    const effectiveEnd = end_date || existingTrip?.end_date;
+    const startTime = effectiveStart ? new Date(effectiveStart).getTime() : NaN;
+    const endTime = effectiveEnd ? new Date(effectiveEnd).getTime() : NaN;
+    if (Number.isNaN(startTime) || Number.isNaN(endTime) || startTime > endTime) {
+      return badRequestResponse('start_date and end_date must be valid dates with start_date on or before end_date');
+    }
 
     const updateData = {
       ...(title && { title }),
+      ...(destination !== undefined && { destination }),
       ...(description !== undefined && { description }),
       ...(start_date && { start_date }),
       ...(end_date && { end_date }),
       ...(cover_image !== undefined && { cover_image }),
+      ...(currency && { currency }),
+      ...(budget_limit !== undefined && { budget_limit }),
     };
 
     const { trip, error } = await updateTrip(tripId, updateData);

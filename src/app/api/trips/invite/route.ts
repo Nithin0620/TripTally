@@ -39,9 +39,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { tripId, email } = await request.json();
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
     // Validate inputs
-    if (!tripId || !email) {
+    if (!tripId || !normalizedEmail) {
       return NextResponse.json(
         { error: 'Trip ID and email are required' },
         { status: 400 }
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
@@ -73,12 +74,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already invited
+    const nowIso = new Date().toISOString();
     const { data: existingInvite } = await supabase
       .from('trip_invites')
       .select('*')
       .eq('trip_id', tripId)
-      .eq('email', email)
-      .single();
+      .eq('email', normalizedEmail)
+      .eq('status', 'pending')
+      .gte('expires_at', nowIso)
+      .maybeSingle();
 
     if (existingInvite) {
       return NextResponse.json(
@@ -91,8 +95,8 @@ export async function POST(request: NextRequest) {
     const { data: existingMember } = await supabase
       .from('users')
       .select('id')
-      .eq('email', email)
-      .single();
+      .eq('email', normalizedEmail)
+      .maybeSingle();
 
     if (existingMember) {
       const { data: tripMember } = await supabase
@@ -115,9 +119,11 @@ export async function POST(request: NextRequest) {
       .from('trip_invites')
       .insert({
         trip_id: tripId,
-        email,
+        email: normalizedEmail,
         status: 'pending',
-        created_at: new Date().toISOString(),
+        created_by: payload.userId,
+        created_at: nowIso,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();
@@ -149,7 +155,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <p>
-            <a href="${inviteLink}" style="background: #EFEC07; color: #163427; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-weight: bold; display: inline-block;">
+            <a href="${inviteLink}" style="background: #EFEC07; color: #0F172A; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-weight: bold; display: inline-block;">
               Accept Invitation
             </a>
           </p>
@@ -163,8 +169,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await transporter.sendMail(mailOptions);
-    } catch (emailError) {
-      console.error('Email send error:', emailError);
+    } catch {
       // Delete invite if email fails
       await supabase.from('trip_invites').delete().eq('id', invite.id);
       return NextResponse.json(
@@ -175,11 +180,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Invitation sent to ${email}`,
+      message: `Invitation sent to ${normalizedEmail}`,
       invite,
     });
-  } catch (error) {
-    console.error('Invite endpoint error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

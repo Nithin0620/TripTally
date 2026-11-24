@@ -6,6 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, extractTokenFromCookie } from '@/lib/jwt';
 import { UserContext } from '@/types';
 
+type ErrorPayload = {
+  error: string;
+  code?: string;
+  hint?: string;
+};
+
 /**
  * Middleware to verify JWT and attach user context to request
  */
@@ -43,30 +49,42 @@ export async function authenticateUser(request: NextRequest) {
   };
 }
 
+export function errorResponse(
+  status: number,
+  message: string,
+  code?: string,
+  hint?: string
+) {
+  const payload: ErrorPayload = { error: message };
+  if (code) payload.code = code;
+  if (hint) payload.hint = hint;
+  return NextResponse.json(payload, { status });
+}
+
 /**
  * Helper to create unauthorized response
  */
 export function unauthorizedResponse(message: string = 'Unauthorized') {
-  return NextResponse.json({ error: message }, { status: 401 });
+  return errorResponse(401, message, 'UNAUTHORIZED');
 }
 
 /**
  * Helper to create forbidden response
  */
 export function forbiddenResponse(message: string = 'Forbidden') {
-  return NextResponse.json({ error: message }, { status: 403 });
+  return errorResponse(403, message, 'FORBIDDEN');
 }
 
 /**
  * Helper to create bad request response
  */
 export function badRequestResponse(message: string = 'Bad Request') {
-  return NextResponse.json({ error: message }, { status: 400 });
+  return errorResponse(400, message, 'BAD_REQUEST');
 }
 
 /**
  * Helper to create server error response
  */
 export function serverErrorResponse(message: string = 'Internal Server Error') {
-  return NextResponse.json({ error: message }, { status: 500 });
+  return errorResponse(500, message, 'INTERNAL_SERVER_ERROR');
 }

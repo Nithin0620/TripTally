@@ -2,7 +2,7 @@
 // Trip Service
 // ============================================
 
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { CreateTripRequest, Trip, TripMember, User } from '@/types';
 
 /**
@@ -14,10 +14,11 @@ export async function createTrip(
 ): Promise<{ trip: Trip | null; error: string | null }> {
   try {
     // Create the trip
-    const { data: trip, error: tripError } = await supabase
+    const { data: trip, error: tripError } = await supabaseAdmin
       .from('trips')
       .insert({
         title: data.title,
+        destination: data.destination,
         description: data.description,
         start_date: data.start_date,
         end_date: data.end_date,
@@ -32,7 +33,7 @@ export async function createTrip(
     }
 
     // Add creator as owner
-    const { error: memberError } = await supabase
+    const { error: memberError } = await supabaseAdmin
       .from('trip_members')
       .insert({
         trip_id: trip.id,
@@ -56,30 +57,71 @@ export async function createTrip(
  */
 export async function getTrip(tripId: string) {
   try {
-    const { data: trip, error: tripError } = await supabase
+    const { data: trip, error: tripError } = await supabaseAdmin
       .from('trips')
       .select('*')
       .eq('id', tripId)
       .single();
 
     if (tripError || !trip) {
-      return { trip: null, error: 'Trip not found' };
+      return {
+        trip: null,
+        members: [],
+        activities: [],
+        expenses: [],
+        error: 'Trip not found',
+      };
     }
 
-    // Get trip members with user details
-    const { data: members, error: membersError } = await supabase
+    const { data: members, error: membersError } = await supabaseAdmin
       .from('trip_members')
       .select('id, trip_id, user_id, role, joined_at, users(id, name, email, profile_image)')
       .eq('trip_id', tripId);
 
-    if (membersError) {
-      return { trip, members: [], error: null };
+    const { data: activities, error: activitiesError } = await supabaseAdmin
+      .from('activities')
+      .select('*')
+      .eq('trip_id', tripId)
+      .order('activity_date', { ascending: true })
+      .order('order_index', { ascending: true });
+
+    const { data: expenses, error: expensesError } = await supabaseAdmin
+      .from('expenses')
+      .select(
+        `
+        *,
+        paidByUser:users!paid_by(id, name, email, profile_image),
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
+      `
+      )
+      .eq('trip_id', tripId)
+      .order('created_at', { ascending: false });
+
+    if (membersError || activitiesError || expensesError) {
+      console.error('Error fetching trip relations:', {
+        membersError,
+        activitiesError,
+        expensesError,
+      });
     }
 
-    return { trip, members: members || [], error: null };
+    return {
+      trip,
+      members: members || [],
+      activities: activities || [],
+      expenses: expenses || [],
+      error: null,
+    };
   } catch (error) {
     console.error('Error fetching trip:', error);
-    return { trip: null, members: [], error: 'Failed to fetch trip' };
+    return {
+      trip: null,
+      members: [],
+      activities: [],
+      expenses: [],
+      error: 'Failed to fetch trip',
+    };
   }
 }
 
@@ -91,7 +133,7 @@ export async function updateTrip(
   data: Partial<CreateTripRequest>
 ) {
   try {
-    const { data: trip, error } = await supabase
+    const { data: trip, error } = await supabaseAdmin
       .from('trips')
       .update(data)
       .eq('id', tripId)
@@ -114,7 +156,7 @@ export async function updateTrip(
  */
 export async function deleteTrip(tripId: string) {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('trips')
       .delete()
       .eq('id', tripId);
@@ -139,7 +181,7 @@ export async function addTripMember(
   role: 'owner' | 'editor' | 'viewer'
 ) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('trip_members')
       .insert({
         trip_id: tripId,
@@ -165,7 +207,7 @@ export async function addTripMember(
  */
 export async function removeTripMember(tripId: string, userId: string) {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('trip_members')
       .delete()
       .eq('trip_id', tripId)
@@ -191,7 +233,7 @@ export async function updateTripMemberRole(
   role: 'owner' | 'editor' | 'viewer'
 ) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('trip_members')
       .update({ role })
       .eq('trip_id', tripId)

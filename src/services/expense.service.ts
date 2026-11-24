@@ -2,10 +2,27 @@
 // Expense Service
 // ============================================
 
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { CreateExpenseRequest, Expense } from '@/types';
-import { calculateSplit, sumUpMemberBalances, SplitCalculatorInput } from '@/utils/splitCalculator';
+import { calculateSplit, sumUpMemberBalances, SplitCalculatorInput, SplitType } from '@/utils/splitCalculator';
 import { optimizeSettlements } from '@/utils/settlementOptimizer';
+
+interface ExpenseShareInput {
+  expense_id?: string;
+  user_id: string;
+  share_amount: number;
+  paid_amount?: number;
+}
+
+function hasNegativeShareValues(shares: ExpenseShareInput[]): boolean {
+  return shares.some(
+    share =>
+      !Number.isFinite(share.share_amount) ||
+      share.share_amount < 0 ||
+      (share.paid_amount !== undefined &&
+        (!Number.isFinite(share.paid_amount) || share.paid_amount < 0))
+  );
+}
 
 /**
  * Create an expense with validated split calculation
@@ -16,24 +33,39 @@ export async function createExpenseWithSplit(
   title: string,
   amount: number,
   paidByUserId: string,
-  splitType: 'equal' | 'percentage' | 'custom',
+  splitType: SplitType,
   involvedMembers: string[],
   percentages?: Record<string, number>,
   customShares?: Record<string, number>,
+  shareCounts?: Record<string, number>,
   notes?: string,
-  category?: string
+  category?: string,
+  expenseDate?: string,
+  description?: string,
+  tags?: string[],
+  currency?: string,
+  exchangeRate?: number
 ): Promise<{ data: any; error: string | null }> {
   try {
-    if (!tripId || !title || !paidByUserId || amount <= 0) {
+    if (!tripId || !title || !paidByUserId || !Number.isFinite(amount) || amount <= 0) {
       return {
         data: null,
         error: 'Invalid expense parameters: trip ID, title, payer, and amount > 0 required',
       };
     }
 
-    // Validate that payer is in involved members
+    if (!Array.isArray(involvedMembers) || involvedMembers.length === 0) {
+      return {
+        data: null,
+        error: 'involved_members must not be empty',
+      };
+    }
+
     if (!involvedMembers.includes(paidByUserId)) {
-      involvedMembers.push(paidByUserId);
+      return {
+        data: null,
+        error: 'paid_by must be part of involved_members',
+      };
     }
 
     // Use split calculator to validate and compute shares
@@ -44,6 +76,7 @@ export async function createExpenseWithSplit(
       involvedMembers,
       percentages,
       customShares,
+      shareCounts,
     };
 
     const splitResult = calculateSplit(splitInput);
@@ -56,47 +89,41 @@ export async function createExpenseWithSplit(
       };
     }
 
-    // Create expense in database
-    const { data: expense, error: expenseError } = await supabase
-      .from('expenses')
-      .insert({
-        trip_id: tripId,
-        title,
-        amount: splitResult.totalAmount,
-        paid_by: paidByUserId,
-        split_type: splitType,
-        notes: notes || null,
-        category: category || 'general',
-        created_by: paidByUserId,
-      })
-      .select()
-      .single();
-
-    if (expenseError || !expense) {
-      return {
-        data: null,
-        error: expenseError?.message || 'Failed to create expense record',
-      };
-    }
-
-    // Create expense shares from validated breakdown
-    const shares = splitResult.breakdown.map(item => ({
-      expense_id: expense.id,
+    const shares: ExpenseShareInput[] = splitResult.breakdown.map(item => ({
       user_id: item.userId,
       share_amount: item.share,
       paid_amount: item.paid,
     }));
 
-    const { error: sharesError } = await supabase
-      .from('expense_shares')
-      .insert(shares);
-
-    if (sharesError) {
-      // Cleanup on failure
-      await supabase.from('expenses').delete().eq('id', expense.id);
+    if (hasNegativeShareValues(shares)) {
       return {
         data: null,
-        error: 'Failed to create expense shares',
+        error: 'Share values must be valid non-negative numbers',
+      };
+    }
+
+    // Atomic insert via RPC (single DB transaction)
+    const { data: expense, error: expenseError } = await supabaseAdmin.rpc('create_expense_with_shares', {
+      p_trip_id: tripId,
+      p_title: title,
+      p_amount: splitResult.totalAmount,
+      p_paid_by: paidByUserId,
+      p_split_type: splitType,
+      p_notes: notes || null,
+      p_category: category || 'general',
+      p_created_by: paidByUserId,
+      p_shares: shares,
+      p_expense_date: expenseDate || null,
+      p_description: description || null,
+      p_tags: tags || null,
+      p_currency: currency || null,
+      p_exchange_rate: exchangeRate ?? null,
+    });
+
+    if (expenseError || !expense) {
+      return {
+        data: null,
+        error: expenseError?.message || 'Failed to create expense record',
       };
     }
 
@@ -126,7 +153,7 @@ export async function createExpense(
 ): Promise<{ expense: Expense | null; error: string | null }> {
   try {
     // Create expense
-    const { data: expense, error: expenseError } = await supabase
+    const { data: expense, error: expenseError } = await supabaseAdmin
       .from('expenses')
       .insert({
         trip_id: data.trip_id,
@@ -150,13 +177,13 @@ export async function createExpense(
       share_amount: share.amount,
     }));
 
-    const { error: sharesError } = await supabase
+    const { error: sharesError } = await supabaseAdmin
       .from('expense_shares')
       .insert(shares);
 
     if (sharesError) {
       // Clean up
-      await supabase.from('expenses').delete().eq('id', expense.id);
+      await supabaseAdmin.from('expenses').delete().eq('id', expense.id);
       return { expense: null, error: 'Failed to create expense shares' };
     }
 
@@ -172,13 +199,14 @@ export async function createExpense(
  */
 export async function getExpense(expenseId: string) {
   try {
-    const { data: expense, error: expenseError } = await supabase
+    const { data: expense, error: expenseError } = await supabaseAdmin
       .from('expenses')
       .select(
         `
         *,
         users!paid_by(id, name, email, profile_image),
-        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
       `
       )
       .eq('id', expenseId)
@@ -198,28 +226,36 @@ export async function getExpense(expenseId: string) {
 /**
  * Get all expenses for a trip
  */
-export async function getTripExpenses(tripId: string) {
+export async function getTripExpenses(tripId: string, limit?: number, offset?: number) {
   try {
-    const { data: expenses, error } = await supabase
+    const resolvedLimit = typeof limit === 'number' ? limit : 20;
+    const resolvedOffset = typeof offset === 'number' ? offset : 0;
+    const from = Math.max(0, resolvedOffset);
+    const to = from + Math.max(1, resolvedLimit) - 1;
+
+    const { data: expenses, error, count } = await supabaseAdmin
       .from('expenses')
       .select(
         `
         *,
         users!paid_by(id, name, email, profile_image),
-        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image))
-      `
+        expense_shares(id, user_id, share_amount, users(id, name, email, profile_image)),
+        receipts(id, image_url, extracted_text, created_at)
+      `,
+        { count: 'exact' }
       )
       .eq('trip_id', tripId)
+      .range(from, to)
       .order('created_at', { ascending: false });
 
     if (error) {
-      return { expenses: [], error: error.message };
+      return { expenses: [], total: 0, error: error.message };
     }
 
-    return { expenses: expenses || [], error: null };
+    return { expenses: expenses || [], total: count || 0, error: null };
   } catch (error) {
     console.error('Error fetching trip expenses:', error);
-    return { expenses: [], error: 'Failed to fetch expenses' };
+    return { expenses: [], total: 0, error: 'Failed to fetch expenses' };
   }
 }
 
@@ -230,7 +266,7 @@ export async function getTripExpenses(tripId: string) {
 export async function calculateTripSettlement(tripId: string) {
   try {
     // Get all expenses and shares for the trip
-    const { data: expenses, error: expensesError } = await supabase
+    const { data: expenses, error: expensesError } = await supabaseAdmin
       .from('expenses')
       .select(
         `
@@ -289,7 +325,7 @@ export async function calculateTripSettlement(tripId: string) {
 
     // Get user details for display
     const userIds = Object.keys(balances);
-    const { data: users } = await supabase
+    const { data: users } = await supabaseAdmin
       .from('users')
       .select('id, name, email')
       .in('id', userIds);
@@ -326,45 +362,109 @@ export async function calculateTripSettlement(tripId: string) {
  */
 export async function updateExpense(
   expenseId: string,
-  data: Partial<CreateExpenseRequest>
+  data: Partial<CreateExpenseRequest> & {
+    notes?: string;
+    involved_members?: string[];
+    percentages?: Record<string, number>;
+    custom_shares?: Record<string, number>;
+    share_counts?: Record<string, number>;
+  }
 ) {
   try {
-    const { data: expense, error } = await supabase
+    const { data: existingExpense, error: fetchError } = await supabaseAdmin
       .from('expenses')
-      .update({
-        title: data.title,
-        amount: data.amount,
-        paid_by: data.paid_by,
-        split_type: data.split_type,
-        category: data.category,
-      })
+      .select('id, trip_id, title, amount, paid_by, split_type, category, notes, expense_date, description, tags, currency, exchange_rate')
       .eq('id', expenseId)
-      .select()
       .single();
 
-    if (error) {
-      return { expense: null, error: error.message };
+    if (fetchError || !existingExpense) {
+      return { expense: null, error: fetchError?.message || 'Expense not found' };
     }
 
-    // Update shares if provided
-    if (data.shares) {
-      // Delete old shares
-      await supabase.from('expense_shares').delete().eq('expense_id', expenseId);
+    const { data: existingShares, error: shareFetchError } = await supabaseAdmin
+      .from('expense_shares')
+      .select('user_id, share_amount')
+      .eq('expense_id', expenseId);
 
-      // Insert new shares
-      const shares = data.shares.map(share => ({
-        expense_id: expenseId,
-        user_id: share.user_id,
-        share_amount: share.amount,
-      }));
+    if (shareFetchError) {
+      return { expense: null, error: shareFetchError.message };
+    }
 
-      const { error: sharesError } = await supabase
-        .from('expense_shares')
-        .insert(shares);
+    const mergedAmount = data.amount ?? existingExpense.amount;
+    const mergedPaidBy = data.paid_by ?? existingExpense.paid_by;
+    const mergedSplitType = data.split_type ?? existingExpense.split_type;
+    const mergedInvolvedMembers =
+      data.involved_members && data.involved_members.length > 0
+        ? data.involved_members
+        : (existingShares || []).map(share => share.user_id);
 
-      if (sharesError) {
-        return { expense: null, error: 'Failed to update expense shares' };
-      }
+    const mergedExpenseDate = data.expense_date ?? existingExpense.expense_date ?? null;
+    const mergedDescription = data.description ?? existingExpense.description ?? null;
+    const mergedTags = data.tags ?? existingExpense.tags ?? null;
+    const mergedCurrency = data.currency ?? existingExpense.currency ?? null;
+    const mergedExchangeRate = data.exchange_rate ?? existingExpense.exchange_rate ?? null;
+
+    const derivedCustomShares =
+      data.custom_shares ??
+      (data.shares
+        ? Object.fromEntries(data.shares.map(share => [share.user_id, share.amount]))
+        : Object.fromEntries((existingShares || []).map(share => [share.user_id, share.share_amount])));
+
+    if (!Array.isArray(mergedInvolvedMembers) || mergedInvolvedMembers.length === 0) {
+      return { expense: null, error: 'involved_members must not be empty' };
+    }
+
+    if (!mergedInvolvedMembers.includes(mergedPaidBy)) {
+      return { expense: null, error: 'paid_by must be part of involved_members' };
+    }
+
+    const splitInput: SplitCalculatorInput = {
+      amount: mergedAmount,
+      paidByUserId: mergedPaidBy,
+      splitType: mergedSplitType,
+      involvedMembers: mergedInvolvedMembers,
+      percentages: data.percentages,
+      customShares: mergedSplitType === 'custom' ? derivedCustomShares : data.custom_shares,
+      shareCounts:
+        data.share_counts ??
+        (mergedSplitType === 'shares'
+          ? Object.fromEntries((existingShares || []).map(share => [share.user_id, share.share_amount]))
+          : undefined),
+    };
+
+    const splitResult = calculateSplit(splitInput);
+    if (!splitResult.isValid) {
+      return { expense: null, error: `Split validation failed: ${splitResult.errors.join('; ')}` };
+    }
+
+    const shares: ExpenseShareInput[] = splitResult.breakdown.map(item => ({
+      user_id: item.userId,
+      share_amount: item.share,
+      paid_amount: item.paid,
+    }));
+
+    if (hasNegativeShareValues(shares)) {
+      return { expense: null, error: 'Share values must be valid non-negative numbers' };
+    }
+
+    const { data: expense, error: updateError } = await supabaseAdmin.rpc('update_expense_with_shares', {
+      p_expense_id: expenseId,
+      p_title: data.title ?? existingExpense.title,
+      p_amount: splitResult.totalAmount,
+      p_paid_by: mergedPaidBy,
+      p_split_type: mergedSplitType,
+      p_category: data.category ?? existingExpense.category ?? 'general',
+      p_notes: data.notes ?? existingExpense.notes ?? null,
+      p_shares: shares,
+      p_expense_date: mergedExpenseDate,
+      p_description: mergedDescription,
+      p_tags: mergedTags,
+      p_currency: mergedCurrency,
+      p_exchange_rate: mergedExchangeRate,
+    });
+
+    if (updateError || !expense) {
+      return { expense: null, error: updateError?.message || 'Failed to update expense' };
     }
 
     return { expense, error: null };
@@ -377,13 +477,12 @@ export async function updateExpense(
 /**
  * Delete expense
  */
-export async function deleteExpense(expenseId: string) {
+export async function deleteExpense(expenseId: string, tripId: string) {
   try {
-    // Shares will be deleted via CASCADE
-    const { error } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('id', expenseId);
+    const { error } = await supabaseAdmin.rpc('delete_expense_with_shares', {
+      p_expense_id: expenseId,
+      p_trip_id: tripId,
+    });
 
     if (error) {
       return { error: error.message };
@@ -402,14 +501,14 @@ export async function deleteExpense(expenseId: string) {
 export async function getUserExpenses(tripId: string, userId: string) {
   try {
     // Expenses paid by user
-    const { data: paid, error: paidError } = await supabase
+    const { data: paid, error: paidError } = await supabaseAdmin
       .from('expenses')
       .select('*')
       .eq('trip_id', tripId)
       .eq('paid_by', userId);
 
     // Shares where user owes
-    const { data: owes, error: owesError } = await supabase
+    const { data: owes, error: owesError } = await supabaseAdmin
       .from('expense_shares')
       .select(
         `

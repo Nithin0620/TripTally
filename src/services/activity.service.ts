@@ -2,7 +2,7 @@
 // Activity Service
 // ============================================
 
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { CreateActivityRequest, Activity } from '@/types';
 
 /**
@@ -12,7 +12,7 @@ export async function createActivity(
   data: CreateActivityRequest
 ): Promise<{ activity: Activity | null; error: string | null }> {
   try {
-    const { data: activity, error } = await supabase
+    const { data: activity, error } = await supabaseAdmin
       .from('activities')
       .insert({
         trip_id: data.trip_id,
@@ -43,7 +43,7 @@ export async function createActivity(
  */
 export async function getActivity(activityId: string) {
   try {
-    const { data: activity, error } = await supabase
+    const { data: activity, error } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('id', activityId)
@@ -65,7 +65,7 @@ export async function getActivity(activityId: string) {
  */
 export async function getTripActivities(tripId: string) {
   try {
-    const { data: activities, error } = await supabase
+    const { data: activities, error } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('trip_id', tripId)
@@ -91,7 +91,7 @@ export async function updateActivity(
   data: Partial<CreateActivityRequest>
 ) {
   try {
-    const { data: activity, error } = await supabase
+    const { data: activity, error } = await supabaseAdmin
       .from('activities')
       .update({
         title: data.title,
@@ -122,7 +122,7 @@ export async function updateActivity(
  */
 export async function deleteActivity(activityId: string) {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('activities')
       .delete()
       .eq('id', activityId);
@@ -147,7 +147,7 @@ export async function reorderActivities(
   try {
     // Use Promise.all to update all activities
     const updates = activities.map(({ id, order_index }) =>
-      supabase
+      supabaseAdmin
         .from('activities')
         .update({ order_index })
         .eq('id', id)

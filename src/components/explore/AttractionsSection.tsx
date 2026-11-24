@@ -27,7 +27,7 @@ function AttractionCard({
       className="group animate-fadeInUp hover:-translate-y-2 transition-transform duration-300"
       style={{ animationDelay: `${index * 0.1}s` }}
     >
-      <div className="relative rounded-2xl overflow-hidden h-64 mb-4">
+      <div className="relative rounded-2xl overflow-hidden h-64 mb-4 neu-glass">
         <img
           src={attraction.image_placeholder}
           alt={attraction.name}
@@ -36,10 +36,10 @@ function AttractionCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
-      <h3 className="text-xl font-bold text-[#163427] group-hover:text-[#EFEC07] transition-colors mb-2">
+      <h3 className="text-xl font-bold text-[#0F172A] group-hover:text-[#3B82F6] transition-colors mb-2">
         {attraction.name}
       </h3>
-      <p className="text-[#4f6f5e] text-sm">{attraction.description}</p>
+      <p className="text-[#64748B] text-sm">{attraction.description}</p>
     </div>
   );
 }
@@ -51,10 +51,10 @@ export default function AttractionsSection({
   return (
     <section className="py-20">
       <div className="mb-12 animate-fadeIn">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#163427] mb-3">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">
           🏛️ Must-Visit Attractions
         </h2>
-        <div className="w-12 h-1 bg-gradient-to-r from-[#EFEC07] to-transparent rounded-full" />
+        <div className="w-12 h-1 bg-gradient-to-r from-[#3B82F6] to-transparent rounded-full" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

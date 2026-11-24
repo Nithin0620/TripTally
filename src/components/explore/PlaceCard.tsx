@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Place } from '@/types';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles } from 'lucide-react';
 import { useUnsplashImage } from '@/hooks/useUnsplashImage';
 
 interface PlaceCardProps {
@@ -17,65 +17,54 @@ export default function PlaceCard({ place, isAI = false }: PlaceCardProps) {
 
   return (
     <motion.div
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="group"
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white/95 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all overflow-hidden"
     >
-      <Link href={`/explore/${slug}`}>
-        <div className="relative rounded-3xl overflow-hidden bg-gray-900 cursor-pointer h-96">
-          {/* Image with ratio maintenance */}
+      <Link href={`/explore/${slug}`} className="block">
+        {/* Photo Container */}
+        <div className="relative h-48 overflow-hidden bg-slate-100">
           {loading ? (
-            <div className="w-full h-full bg-gray-800 animate-pulse" />
+            <div className="w-full h-full bg-slate-200 animate-pulse" />
           ) : (
             <img
               src={image?.url || place.hero_image}
               alt={image?.alt || place.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
           )}
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 
-          {/* AI Badge */}
           {isAI && (
-            <div className="absolute top-4 right-4 bg-[#EFEC07]/20 backdrop-blur-sm border border-[#EFEC07] text-[#EFEC07] px-3 py-1.5 rounded-full text-xs font-semibold">
-              AI Generated
+            <div className="absolute top-3 right-3 bg-amber-500/90 backdrop-blur-md text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+              <Sparkles className="h-3 w-3" />
+              <span>AI Verified</span>
             </div>
           )}
 
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col justify-end p-6">
-            {/* Title */}
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+          <div className="absolute bottom-3 left-3 right-3 text-white">
+            <h3 className="text-lg font-black leading-snug drop-shadow-sm group-hover:text-blue-200 transition-colors">
               {place.name}
             </h3>
-
-            {/* State + Category */}
-            <p className="text-sm text-gray-300 mb-3 flex items-center gap-2">
-              <span className="text-[#EFEC07]">📍</span>
-              {place.state} • {place.category}
+            <p className="text-[11px] font-semibold text-slate-300 flex items-center gap-1 mt-0.5">
+              <MapPin className="h-3 w-3 text-amber-400" />
+              <span>{place.state || place.category}</span>
             </p>
-
-            {/* Preview Description */}
-            <p className="text-gray-200 text-sm line-clamp-2 mb-4">
-              {place.description.substring(0, 120)}...
-            </p>
-
-            {/* CTA Button */}
-            <div className="flex items-center gap-2 text-[#EFEC07] font-semibold text-sm group-hover:gap-3 transition-all duration-300">
-              <span>Explore More</span>
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-2" />
-            </div>
           </div>
+        </div>
 
-          {/* Glow Effect on Hover */}
-          <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-            style={{
-              boxShadow: 'inset 0 0 20px rgba(239, 236, 7, 0.2)',
-            }}
-          />
+        {/* Content Body */}
+        <div className="p-4">
+          <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-4">
+            {place.description}
+          </p>
+
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
+            <span>Explore Travel Guide</span>
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+          </div>
         </div>
       </Link>
     </motion.div>

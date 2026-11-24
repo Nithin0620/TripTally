@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import Button from "./ui/Button";
 import { scaleIn } from "@/lib/animations";
+import { MapPin, Heart, Wallet } from "lucide-react";
 
 export default function PackageGeneratorSection() {
   const [destination, setDestination] = useState("");
@@ -14,22 +15,28 @@ export default function PackageGeneratorSection() {
     <section className="py-24">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <motion.div
-          className="glass-card rounded-3xl p-8 md:p-12"
+          className="rounded-3xl bg-white border border-brand-sand/30 p-8 shadow-sm md:p-12"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={scaleIn}
         >
-          <h2 className="mb-6 text-center text-4xl font-black text-[#163427] md:text-5xl">
-            Dream Trip Builder
-          </h2>
-          <p className="mb-8 text-center text-xl text-[#5f7a6c]">
-            Tell us your vision, and our AI will craft the perfect itinerary.
-          </p>
+          <div className="mb-8 text-center">
+            <span className="mb-4 inline-block rounded-full border border-brand-sand/50 bg-brand-sand/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-accent">
+              AI Builder
+            </span>
+            <h2 className="mb-3 font-serif text-4xl font-bold text-brand-text md:text-5xl tracking-tight">
+              Dream Trip Builder
+            </h2>
+            <p className="mx-auto max-w-lg text-lg text-brand-text/60">
+              Tell us your vision, and our AI will craft the perfect itinerary.
+            </p>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+              <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-brand-text/70">
+                <MapPin className="h-3.5 w-3.5 text-brand-accent" />
                 Destination
               </label>
               <input
@@ -37,50 +44,40 @@ export default function PackageGeneratorSection() {
                 placeholder="Where do you want to go?"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-2xl px-4 py-3 text-brand-text placeholder-brand-text/35 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/20"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
+              <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-brand-text/70">
+                <Heart className="h-3.5 w-3.5 text-brand-accent" />
                 Travel Vibe
               </label>
               <select
                 value={vibe}
                 onChange={(e) => setVibe(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-2xl px-4 py-3 text-brand-text transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/20"
               >
-                <option value="" className="bg-brand-surface">
-                  Choose your style
-                </option>
-                <option value="relaxation" className="bg-brand-surface">
-                  Relaxation & Wellness
-                </option>
-                <option value="adventure" className="bg-brand-surface">
-                  Adventure & Thrill
-                </option>
-                <option value="cultural" className="bg-brand-surface">
-                  Cultural Immersion
-                </option>
-                <option value="luxury" className="bg-brand-surface">
-                  Luxury & Comfort
-                </option>
-                <option value="budget" className="bg-brand-surface">
-                  Budget-Friendly
-                </option>
+                <option value="">Choose your style</option>
+                <option value="relaxation">Relaxation & Wellness</option>
+                <option value="adventure">Adventure & Thrill</option>
+                <option value="cultural">Cultural Immersion</option>
+                <option value="luxury">Luxury & Comfort</option>
+                <option value="budget">Budget-Friendly</option>
               </select>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                Budget (USD)
+              <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-brand-text/70">
+                <Wallet className="h-3.5 w-3.5 text-brand-accent" />
+                Budget (INR)
               </label>
               <input
                 type="text"
-                placeholder="e.g., $3000 or $1000-$2000"
+                placeholder="e.g., ₹20,000 or ₹15,000-₹30,000"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50"
+                className="neu-input w-full rounded-2xl px-4 py-3 text-brand-text placeholder-brand-text/35 transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/20"
               />
             </div>
 

@@ -10,13 +10,16 @@ export interface SplitBreakdown {
   owes: number;  // Net amount they owe (positive) or are owed (negative)
 }
 
+export type SplitType = 'equal' | 'percentage' | 'custom' | 'shares';
+
 export interface SplitCalculatorInput {
   amount: number;
   paidByUserId: string;
-  splitType: 'equal' | 'percentage' | 'custom';
+  splitType: SplitType;
   involvedMembers: string[]; // User IDs involved in this split
   percentages?: Record<string, number>;
   customShares?: Record<string, number>;
+  shareCounts?: Record<string, number>;
 }
 
 export interface SplitCalculatorOutput {
@@ -26,13 +29,28 @@ export interface SplitCalculatorOutput {
   isValid: boolean;
 }
 
+const CENTS_PRECISION = 100;
+const PERCENT_PRECISION = 10000; // basis points (2 decimal places)
+
+function toCents(value: number): number {
+  return Math.round(value * CENTS_PRECISION);
+}
+
+function fromCents(value: number): number {
+  return value / CENTS_PRECISION;
+}
+
+function isValidNonNegativeNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
 /**
  * Validate split inputs
  */
 function validateSplitInput(input: SplitCalculatorInput): string[] {
   const errors: string[] = [];
 
-  if (input.amount <= 0) {
+  if (typeof input.amount !== 'number' || !Number.isFinite(input.amount) || input.amount <= 0) {
     errors.push('Amount must be greater than 0');
   }
 
@@ -52,15 +70,20 @@ function validateSplitInput(input: SplitCalculatorInput): string[] {
     if (!input.percentages) {
       errors.push('Percentages must be provided for percentage splits');
     } else {
-      const percentageSum = Object.values(input.percentages).reduce((a, b) => a + b, 0);
-      if (Math.abs(percentageSum - 100) > 0.01) {
-        errors.push(`Percentages must sum to 100, got ${percentageSum.toFixed(2)}`);
+      const percentValues = Object.values(input.percentages);
+      if (percentValues.some(value => !isValidNonNegativeNumber(value))) {
+        errors.push('Percentages must be valid non-negative numbers');
       }
-
       for (const userId of input.involvedMembers) {
         if (!(userId in input.percentages)) {
           errors.push(`Missing percentage for member ${userId}`);
         }
+      }
+      const percentageSum = input.involvedMembers.reduce((sum, userId) => {
+        return sum + Math.round((input.percentages?.[userId] || 0) * PERCENT_PRECISION);
+      }, 0);
+      if (percentageSum !== 100 * PERCENT_PRECISION) {
+        errors.push('Percentages must sum to exactly 100');
       }
     }
   }
@@ -69,16 +92,40 @@ function validateSplitInput(input: SplitCalculatorInput): string[] {
     if (!input.customShares) {
       errors.push('Custom shares must be provided for custom splits');
     } else {
-      const customSum = Object.values(input.customShares).reduce((a, b) => a + b, 0);
-      const tolerance = 0.01;
-      if (Math.abs(customSum - input.amount) > tolerance) {
-        errors.push(`Custom shares must sum to ${input.amount}, got ${customSum.toFixed(2)}`);
+      const shareValues = Object.values(input.customShares);
+      if (shareValues.some(value => !isValidNonNegativeNumber(value))) {
+        errors.push('Custom shares must be valid non-negative numbers');
       }
-
       for (const userId of input.involvedMembers) {
         if (!(userId in input.customShares)) {
           errors.push(`Missing custom share for member ${userId}`);
         }
+      }
+      const customSumCents = input.involvedMembers.reduce((sum, userId) => {
+        return sum + toCents(input.customShares?.[userId] || 0);
+      }, 0);
+      if (customSumCents !== toCents(input.amount)) {
+        errors.push('Custom shares must sum to total amount');
+      }
+    }
+  }
+
+  if (input.splitType === 'shares') {
+    if (!input.shareCounts) {
+      errors.push('Share counts must be provided for shares splits');
+    } else {
+      const counts = input.involvedMembers.map(userId => input.shareCounts?.[userId]);
+      if (counts.some(value => !isValidNonNegativeNumber(value))) {
+        errors.push('Share counts must be valid non-negative numbers');
+      }
+      for (const userId of input.involvedMembers) {
+        if (!(userId in input.shareCounts!)) {
+          errors.push(`Missing share count for member ${userId}`);
+        }
+      }
+      const total = counts.reduce<number>((sum, value) => sum + (value || 0), 0);
+      if (total <= 0) {
+        errors.push('At least one share count must be greater than zero');
       }
     }
   }
@@ -94,17 +141,20 @@ function calculateEqualSplit(
   paidByUserId: string,
   involvedMembers: string[]
 ): SplitBreakdown[] {
-  const sharePerPerson = amount / involvedMembers.length;
-  const tolerance = 0.01;
+  const totalCents = toCents(amount);
+  const memberCount = involvedMembers.length;
+  const baseShareCents = Math.floor(totalCents / memberCount);
+  const remainder = totalCents % memberCount;
 
-  return involvedMembers.map((userId) => {
+  return involvedMembers.map((userId, index) => {
+    const shareCents = baseShareCents + (index < remainder ? 1 : 0);
+    const share = fromCents(shareCents);
     const paid = userId === paidByUserId ? amount : 0;
-    const share = sharePerPerson;
-    const owes = Math.abs(share - paid) < tolerance ? 0 : share - paid;
+    const owes = share - paid;
 
     return {
       userId,
-      share: Math.round(share * 100) / 100,
+      share,
       paid,
       owes: Math.round(owes * 100) / 100,
     };
@@ -120,9 +170,29 @@ function calculatePercentageSplit(
   involvedMembers: string[],
   percentages: Record<string, number>
 ): SplitBreakdown[] {
-  return involvedMembers.map((userId) => {
+  const totalCents = toCents(amount);
+  const provisional = involvedMembers.map((userId) => {
     const percentage = percentages[userId] || 0;
-    const share = (amount * percentage) / 100;
+    const rawCents = (totalCents * percentage) / 100;
+    const flooredCents = Math.floor(rawCents);
+    const remainder = rawCents - flooredCents;
+    return { userId, flooredCents, remainder };
+  });
+  const flooredSum = provisional.reduce((sum, item) => sum + item.flooredCents, 0);
+  let remainingCents = totalCents - flooredSum;
+
+  const sortedByRemainder = [...provisional].sort((a, b) => b.remainder - a.remainder);
+  const finalShareCents: Record<string, number> = {};
+  provisional.forEach(item => {
+    finalShareCents[item.userId] = item.flooredCents;
+  });
+  for (let i = 0; i < remainingCents; i += 1) {
+    const targetUser = sortedByRemainder[i % sortedByRemainder.length]?.userId;
+    if (targetUser) finalShareCents[targetUser] += 1;
+  }
+
+  return involvedMembers.map((userId) => {
+    const share = fromCents(finalShareCents[userId] || 0);
     const paid = userId === paidByUserId ? amount : 0;
     const owes = share - paid;
 
@@ -145,7 +215,7 @@ function calculateCustomSplit(
   customShares: Record<string, number>
 ): SplitBreakdown[] {
   return involvedMembers.map((userId) => {
-    const share = customShares[userId] || 0;
+    const share = fromCents(toCents(customShares[userId] || 0));
     const paid = userId === paidByUserId ? amount : 0;
     const owes = share - paid;
 
@@ -158,9 +228,46 @@ function calculateCustomSplit(
   });
 }
 
-/**
- * Main split calculator function
- */
+function calculateSharesSplit(
+  amount: number,
+  paidByUserId: string,
+  involvedMembers: string[],
+  shareCounts: Record<string, number>
+): SplitBreakdown[] {
+  const totalCents = toCents(amount);
+  const totalShares = involvedMembers.reduce((sum, userId) => sum + (shareCounts[userId] || 0), 0);
+  const provisional = involvedMembers.map(userId => {
+    const rawCents = (totalCents * (shareCounts[userId] || 0)) / totalShares;
+    const flooredCents = Math.floor(rawCents);
+    return { userId, flooredCents, remainder: rawCents - flooredCents };
+  });
+  const flooredSum = provisional.reduce((sum, item) => sum + item.flooredCents, 0);
+  let remainingCents = totalCents - flooredSum;
+
+  const sortedByRemainder = [...provisional].sort((a, b) => b.remainder - a.remainder);
+  const finalShareCents: Record<string, number> = {};
+  provisional.forEach(item => {
+    finalShareCents[item.userId] = item.flooredCents;
+  });
+  for (let i = 0; i < remainingCents; i += 1) {
+    const targetUser = sortedByRemainder[i % sortedByRemainder.length]?.userId;
+    if (targetUser) finalShareCents[targetUser] += 1;
+  }
+
+  return involvedMembers.map(userId => {
+    const share = fromCents(finalShareCents[userId] || 0);
+    const paid = userId === paidByUserId ? amount : 0;
+    const owes = share - paid;
+
+    return {
+      userId,
+      share: Math.round(share * 100) / 100,
+      paid,
+      owes: Math.round(owes * 100) / 100,
+    };
+  });
+}
+
 export function calculateSplit(input: SplitCalculatorInput): SplitCalculatorOutput {
   const validationErrors = validateSplitInput(input);
 
@@ -196,6 +303,15 @@ export function calculateSplit(input: SplitCalculatorInput): SplitCalculatorOutp
           input.paidByUserId,
           input.involvedMembers,
           input.customShares!
+        );
+        break;
+
+      case 'shares':
+        breakdown = calculateSharesSplit(
+          input.amount,
+          input.paidByUserId,
+          input.involvedMembers,
+          input.shareCounts!
         );
         break;
 

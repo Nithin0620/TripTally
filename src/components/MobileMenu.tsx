@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { User } from "@/types";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 type NavItem = {
   label: string;
@@ -39,7 +40,7 @@ export default function MobileMenu({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="mt-3 overflow-hidden rounded-3xl border border-[#cfe0d7] bg-white/95 p-4 shadow-lg backdrop-blur-lg md:hidden"
+          className="glass-card mt-3 overflow-hidden rounded-3xl p-4 md:hidden"
         >
           <div className="space-y-2">
             {navItems.map((item) => {
@@ -50,15 +51,15 @@ export default function MobileMenu({
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
-                  className={`group relative block rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                  className={`group relative block rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "bg-[#edf6f1] text-[#163427]"
-                      : "text-[#4f6f5e] hover:bg-[#f5fbf7] hover:text-[#163427]"
+                      ? "bg-brand-sand/30 text-brand-text"
+                      : "text-brand-text/60 hover:bg-brand-sand/20 hover:text-brand-text"
                   }`}
                 >
                   <span>{item.label}</span>
                   <span
-                    className={`absolute bottom-2 left-4 h-0.5 bg-[#EFEC07] transition-all duration-300 ${
+                    className={`absolute bottom-2 left-4 h-0.5 bg-brand-accent transition-all duration-300 ${
                       isActive ? "w-10" : "w-0 group-hover:w-10"
                     }`}
                   />
@@ -67,12 +68,31 @@ export default function MobileMenu({
             })}
           </div>
 
-          <div className="mt-4 space-y-2 border-t border-[#d8e7df] pt-4">
+          <div className="mt-4 space-y-2 border-t border-brand-sand/30 pt-4">
+            {user && (
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-semibold text-brand-text">
+                  {user.name || user.email}
+                </span>
+                <NotificationCenter />
+              </div>
+            )}
+
+            {user && (
+              <Link
+                href="/profile"
+                onClick={onClose}
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
+              >
+                Profile &amp; settings
+              </Link>
+            )}
+
             {!user && (
               <Link
                 href="/login"
                 onClick={onClose}
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-[#4f6f5e] transition-all duration-300 hover:bg-[#f5fbf7] hover:text-[#163427]"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
               >
                 Login
               </Link>
@@ -82,7 +102,7 @@ export default function MobileMenu({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#4f6f5e] transition-all duration-300 hover:bg-[#f5fbf7] hover:text-[#163427]"
+                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-brand-text/60 transition-all duration-200 hover:bg-brand-sand/20 hover:text-brand-text"
               >
                 Logout
               </button>
@@ -91,7 +111,7 @@ export default function MobileMenu({
             <Link
               href={user ? "/dashboard" : "/register"}
               onClick={onClose}
-              className="block rounded-full bg-[#EFEC07] px-4 py-3 text-center text-sm font-semibold text-[#163427] transition-all duration-300 hover:shadow-[0_10px_25px_rgba(250,204,21,0.4)]"
+              className="block rounded-full bg-brand-accent px-4 py-3 text-center text-sm font-semibold text-white transition-all duration-200 hover:brightness-105"
             >
               Get Started
             </Link>

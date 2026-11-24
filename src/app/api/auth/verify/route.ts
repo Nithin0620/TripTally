@@ -1,51 +1,53 @@
+// ============================================
+// POST /api/auth/verify
+// Confirms a one-time email verification token.
+// ============================================
+
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, extractTokenFromCookie } from '@/lib/jwt';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { signToken, setAuthCookie } from '@/lib/jwt';
+import { badRequestResponse, serverErrorResponse } from '@/middleware/auth';
+import { consumeAuthToken } from '@/lib/auth-tokens';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from cookie (preferred) or Authorization header (backward compatibility)
-    const cookieHeader = request.headers.get('cookie');
-    const authHeader = request.headers.get('Authorization');
-    
-    let token = extractTokenFromCookie(cookieHeader || '');
-    
-    // Fallback to Authorization header if no cookie
-    if (!token && authHeader) {
-      token = authHeader.replace('Bearer ', '');
-    }
+    const dbClient = supabaseAdmin ?? supabase;
+    const body = await request.json().catch(() => null);
+    const token = typeof body?.token === 'string' ? body.token.trim() : '';
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'No token provided' },
-        { status: 401 }
-      );
+      return badRequestResponse('Missing verification token');
     }
 
-    // Verify JWT token
-    const payload = await verifyToken(token);
-    
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+    const consumed = await consumeAuthToken(token, 'email_verification');
+    if (!consumed.ok) {
+      return badRequestResponse('Invalid or expired verification link. Request a new one.');
     }
 
-    // Return user data from token payload
-    const user = {
-      id: payload.userId,
-      email: payload.email,
-      name: payload.name || '',
-      profile_image: payload.profile_image,
-      created_at: new Date().toISOString(),
-    };
+    const { data: user, error } = await dbClient
+      .from('users')
+      .update({ email_verified: true })
+      .eq('id', consumed.userId)
+      .select('id, name, email, profile_image, email_verified')
+      .single();
 
-    return NextResponse.json({ user });
+    if (error || !user) {
+      console.error('Verify email update error:', error);
+      return serverErrorResponse('Failed to verify email');
+    }
+
+    const authToken = await signToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      profile_image: user.profile_image,
+    });
+
+    const response = NextResponse.json({ user, verified: true });
+    response.headers.set('Set-Cookie', setAuthCookie(authToken));
+    return response;
   } catch (error) {
-    console.error('Token verification error:', error);
-    return NextResponse.json(
-      { error: 'Token verification failed' },
-      { status: 401 }
-    );
+    console.error('Email verification error:', error);
+    return serverErrorResponse('Email verification failed');
   }
 }

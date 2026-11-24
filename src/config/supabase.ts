@@ -1,17 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// Re-export standard clients to avoid duplicate configs
+export const supabaseClient = supabase;
+export { supabaseAdmin };
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+export type Database = any;
 
-// Client for browser (with anon key - limited permissions)
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-// Service role client for server-side operations (full permissions)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-export type Database = any; // Replace with your generated types from Supabase CLI

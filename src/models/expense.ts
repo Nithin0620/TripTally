@@ -7,7 +7,7 @@ export interface Expense {
   title: string;                                   // Expense description
   amount: number;                                  // Total expense amount
   paid_by: string;                                 // UUID of user who paid
-  split_type: 'equal' | 'percentage' | 'custom'; // How to split the expense
+  split_type: 'equal' | 'percentage' | 'custom' | 'shares'; // How to split the expense
   category: string | null;                        // Expense category
   created_at: string;                             // ISO timestamp
 }
@@ -27,7 +27,7 @@ export interface CreateExpenseInput {
   title: string;
   amount: number;
   paid_by: string;
-  split_type: 'equal' | 'percentage' | 'custom';
+  split_type: 'equal' | 'percentage' | 'custom' | 'shares';
   category?: string;
 }
 
@@ -38,7 +38,7 @@ export interface UpdateExpenseInput {
   title?: string;
   amount?: number;
   paid_by?: string;
-  split_type?: 'equal' | 'percentage' | 'custom';
+  split_type?: 'equal' | 'percentage' | 'custom' | 'shares';
   category?: string;
 }
 

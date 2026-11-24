@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "outline";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "amber";
 
 interface ButtonProps {
   href?: string;
@@ -18,11 +18,15 @@ interface ButtonProps {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-accent text-brand-text font-bold shadow-[0_0_24px_rgba(239,236,7,0.35)] hover:shadow-[0_0_30px_rgba(239,236,7,0.55)] hover:brightness-95",
+    "bg-blue-600 text-white font-bold border border-blue-500 shadow-md shadow-blue-500/20 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200",
+  amber:
+    "bg-amber-500 text-slate-900 font-bold border border-amber-400 shadow-md shadow-amber-500/20 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-200",
   secondary:
-    "bg-brand-surface text-brand-text backdrop-blur-md border border-[#b9d3c5] hover:border-brand-accent hover:shadow-[0_0_20px_rgba(239,236,7,0.2)]",
+    "bg-white border border-slate-200 text-slate-800 font-semibold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-200",
   outline:
-    "border-2 border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-text",
+    "border-2 border-slate-300 text-slate-800 bg-transparent hover:bg-slate-100/60 font-semibold transition-all duration-200",
+  ghost:
+    "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium transition-all duration-200",
 };
 
 export default function Button({
@@ -34,14 +38,14 @@ export default function Button({
   type = "button",
   disabled = false,
 }: ButtonProps) {
-  const buttonClasses = `inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 ${variantStyles[variant]} ${className}`;
+  const buttonClasses = `inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${variantStyles[variant]} ${className}`;
 
   if (href) {
     return (
-      <Link href={href}>
+      <Link href={href} className="inline-block">
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.98 }}
           className={buttonClasses}
           type={type}
           disabled={disabled}
@@ -54,8 +58,8 @@ export default function Button({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={buttonClasses}
       type={type}

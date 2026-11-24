@@ -5,13 +5,13 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import GlassCard from "@/components/ui/GlassCard";
+import NeuInput from "@/components/ui/NeuInput";
 import GoogleIdentityScript from "@/components/GoogleIdentityScript";
-import { fadeIn, fadeInUp } from "@/lib/animations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import Toast from "@/components/ui/Toast";
+import { Compass, Sparkles, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -27,6 +27,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toasts, showToast, removeToast } = useToast();
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   useGoogleSignIn({
     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
@@ -36,13 +37,13 @@ export default function LoginPage() {
       if (result.error) {
         showToast(result.error, 'error');
       } else {
-        showToast('Login successful!', 'success');
-        setTimeout(() => router.push('/dashboard'), 1000);
+        showToast('Welcome back!', 'success');
+        setTimeout(() => router.push('/dashboard'), 800);
       }
     },
     onError: (error) => {
-      console.error('Error initializing Google Sign-In:', error);
-      showToast('Google Sign-In could not be loaded', 'error');
+      console.error('Google Sign-In initialization error:', error);
+      showToast('Google authentication unavailable', 'error');
     },
     buttonRef: googleButtonRef,
     context: 'signin',
@@ -56,12 +57,15 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result.error) {
+        if (result.code === 'EMAIL_NOT_VERIFIED') {
+          setVerificationEmail(result.hint || email);
+        }
         showToast(result.error, 'error');
       } else {
         showToast('Login successful!', 'success');
-        setTimeout(() => router.push('/dashboard'), 1000);
+        setTimeout(() => router.push('/dashboard'), 800);
       }
-    } catch (error) {
+    } catch {
       showToast('An unexpected error occurred', 'error');
     } finally {
       setLoading(false);
@@ -71,90 +75,113 @@ export default function LoginPage() {
   return (
     <>
       <GoogleIdentityScript />
-      <div className="flex min-h-screen items-center justify-center px-4 py-24">
+      <div className="min-h-screen flex items-center justify-center px-4 py-24">
         <motion.div
-          className="w-full max-w-md"
-          initial="hidden"
-          animate="visible"
-          variants={fadeIn}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 p-8 shadow-2xl backdrop-blur-xl"
         >
-          <GlassCard className="p-8">
-            <motion.div variants={fadeInUp} className="mb-8 text-center">
-              <h1 className="mb-2 text-4xl font-black text-[#163427]">
-                Welcome Back
-              </h1>
-              <p className="text-[#5f7a6c]">Sign in to continue your journey</p>
-            </motion.div>
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/25">
+              <Compass className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Sign in to manage your itineraries and group expenses.
+            </p>
+          </div>
 
-            <motion.form variants={fadeInUp} onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                />
-              </div>
+          {verificationEmail && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-900">
+              Your email isn&apos;t verified yet.{" "}
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(verificationEmail)}`}
+                className="font-bold underline"
+              >
+                Open verification page
+              </Link>{" "}
+              to resend the link.
+            </div>
+          )}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[#5f7a6c]">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full rounded-xl border border-[#cfe0d7] bg-brand-surface px-4 py-3 text-[#163427] placeholder-[#7a9186] backdrop-blur-md transition focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/50 disabled:opacity-50"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <NeuInput
+              label="Email Address"
+              icon={<Mail className="h-4 w-4" />}
+              type="email"
+              placeholder="name@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              autoFocus
+            />
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-[#5f7a6c]">
-                  <input type="checkbox" className="rounded border-white/20" />
-                  Remember me
-                </label>
-                <a href="#" className="text-brand-accent hover:underline">
-                  Forgot password?
-                </a>
-              </div>
+            <NeuInput
+              label="Password"
+              icon={<Lock className="h-4 w-4" />}
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
 
-              <Button type="submit" variant="primary" className="w-full" onClick={undefined}>
-                {loading ? 'Signing In...' : 'Sign In'}
-              </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#d8e7df]" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-brand-bg px-2 text-[#7a9186]">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <div ref={googleButtonRef} className="flex justify-center" />
-            </motion.form>
-
-            <motion.p variants={fadeInUp} className="mt-6 text-center text-sm text-[#5f7a6c]">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-brand-accent hover:underline">
-                Sign up
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
+                <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span>Remember me</span>
+              </label>
+              <Link href="/forgot-password" className="font-semibold text-blue-600 hover:text-blue-700">
+                Forgot password?
               </Link>
-            </motion.p>
-          </GlassCard>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading || !email.trim() || !password.trim()}
+              className="w-full py-3 text-xs font-bold gap-2 mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In to TripTally</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <span className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Or continue with
+              </span>
+            </div>
+
+            <div ref={googleButtonRef} className="flex justify-center min-h-[40px]" />
+          </form>
+
+          <p className="mt-8 text-center text-xs text-slate-500 font-medium">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700">
+              Create an account
+            </Link>
+          </p>
         </motion.div>
       </div>
-      
+
       <Toast toasts={toasts} onRemove={removeToast} />
     </>
   );

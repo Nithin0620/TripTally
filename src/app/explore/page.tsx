@@ -5,158 +5,10 @@ import CategorySection from '@/components/explore/CategorySection';
 import PlaceCard from '@/components/explore/PlaceCard';
 import { ExploreCategory, Place, PlacesApiResponse, SearchApiResponse } from '@/types';
 import { useEffect, useState } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Sparkles, Compass, MapPin, ArrowRight } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import Skeleton from '@/components/ui/Skeleton';
 
-/**
- * Hero Section Component
- */
-function ExploreHero() {
-  return (
-    <section className="relative py-20 md:py-32 overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#E7F3EC]/70 to-transparent pointer-events-none" />
-
-      <div
-        className="relative z-10 max-w-5xl mx-auto text-center px-4 md:px-8 animate-fadeInUp"
-      >
-        <div
-          className="inline-block mb-4 bg-[#EFEC07]/10 border border-[#EFEC07]/30 rounded-full px-4 py-2 animate-fadeInDown"
-        >
-          <span className="text-[#EFEC07] text-sm font-semibold">
-            DISCOVER • EXPLORE • JOURNEY
-          </span>
-        </div>
-
-        <h1
-          className="text-5xl md:text-7xl font-bold text-[#163427] mb-6 leading-tight animate-fadeInUp"
-          style={{ animationDelay: '0.1s' }}
-        >
-          Explore India's
-          <br />
-          <span className="bg-gradient-to-r from-[#EFEC07] to-yellow-300 bg-clip-text text-transparent">
-            Most Magical Destinations
-          </span>
-        </h1>
-
-        <p
-          className="text-lg md:text-xl text-[#4f6f5e] max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeInUp"
-          style={{ animationDelay: '0.2s' }}
-        >
-          From serene beaches to majestic mountains, spiritual retreats to luxurious escapes—
-          discover handpicked destinations that match your travel style and dreams.
-        </p>
-
-        {/* Feature Pills */}
-        <div
-          className="flex flex-wrap justify-center gap-4 animate-fadeInUp"
-          style={{ animationDelay: '0.3s' }}
-        >
-          {[
-            '🏖️ 40+ Beaches',
-            '⛰️ Stunning Mountains',
-            '🏙️ Vibrant Cities',
-            '🙏 Spiritual Havens',
-            '✨ Luxury Escapes',
-          ].map((pill, idx) => (
-            <div
-              key={idx}
-              className="px-4 py-2 bg-white/80 border border-[#d8e7df] rounded-full backdrop-blur-sm hover:border-[#EFEC07]/30 transition-colors cursor-pointer hover:scale-105"
-            >
-              <span className="text-sm text-[#4f6f5e]">{pill}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out forwards;
-          opacity: 0;
-        }
-
-        .animate-fadeInDown {
-          animation: fadeInDown 0.6s ease-out forwards;
-        }
-      `}</style>
-    </section>
-  );
-}
-
-/**
- * CTA Section Component
- */
-function ExploreCTA() {
-  return (
-    <section className="py-20 md:py-32 text-center">
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.6s ease-out forwards;
-        }
-
-        .cta-section {
-          opacity: 0;
-        }
-
-        .cta-section.visible {
-          animation: fadeIn 0.6s ease-out forwards;
-        }
-      `}</style>
-
-      <h2
-        className="text-4xl md:text-5xl font-bold text-[#163427] mb-6 animate-fadeInUp"
-      >
-        Ready to Plan Your Next Adventure?
-      </h2>
-
-      <p className="text-[#4f6f5e] text-lg mb-8 max-w-2xl mx-auto">
-        Use our AI-powered planner to create personalized itineraries, manage
-        budgets, and split expenses with your travel companions.
-      </p>
-
-      <div
-        className="flex flex-col sm:flex-row gap-4 justify-center"
-      >
-        <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
-          Start Planning
-        </button>
-        <button className="px-8 py-4 bg-white/85 border border-[#cfe0d7] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:border-[#EFEC07]/50 hover:bg-white">
-          Get Inspiration
-        </button>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Main Explore Page
- */
 export default function ExplorePage() {
   const [categories, setCategories] = useState<ExploreCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,109 +73,157 @@ export default function ExplorePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F6FBF8] text-[#163427]">
-      <div className="container mx-auto px-4 md:px-6 lg:px-8">
-        {/* Hero */}
-        <div className="py-8">
-          <ExploreHero />
+    <main className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      
+      {/* Editorial Hero Header */}
+      <div className="pb-10 border-b border-slate-200/80 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-xs font-bold text-blue-700 mb-3">
+              <Compass className="h-3.5 w-3.5 text-blue-600" />
+              <span>Curated Destination Atlas</span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+              Explore Extraordinary Places
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 mt-2">
+              From alpine mountain passes to secluded coastal retreats. Discover handpicked destinations with AI-generated travel guides.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" href="/map" className="text-xs py-2.5 px-4 gap-1.5 border-slate-200">
+              <MapPin className="h-4 w-4 text-blue-600" />
+              <span>Explore Map</span>
+            </Button>
+            <Button variant="primary" href="/ai-planner" className="text-xs py-2.5 px-4 gap-1.5">
+              <Sparkles className="h-4 w-4 text-amber-300" />
+              <span>Plan Trip with AI</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Sticky Search Section */}
-        <section className="sticky top-0 z-50 mb-10 -mx-4 md:-mx-6 lg:-mx-8 bg-[#F6FBF8] px-4 md:px-6 lg:px-8 py-6 shadow-md">
-          <div className="rounded-2xl border border-[#d8e7df] bg-white p-4 md:p-6">
-            <form onSubmit={handleSearch} className="flex flex-col gap-3 md:flex-row">
+        {/* Search Input Bar */}
+        <div className="mt-8">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search places by name or description"
-                className="w-full rounded-full border border-[#cfe0d7] px-4 py-3 text-[#163427] placeholder-[#8ca196] focus:border-[#EFEC07] focus:outline-none"
+                placeholder="Search any destination worldwide (e.g., Zermatt, Kyoto, Amalfi)..."
+                className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-sm"
               />
-              <button
-                type="submit"
-                disabled={searchLoading}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#163427] px-5 py-3 font-semibold text-white disabled:opacity-60 whitespace-nowrap"
-              >
-                {searchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                {searchLoading ? 'Searching...' : 'Search'}
-              </button>
-            </form>
+            </div>
+            <button
+              type="submit"
+              disabled={searchLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-xs font-bold text-white hover:bg-blue-600 disabled:opacity-60 transition shadow-sm shrink-0"
+            >
+              {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              <span>{searchLoading ? 'Searching...' : 'Search Atlas'}</span>
+            </button>
+          </form>
 
-            {searchMessage && (
-              <p className="mt-3 text-sm text-[#4f6f5e]">
-                {searchSource === 'ai' ? '🤖 ' : ''}
-                {searchMessage}
-              </p>
-            )}
+          {searchMessage && (
+            <p className="mt-3 text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              {searchSource === 'ai' && <span className="text-amber-600 font-bold">⚡ AI Generated Result:</span>}
+              <span>{searchMessage}</span>
+            </p>
+          )}
 
-            {searchResults.length > 0 && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Search Results Display */}
+          {searchResults.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 mb-4">Search Results ({searchResults.length})</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {searchResults.map((place) => (
                   <PlaceCard key={place.id} place={place} isAI={searchSource === 'ai'} />
                 ))}
               </div>
-            )}
-          </div>
-        </section>
-
-        {/* Categories */}
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="inline-block">
-              <div className="w-12 h-12 border-2 border-[#EFEC07] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-[#5f7a6c]">Loading amazing destinations...</p>
             </div>
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-[#163427] mb-3">
-                No Places Found
-              </h2>
-              <p className="text-[#5f7a6c] mb-6">
-                We're working on loading amazing destinations for you.
-              </p>
-              <Link href="/map">
-                <button className="px-8 py-4 bg-[#EFEC07] text-[#163427] rounded-full font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#EFEC07]/40 hover:scale-105">
-                  View on Map
-                </button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-8 md:space-y-12">
-            {categories.map((categoryData) => (
-              <CategorySection
-                key={categoryData.category}
-                category={categoryData.category}
-                places={categoryData.places}
-                hasMore={categoryData.hasMore}
-                onLoadMore={async (category, offset) => {
-                  const response = await fetch(
-                    `/api/explore/places?category=${encodeURIComponent(category)}&offset=${offset}`
-                  );
-                  if (!response.ok) {
-                    console.error('API returned error:', response.status);
-                    return { places: [], hasMore: false };
-                  }
-
-                  const payload = (await response.json()) as PlacesApiResponse;
-                  if (!payload.success) {
-                    return { places: [], hasMore: false };
-                  }
-
-                  return {
-                    places: payload.data || [],
-                    hasMore: payload.pagination?.hasMore ?? false,
-                  };
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* CTA Section */}
-        <ExploreCTA />
+          )}
+        </div>
       </div>
+
+      {/* Destination Categories Stream */}
+      {loading ? (
+        <div className="space-y-12">
+          {[1, 2].map((n) => (
+            <div key={n} className="space-y-4">
+              <Skeleton className="h-8 w-48" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((c) => (
+                  <Skeleton key={c} className="h-64 rounded-2xl" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="text-center py-20 rounded-3xl border border-dashed border-slate-200 bg-white/60 p-12">
+          <Compass className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Destinations Loading</h2>
+          <p className="text-xs text-slate-500 mb-6">Explore our interactive globe or search destinations directly.</p>
+          <Button variant="primary" href="/map" className="text-xs py-2 px-5">
+            Open Map Explorer
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-12">
+          {categories.map((categoryData) => (
+            <CategorySection
+              key={categoryData.category}
+              category={categoryData.category}
+              places={categoryData.places}
+              hasMore={categoryData.hasMore}
+              onLoadMore={async (category, offset) => {
+                const response = await fetch(
+                  `/api/explore/places?category=${encodeURIComponent(category)}&offset=${offset}`
+                );
+                if (!response.ok) {
+                  return { places: [], hasMore: false };
+                }
+
+                const payload = (await response.json()) as PlacesApiResponse;
+                if (!payload.success) {
+                  return { places: [], hasMore: false };
+                }
+
+                return {
+                  places: payload.data || [],
+                  hasMore: payload.pagination?.hasMore ?? false,
+                };
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Bottom Editorial Callout */}
+      <div className="mt-20 rounded-3xl border border-slate-200/90 bg-white/90 p-8 sm:p-12 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="max-w-xl">
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 block mb-2">
+            Personalized Travel Generation
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Ready to turn inspiration into an itinerary?
+          </h2>
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            Our AI planner takes your chosen destination, budget, and travel dates to generate an optimized route with real-time expense calculations.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+          <Button variant="primary" href="/ai-planner" className="text-xs py-3 px-6 gap-2">
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <span>Generate Itinerary</span>
+          </Button>
+          <Button variant="secondary" href="/dashboard" className="text-xs py-3 px-6">
+            Go to My Trips
+          </Button>
+        </div>
+      </div>
+
     </main>
   );
 }

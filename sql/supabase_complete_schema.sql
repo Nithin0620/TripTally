@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   profile_image TEXT,
+  email_verified BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -54,10 +55,22 @@ CREATE TABLE IF NOT EXISTS auth_passwords (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Single-use, expiring verification/password-reset tokens (hashes only)
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  type TEXT NOT NULL CHECK (type IN ('email_verification', 'password_reset')),
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  used_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- Create trips table
 CREATE TABLE IF NOT EXISTS trips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
+  destination TEXT,
   description TEXT,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
@@ -97,8 +110,13 @@ CREATE TABLE IF NOT EXISTS expenses (
   title TEXT NOT NULL,
   amount NUMERIC(10, 2) NOT NULL,
   paid_by UUID NOT NULL REFERENCES users(id),
-  split_type TEXT NOT NULL CHECK (split_type IN ('equal', 'percentage', 'custom')),
+  split_type TEXT NOT NULL CHECK (split_type IN ('equal', 'percentage', 'custom', 'shares')),
   category TEXT,
+  expense_date DATE DEFAULT CURRENT_DATE,
+  description TEXT,
+  tags TEXT[],
+  currency TEXT DEFAULT 'INR',
+  exchange_rate NUMERIC(12, 6) DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -138,6 +156,7 @@ CREATE TABLE IF NOT EXISTS templates (
 
 CREATE INDEX IF NOT EXISTS idx_trips_created_by ON trips(created_by);
 CREATE INDEX IF NOT EXISTS idx_auth_passwords_user_id ON auth_passwords(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_tokens_user_type ON auth_tokens(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_trip_members_trip_id ON trip_members(trip_id);
 CREATE INDEX IF NOT EXISTS idx_trip_members_user_id ON trip_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_activities_trip_id ON activities(trip_id);
@@ -159,6 +178,7 @@ ALTER TABLE visitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth_passwords ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
@@ -262,6 +282,12 @@ CREATE POLICY "Service role full access to auth_passwords"
   USING (true)
   WITH CHECK (true);
 
+CREATE POLICY "Service role full access to auth_tokens"
+  ON auth_tokens FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
 CREATE POLICY "Service role full access to trips"
   ON trips FOR ALL
   TO service_role
@@ -305,7 +331,38 @@ CREATE POLICY "Service role full access to templates"
   WITH CHECK (true);
 
 -- ============================================
--- 7. HELPFUL VIEWS (OPTIONAL)
+-- 7. ACCOUNT DELETION
+-- ============================================
+
+CREATE OR REPLACE FUNCTION delete_user_account(target_user_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM auth_tokens WHERE user_id = target_user_id;
+  DELETE FROM expense_shares WHERE user_id = target_user_id;
+  DELETE FROM expenses WHERE paid_by = target_user_id;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'expenses'
+      AND column_name = 'created_by'
+  ) THEN
+    EXECUTE 'DELETE FROM expenses WHERE created_by = $1' USING target_user_id;
+  END IF;
+
+  DELETE FROM users WHERE id = target_user_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION delete_user_account(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION delete_user_account(UUID) TO service_role;
+
+-- ============================================
+-- 8. HELPFUL VIEWS (OPTIONAL)
 -- ============================================
 
 -- View for trip statistics
